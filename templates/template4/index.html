@@ -33,6 +33,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  
+  <!-- Mobile Menu Fix -->
+  <style>
+    @media (max-width: 768px) {
+      .mobile-menu-toggle {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+    }
+  </style>
 </head>
 <body>
   
@@ -90,6 +101,11 @@
             <i class="fas fa-handshake"></i>
             <span>Auspiciadores</span>
           </a></li>
+          <li class="mobile-social-item">
+            <div class="mobile-menu-social" id="mobile-menu-social">
+              <!-- Social links will be loaded here -->
+            </div>
+          </li>
         </ul>
         
         <button class="mobile-menu-toggle">
@@ -623,6 +639,24 @@
   <script src="/assets/js/title-updater.js"></script>
   <script src="/assets/js/mobile-enhancements.js"></script>
   <script src="/assets/js/pwa-installer.js"></script>
+  
+  <!-- Mobile Menu Initialization -->
+  <script>
+    // Force menu to start closed on mobile
+    document.addEventListener('DOMContentLoaded', () => {
+      const navMenu = document.querySelector('.nav-menu');
+      const menuToggle = document.querySelector('.mobile-menu-toggle');
+      
+      if (navMenu) {
+        navMenu.classList.remove('active');
+        console.log('Template4: Menu forced to closed state on load');
+      }
+      if (menuToggle) {
+        menuToggle.classList.remove('active');
+      }
+    });
+  </script>
+  
   <script type="module" src="assets/js/main.js"></script>
   
   <!-- Loading Manager Inline -->

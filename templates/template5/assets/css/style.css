@@ -2362,14 +2362,11 @@ ive Design */
   }
   
   .header-actions {
-    width: 100%;
-    justify-content: center;
+    display: none !important;
   }
   
-  .header-social-main .social-links a {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
+  .header-social-main {
+    display: none !important;
   }
   
   .nav-menu {
@@ -2395,20 +2392,26 @@ ive Design */
   }
   
   .player-content {
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px 15px;
+    flex-direction: row;
+    gap: 15px;
+    padding: 12px 15px;
+    align-items: center;
   }
   
   .now-playing {
-    width: 100%;
-    justify-content: center;
+    flex: 1;
+    min-width: 0;
   }
   
   .player-controls {
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  
+  /* Ocultar elementos innecesarios en móvil */
+  .volume-control,
+  .player-stats,
+  .player-toggle {
+    display: none !important;
   }
   
   .hero-title {
@@ -2551,20 +2554,7 @@ ive Design */
     font-size: 0.9rem;
   }
   
-  .player-stats {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
-  }
-  
-  .volume-control {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .glass-slider {
-    width: 100px;
-  }
+
   
   .program-image {
     height: 150px;

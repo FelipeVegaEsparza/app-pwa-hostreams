@@ -23,6 +23,14 @@ class MobileEnhancements {
     const mobileToggle = document.querySelector('.mobile-menu-toggle, .nav-toggle');
     const navMenu = document.querySelector('.nav-menu, .sidebar');
     
+    // Skip if template4, template5, or template6 (they have their own menu handlers)
+    if (document.querySelector('.news-header') || 
+        document.querySelector('.modern-header') || 
+        document.querySelector('.dynamic-header')) {
+      console.log('MobileEnhancements: Skipping menu setup for template4/5/6');
+      return;
+    }
+    
     if (mobileToggle && navMenu) {
       mobileToggle.addEventListener('click', (e) => {
         e.preventDefault();

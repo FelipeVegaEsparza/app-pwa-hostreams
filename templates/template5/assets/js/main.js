@@ -1034,6 +1034,14 @@ class RadioNexus {
         e.preventDefault();
         const section = link.dataset.section;
         this.showSection(section);
+        
+        // Close mobile menu after selection
+        if (window.innerWidth <= 768) {
+          const navMenu = document.querySelector('.nav-menu');
+          const menuToggle = document.querySelector('.mobile-menu-toggle');
+          if (navMenu) navMenu.classList.remove('active');
+          if (menuToggle) menuToggle.classList.remove('active');
+        }
       });
     });
     
@@ -1041,8 +1049,69 @@ class RadioNexus {
     const navMenu = document.querySelector('.nav-menu');
     
     if (menuToggle && navMenu) {
-      menuToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
+      menuToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const isOpen = navMenu.classList.contains('active');
+        
+        if (isOpen) {
+          navMenu.classList.remove('active');
+          menuToggle.classList.remove('active');
+          navMenu.style.cssText = '';
+        } else {
+          navMenu.classList.add('active');
+          menuToggle.classList.add('active');
+          
+          // Get the header height dynamically
+          const header = document.querySelector('.modern-header');
+          const headerHeight = header ? header.offsetHeight : 80;
+          
+          // Force styles with fixed position
+          navMenu.style.cssText = `
+            position: fixed !important;
+            top: ${headerHeight}px !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(20px) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            height: auto !important;
+            opacity: 1 !important;
+            z-index: 999 !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+            overflow-y: auto !important;
+            max-height: calc(100vh - ${headerHeight}px) !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            visibility: visible !important;
+            border-radius: 0 0 20px 20px !important;
+          `;
+        }
+      });
+      
+      // Close menu when clicking outside
+      setTimeout(() => {
+        document.addEventListener('click', (e) => {
+          if (navMenu.classList.contains('active') && 
+              !navMenu.contains(e.target) && 
+              !menuToggle.contains(e.target)) {
+            navMenu.classList.remove('active');
+            menuToggle.classList.remove('active');
+            navMenu.style.cssText = '';
+          }
+        });
+      }, 100);
+      
+      // Close menu on window resize if screen becomes large
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          navMenu.classList.remove('active');
+          menuToggle.classList.remove('active');
+          navMenu.style.cssText = '';
+        }
       });
     }
   }

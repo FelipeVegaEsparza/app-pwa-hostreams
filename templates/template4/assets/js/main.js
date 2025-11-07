@@ -35,7 +35,6 @@ class NewsHub {
   }
 
   async init() {
-    console.log('NewsHub: Initializing news hub...');
     // Loading is now managed by loading-manager.js
     
     try {
@@ -51,8 +50,6 @@ class NewsHub {
       this.setupAnimations();
       await this.loadSonicPanelData();
       this.startSonicPanelUpdates();
-      
-      console.log('NewsHub: News hub is live! 📰');
     } catch (error) {
       console.error('NewsHub: Error initializing:', error);
     }
@@ -61,7 +58,6 @@ class NewsHub {
     setTimeout(() => {
       const overlay = document.getElementById('loading-overlay');
       if (overlay && !overlay.classList.contains('hidden')) {
-        console.log('Template4: Fallback - Ocultando loading');
         if (window.loadingManager) {
           window.loadingManager.forceHide();
         } else {
@@ -129,8 +125,6 @@ class NewsHub {
   }
 
   async loadAllContent() {
-    console.log('NewsHub: Loading all content...');
-    
     try {
       await Promise.all([
         this.loadHeroCarousel(),
@@ -146,7 +140,6 @@ class NewsHub {
         this.loadVideocasts(),
         this.loadAllSponsors()
       ]);
-      console.log('NewsHub: All content loaded');
     } catch (error) {
       console.error('NewsHub: Error loading content:', error);
     }
@@ -653,7 +646,6 @@ class NewsHub {
   
   setCurrentDayAsActive() {
     const currentDay = this.getCurrentDayName();
-    console.log('NewsHub: Setting current day as active:', currentDay);
     
     // Actualizar los botones de navegación
     document.querySelectorAll('.day-btn').forEach(btn => {
@@ -868,7 +860,13 @@ class NewsHub {
           const headerMainElement = document.getElementById('header-social-main');
           if (headerMainElement) {
             headerMainElement.innerHTML = headerMainHtml;
-
+          }
+          
+          // Para mobile-menu-social, usar la estructura específica
+          const mobileMenuHtml = `<div class="social-links">${socialHtml}</div>`;
+          const mobileMenuElement = document.getElementById('mobile-menu-social');
+          if (mobileMenuElement) {
+            mobileMenuElement.innerHTML = mobileMenuHtml;
           }
         } else {
 
@@ -999,23 +997,103 @@ class NewsHub {
   }
 
   setupNavigation() {
+    // Mobile menu toggle
+    const menuToggle = document.querySelector('.mobile-menu-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+    const mobileMenuSocial = document.querySelector('.mobile-menu-social');
+    
+    // IMPORTANT: Ensure menu starts closed on mobile
+    if (navMenu) {
+      navMenu.classList.remove('active');
+    }
+    if (menuToggle) {
+      menuToggle.classList.remove('active');
+    }
+    if (mobileMenuSocial) {
+      mobileMenuSocial.classList.remove('active');
+    }
+    
     // Navigation links
     document.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const section = link.dataset.section;
         this.showSection(section);
+        
+        // Close mobile menu after selection
+        if (window.innerWidth <= 768) {
+          if (navMenu) {
+            navMenu.classList.remove('active');
+          }
+          if (menuToggle) {
+            menuToggle.classList.remove('active');
+          }
+        }
       });
     });
     
-    // Mobile menu toggle
-    const menuToggle = document.querySelector('.mobile-menu-toggle');
-    const navMenu = document.querySelector('.nav-menu');
-    
     if (menuToggle && navMenu) {
-      menuToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
+      menuToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const isOpen = navMenu.classList.contains('active');
+        
+        if (isOpen) {
+          navMenu.classList.remove('active');
+          menuToggle.classList.remove('active');
+          navMenu.style.cssText = '';
+        } else {
+          navMenu.classList.add('active');
+          menuToggle.classList.add('active');
+          
+          // Get the header height dynamically
+          const header = document.querySelector('.news-header');
+          const headerHeight = header ? header.offsetHeight : 169;
+          
+          // Force all styles via JavaScript with fixed position
+          navMenu.style.cssText = `
+            position: fixed !important;
+            top: ${headerHeight}px !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            background: #2c3e50 !important;
+            display: block !important;
+            height: auto !important;
+            opacity: 1 !important;
+            z-index: 999 !important;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+            overflow-y: auto !important;
+            max-height: calc(100vh - ${headerHeight}px) !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            visibility: visible !important;
+          `;
+        }
       });
+      
+      // Close menu when clicking outside - with delay to prevent immediate closing
+      setTimeout(() => {
+        document.addEventListener('click', (e) => {
+          if (navMenu.classList.contains('active') && 
+              !navMenu.contains(e.target) && 
+              !menuToggle.contains(e.target)) {
+            navMenu.classList.remove('active');
+            menuToggle.classList.remove('active');
+          }
+        });
+      }, 100);
+      
+      // Close menu on window resize if screen becomes large
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          navMenu.classList.remove('active');
+          menuToggle.classList.remove('active');
+        }
+      });
+    } else {
+      console.error('Template4: Menu toggle or nav menu not found!');
     }
   }
 
@@ -1039,14 +1117,6 @@ class NewsHub {
     
     // Audio events
     if (this.audioPlayer) {
-      this.audioPlayer.addEventListener('loadstart', () => {
-        console.log('NewsHub: Audio loading started');
-      });
-      
-      this.audioPlayer.addEventListener('canplay', () => {
-        console.log('NewsHub: Audio can play');
-      });
-      
       this.audioPlayer.addEventListener('error', (e) => {
         console.error('NewsHub: Audio error:', e);
         this.handleAudioError();
@@ -1191,8 +1261,6 @@ class NewsHub {
 
 
   showDayPrograms(day) {
-    console.log('NewsHub: Showing programs for:', day);
-    
     // Hide all day programs
     document.querySelectorAll('.day-programs').forEach(dayProgram => {
       dayProgram.classList.remove('active');
@@ -1257,7 +1325,6 @@ class NewsHub {
     this.audioPlayer.play().then(() => {
       this.isPlaying = true;
       this.updatePlayButton(true);
-      console.log('NewsHub: Audio playing');
     }).catch(error => {
       console.error('NewsHub: Error playing audio:', error);
       this.handleAudioError();
@@ -1270,7 +1337,6 @@ class NewsHub {
     this.audioPlayer.pause();
     this.isPlaying = false;
     this.updatePlayButton(false);
-    console.log('NewsHub: Audio paused');
   }
 
   setVolume(volume) {
@@ -1308,7 +1374,6 @@ class NewsHub {
   handleAudioError() {
     this.isPlaying = false;
     this.updatePlayButton(false);
-    console.error('NewsHub: Audio playback error');
   }
 
 

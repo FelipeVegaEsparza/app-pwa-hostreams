@@ -1,7 +1,7 @@
 {
-  "name": "IPStream Radio App",
-  "short_name": "IPStream",
-  "description": "Aplicación de radio streaming con múltiples templates y funcionalidades avanzadas",
+  "name": "Radio Fusion Austral",
+  "short_name": "Fusion Austral",
+  "description": "Desde la Patagonia al Mundo",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

@@ -1012,6 +1012,19 @@ class RadioPulse {
         e.preventDefault();
         const section = link.dataset.section;
         this.showSection(section);
+        
+        // Close mobile menu after selection with animation
+        if (window.innerWidth <= 768) {
+          const navMenu = document.querySelector('.nav-menu');
+          const menuToggle = document.querySelector('.mobile-menu-toggle');
+          if (navMenu && navMenu.classList.contains('active')) {
+            navMenu.classList.remove('active');
+            menuToggle.classList.remove('active');
+            setTimeout(() => {
+              navMenu.style.cssText = '';
+            }, 300);
+          }
+        }
       });
     });
     
@@ -1019,8 +1032,73 @@ class RadioPulse {
     const navMenu = document.querySelector('.nav-menu');
     
     if (menuToggle && navMenu) {
-      menuToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
+      const closeMenu = () => {
+        navMenu.classList.remove('active');
+        menuToggle.classList.remove('active');
+        // Wait for animation to complete before removing styles
+        setTimeout(() => {
+          navMenu.style.cssText = '';
+        }, 300);
+      };
+      
+      menuToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const isOpen = navMenu.classList.contains('active');
+        
+        if (isOpen) {
+          closeMenu();
+        } else {
+          navMenu.classList.add('active');
+          menuToggle.classList.add('active');
+          
+          // Get the header height dynamically
+          const header = document.querySelector('.dynamic-header');
+          const headerHeight = header ? header.offsetHeight : 80;
+          
+          // Force styles with fixed position and more transparency
+          navMenu.style.cssText = `
+            position: fixed !important;
+            top: ${headerHeight}px !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            background: rgba(0, 0, 0, 0.75) !important;
+            backdrop-filter: blur(25px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            height: auto !important;
+            opacity: 1 !important;
+            z-index: 999 !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+            overflow-y: auto !important;
+            max-height: calc(100vh - ${headerHeight}px) !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            visibility: visible !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+          `;
+        }
+      });
+      
+      // Close menu when clicking outside with animation
+      setTimeout(() => {
+        document.addEventListener('click', (e) => {
+          if (navMenu.classList.contains('active') && 
+              !navMenu.contains(e.target) && 
+              !menuToggle.contains(e.target)) {
+            closeMenu();
+          }
+        });
+      }, 100);
+      
+      // Close menu on window resize if screen becomes large
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
+          closeMenu();
+        }
       });
     }
   }

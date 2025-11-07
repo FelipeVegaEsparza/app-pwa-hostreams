@@ -20,38 +20,24 @@ class RadioStreamApp {
     this.currentVolume = 50;
     this.sonicPanelInterval = null;
     this.currentSongData = null;
-
+    this.navigationSetup = false; // Flag to prevent multiple setups
     
     this.init();
   }
 
   async init() {
-    console.log('Template3: Initializing...');
-    // Loading is now managed by loading-manager.js
-    
     try {
-      console.log('Template3: Loading basic data...');
-      await this.loadBasicData();
-      
-      console.log('Template3: Loading all content...');
-      await this.loadAllContent();
-      
-      console.log('Template3: Setting up navigation...');
+      // Setup navigation FIRST - before loading content
       this.setupNavigation();
       
-      console.log('Template3: Setting up audio player...');
-      this.setupAudioPlayer();
+      await this.loadBasicData();
+      await this.loadAllContent();
       
-      console.log('Template3: Setting up modal event listeners...');
+      this.setupAudioPlayer();
       this.setupModalEventListeners();
       
-      console.log('Template3: Loading SonicPanel data...');
       await this.loadSonicPanelData();
-      
-      console.log('Template3: Starting SonicPanel updates...');
       this.startSonicPanelUpdates();
-      
-      console.log('Template3: Initialization complete!');
     } catch (error) {
       console.error('Template3: Error initializing stream app:', error);
     }
@@ -983,8 +969,22 @@ class RadioStreamApp {
     document.getElementById('main-listeners').innerHTML = `<i class="fas fa-users"></i> ${songData.listeners} oyentes`;
     document.getElementById('main-bitrate').innerHTML = `<i class="fas fa-signal"></i> ${songData.bitrate} kbps`;
     
-    // Update top bar
-    document.getElementById('listener-count').textContent = songData.listeners;
+    // Update top bar (if exists)
+    const listenerCountEl = document.getElementById('listener-count');
+    if (listenerCountEl) {
+      listenerCountEl.textContent = songData.listeners;
+    }
+    
+    // Update bottom player stats
+    const playerListenerCount = document.getElementById('player-listener-count');
+    if (playerListenerCount) {
+      playerListenerCount.textContent = songData.listeners;
+    }
+    
+    const playerBitrateValue = document.getElementById('player-bitrate-value');
+    if (playerBitrateValue) {
+      playerBitrateValue.textContent = songData.bitrate || 'N/A';
+    }
     
     // Update all artwork displays
     const artworkElements = [
@@ -1017,8 +1017,6 @@ class RadioStreamApp {
       const el = document.getElementById(id);
       if (el) el.textContent = 'Radio Stream';
     });
-    
-    // DJ info section removed
   }
 
   updateRecentTracks(history) {
@@ -1058,7 +1056,14 @@ class RadioStreamApp {
         } else {
           // Just update listener count
           document.getElementById('main-listeners').innerHTML = `<i class="fas fa-users"></i> ${songData.listeners} oyentes`;
-          document.getElementById('listener-count').textContent = songData.listeners;
+          const listenerCountEl = document.getElementById('listener-count');
+          if (listenerCountEl) {
+            listenerCountEl.textContent = songData.listeners;
+          }
+          const playerListenerCount = document.getElementById('player-listener-count');
+          if (playerListenerCount) {
+            playerListenerCount.textContent = songData.listeners;
+          }
         }
       } catch (error) {
         console.error('Error updating SonicPanel data:', error);
@@ -1067,35 +1072,120 @@ class RadioStreamApp {
   }
 
   setupNavigation() {
-    console.log('Template3: Setting up navigation...');
+    // Only setup once
+    if (this.navigationSetup) {
+      return;
+    }
     
-    // Navigation menu
-    document.querySelectorAll('.menu-item').forEach(item => {
-      item.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const section = item.dataset.section;
-        console.log('Template3: Menu item clicked:', section);
-        
-        // Update active menu item
-        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-        
-        // Show view
-        this.showView(section);
-        
-        // Load content for specific section if needed
-        await this.loadSectionContent(section);
+    // Wait a bit to ensure DOM is ready
+    setTimeout(() => {
+      // FIRST: Ensure sidebar and overlay start in closed state
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      
+      if (sidebar && overlay) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+      }
+      
+      // Navigation menu
+      document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const section = item.dataset.section;
+          
+          // Update active menu item
+          document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+          
+          // Show view
+          this.showView(section);
+          
+          // Load content for specific section if needed
+          await this.loadSectionContent(section);
+          
+          // Close sidebar on mobile after selecting
+          if (window.innerWidth <= 768) {
+            this.closeSidebar();
+          }
+        });
       });
-    });
-    
-    // Mobile navigation toggle
-    const navToggle = document.querySelector('.nav-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    
-    if (navToggle) {
-      navToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
+      
+      // Mobile navigation toggle
+      const navToggle = document.querySelector('.nav-toggle');
+      
+      if (navToggle && sidebar && overlay) {
+        // Store reference to the toggle function
+        this.toggleSidebarBound = this.toggleSidebar.bind(this);
+        
+        // Add listener
+        navToggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.toggleSidebarBound();
+        });
+        
+        // Close sidebar when clicking overlay
+        overlay.addEventListener('click', () => {
+          this.closeSidebar();
+        });
+        
+        this.navigationSetup = true;
+      }
+      
+      // Close sidebar on window resize if screen becomes large
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          this.closeSidebar();
+        }
       });
+    }, 100);
+  }
+  
+  toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (sidebar && overlay) {
+      // Check the actual position to determine state
+      const sidebarLeft = window.getComputedStyle(sidebar).left;
+      const leftValue = parseInt(sidebarLeft);
+      
+      // If sidebar is visible (left >= -10px), close it. Otherwise open it.
+      if (leftValue >= -10) {
+        this.closeSidebar();
+      } else {
+        this.openSidebar();
+      }
+    }
+  }
+  
+  openSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (sidebar && overlay) {
+      // Force remove first to ensure clean state
+      sidebar.classList.remove('active');
+      overlay.classList.remove('active');
+      
+      // Use setTimeout to ensure CSS transition works
+      setTimeout(() => {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }, 10);
+    }
+  }
+  
+  closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (sidebar && overlay) {
+      sidebar.classList.remove('active');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
     }
   }
 

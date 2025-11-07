@@ -359,11 +359,7 @@
   }
   
   .pwa-floating-button {
-    bottom: 15px;
-    right: 15px;
-    min-width: 120px;
-    height: 45px;
-    padding: 0 16px;
+    display: none !important;
   }
   
   .pwa-floating-icon {
