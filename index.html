@@ -56,38 +56,9 @@
   </style>
   
   <script>
-    // Cargar config y actualizar título inmediatamente
-    fetch('/config/config.json')
-      .then(response => response.json())
-      .then(config => {
-        // Actualizar título
-        document.title = config.project_name || 'Cargando...';
-        document.getElementById('page-title').textContent = config.project_name || 'Cargando...';
-        
-        // Actualizar el h1 si existe
-        const titleElement = document.getElementById('radio-name');
-        if (titleElement) {
-          titleElement.textContent = config.project_name;
-        }
-        
-        // Actualizar meta tags
-        const appNameMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-        if (appNameMeta) {
-          appNameMeta.setAttribute('content', config.project_name);
-        }
-        
-        // Esperar un poco más para que el título se actualice
-        setTimeout(() => {
-          window.location.href = `/templates/${config.template}/index.html`;
-        }, 500);
-      })
-      .catch(error => {
-        console.error('Error loading config:', error);
-        document.title = 'Error al cargar';
-        setTimeout(() => {
-          window.location.href = '/templates/template5/index.html';
-        }, 1000);
-      });
+    // Este archivo ya no debería ser servido en la raíz
+    // El servidor sirve directamente el template configurado
+    console.log('⚠️ Este index.html no debería estar siendo servido');
   </script>
 </head>
 <body>
