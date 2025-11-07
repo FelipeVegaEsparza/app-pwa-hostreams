@@ -43,15 +43,17 @@ try {
 app.get('/', (req, res) => {
   console.log('📍 Acceso a ruta raíz /');
   console.log('📱 Sirviendo template:', currentTemplate);
+  console.log('📂 __dirname:', __dirname);
   
   try {
     const templatePath = path.join(__dirname, 'templates', currentTemplate, 'index.html');
-    console.log('📄 Ruta del template:', templatePath);
+    console.log('📄 Ruta completa del template:', templatePath);
+    console.log('🔍 ¿Existe el archivo?', fs.existsSync(templatePath));
     
     if (fs.existsSync(templatePath)) {
       // Leer el HTML del template
       let html = fs.readFileSync(templatePath, 'utf8');
-      console.log('✅ HTML del template cargado correctamente');
+      console.log('✅ HTML del template cargado correctamente, tamaño:', html.length, 'bytes');
       
       // Reemplazar rutas relativas con rutas absolutas al template
       // Comillas dobles
@@ -67,6 +69,8 @@ app.get('/', (req, res) => {
       html = html.replace(/from '\.\/assets\//g, `from '/templates/${currentTemplate}/assets/`);
       html = html.replace(/from "\.\/assets\//g, `from "/templates/${currentTemplate}/assets/`);
       
+      console.log('🔄 Rutas reemplazadas en el HTML');
+      
       // Headers para evitar caché
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -75,13 +79,22 @@ app.get('/', (req, res) => {
       
       // Enviar el HTML modificado
       res.send(html);
-      console.log('✅ HTML enviado al cliente (', html.length, 'bytes)');
+      console.log('✅ HTML enviado al cliente exitosamente');
     } else {
-      console.log('⚠️ Template no encontrado, sirviendo index.html de raíz');
+      console.error('❌ Template NO encontrado en:', templatePath);
+      console.log('📂 Listando contenido de templates/:');
+      try {
+        const templatesDir = path.join(__dirname, 'templates');
+        const templates = fs.readdirSync(templatesDir);
+        console.log('Templates disponibles:', templates);
+      } catch (e) {
+        console.error('Error listando templates:', e);
+      }
       res.sendFile(path.join(__dirname, 'index.html'));
     }
   } catch (error) {
-    console.error('❌ Error serving template:', error);
+    console.error('❌ Error crítico serving template:', error);
+    console.error('Stack trace:', error.stack);
     res.sendFile(path.join(__dirname, 'index.html'));
   }
 });
