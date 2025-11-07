@@ -54,10 +54,18 @@ app.get('/', (req, res) => {
       console.log('✅ HTML del template cargado correctamente');
       
       // Reemplazar rutas relativas con rutas absolutas al template
+      // Comillas dobles
       html = html.replace(/href="assets\//g, `href="/templates/${currentTemplate}/assets/`);
       html = html.replace(/src="assets\//g, `src="/templates/${currentTemplate}/assets/`);
+      // Comillas simples
       html = html.replace(/href='assets\//g, `href='/templates/${currentTemplate}/assets/`);
       html = html.replace(/src='assets\//g, `src='/templates/${currentTemplate}/assets/`);
+      // Type module con rutas relativas
+      html = html.replace(/src="\.\/assets\//g, `src="/templates/${currentTemplate}/assets/`);
+      html = html.replace(/src='\.\/assets\//g, `src='/templates/${currentTemplate}/assets/`);
+      // Import statements en scripts
+      html = html.replace(/from '\.\/assets\//g, `from '/templates/${currentTemplate}/assets/`);
+      html = html.replace(/from "\.\/assets\//g, `from "/templates/${currentTemplate}/assets/`);
       
       // Headers para evitar caché
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -103,9 +111,27 @@ app.get('/config/:file', (req, res) => {
   res.sendFile(path.join(__dirname, 'config', req.params.file));
 });
 
-// Ruta para assets
-app.get('/assets/*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'assets', req.params[0]));
+// Ruta para assets - primero intenta del template, luego de la raíz
+app.get('/assets/*', (req, res, next) => {
+  const assetPath = req.params[0];
+  
+  // Primero intentar desde el template actual
+  const templateAssetPath = path.join(__dirname, 'templates', currentTemplate, 'assets', assetPath);
+  
+  if (fs.existsSync(templateAssetPath)) {
+    console.log(`📦 Sirviendo asset del template: /assets/${assetPath}`);
+    res.sendFile(templateAssetPath);
+  } else {
+    // Si no existe en el template, intentar desde la raíz
+    const rootAssetPath = path.join(__dirname, 'assets', assetPath);
+    if (fs.existsSync(rootAssetPath)) {
+      console.log(`📦 Sirviendo asset de raíz: /assets/${assetPath}`);
+      res.sendFile(rootAssetPath);
+    } else {
+      console.log(`❌ Asset no encontrado: /assets/${assetPath}`);
+      next();
+    }
+  }
 });
 
 // Página offline
