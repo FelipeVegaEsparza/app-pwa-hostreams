@@ -36,35 +36,22 @@ try {
 // IMPORTANTE: Definir rutas específicas ANTES del middleware estático
 // Ruta principal - sirve el template con rutas corregidas
 app.get('/', (req, res) => {
-  console.log('📍 Acceso a ruta raíz /');
-  console.log('📱 Sirviendo template:', currentTemplate);
-  console.log('📂 __dirname:', __dirname);
-  
   try {
     const templatePath = path.join(__dirname, 'templates', currentTemplate, 'index.html');
-    console.log('📄 Ruta completa del template:', templatePath);
-    console.log('🔍 ¿Existe el archivo?', fs.existsSync(templatePath));
     
     if (fs.existsSync(templatePath)) {
       // Leer el HTML del template
       let html = fs.readFileSync(templatePath, 'utf8');
-      console.log('✅ HTML del template cargado correctamente, tamaño:', html.length, 'bytes');
       
       // Reemplazar rutas relativas con rutas absolutas al template
-      // Comillas dobles
       html = html.replace(/href="assets\//g, `href="/templates/${currentTemplate}/assets/`);
       html = html.replace(/src="assets\//g, `src="/templates/${currentTemplate}/assets/`);
-      // Comillas simples
       html = html.replace(/href='assets\//g, `href='/templates/${currentTemplate}/assets/`);
       html = html.replace(/src='assets\//g, `src='/templates/${currentTemplate}/assets/`);
-      // Type module con rutas relativas
       html = html.replace(/src="\.\/assets\//g, `src="/templates/${currentTemplate}/assets/`);
       html = html.replace(/src='\.\/assets\//g, `src='/templates/${currentTemplate}/assets/`);
-      // Import statements en scripts
       html = html.replace(/from '\.\/assets\//g, `from '/templates/${currentTemplate}/assets/`);
       html = html.replace(/from "\.\/assets\//g, `from "/templates/${currentTemplate}/assets/`);
-      
-      console.log('🔄 Rutas reemplazadas en el HTML');
       
       // Headers para evitar caché
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -74,22 +61,12 @@ app.get('/', (req, res) => {
       
       // Enviar el HTML modificado
       res.send(html);
-      console.log('✅ HTML enviado al cliente exitosamente');
     } else {
-      console.error('❌ Template NO encontrado en:', templatePath);
-      console.log('📂 Listando contenido de templates/:');
-      try {
-        const templatesDir = path.join(__dirname, 'templates');
-        const templates = fs.readdirSync(templatesDir);
-        console.log('Templates disponibles:', templates);
-      } catch (e) {
-        console.error('Error listando templates:', e);
-      }
+      console.error('❌ Template no encontrado:', templatePath);
       res.sendFile(path.join(__dirname, 'index.html'));
     }
   } catch (error) {
-    console.error('❌ Error crítico serving template:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('❌ Error serving template:', error);
     res.sendFile(path.join(__dirname, 'index.html'));
   }
 });
@@ -128,16 +105,13 @@ app.get('/assets/*', (req, res, next) => {
   const templateAssetPath = path.join(__dirname, 'templates', currentTemplate, 'assets', assetPath);
   
   if (fs.existsSync(templateAssetPath)) {
-    console.log(`📦 Sirviendo asset del template: /assets/${assetPath}`);
     res.sendFile(templateAssetPath);
   } else {
     // Si no existe en el template, intentar desde la raíz
     const rootAssetPath = path.join(__dirname, 'assets', assetPath);
     if (fs.existsSync(rootAssetPath)) {
-      console.log(`📦 Sirviendo asset de raíz: /assets/${assetPath}`);
       res.sendFile(rootAssetPath);
     } else {
-      console.log(`❌ Asset no encontrado: /assets/${assetPath}`);
       next();
     }
   }
