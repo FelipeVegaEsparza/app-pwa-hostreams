@@ -71,10 +71,11 @@ app.get('/', (req, res) => {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
       
       // Enviar el HTML modificado
       res.send(html);
-      console.log('✅ HTML enviado al cliente');
+      console.log('✅ HTML enviado al cliente (', html.length, 'bytes)');
     } else {
       console.log('⚠️ Template no encontrado, sirviendo index.html de raíz');
       res.sendFile(path.join(__dirname, 'index.html'));
