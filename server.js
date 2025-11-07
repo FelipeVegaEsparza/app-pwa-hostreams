@@ -41,12 +41,17 @@ try {
 
 // Ruta principal - sirve el template con rutas corregidas
 app.get('/', (req, res) => {
+  console.log('📍 Acceso a ruta raíz /');
+  console.log('📱 Sirviendo template:', currentTemplate);
+  
   try {
     const templatePath = path.join(__dirname, 'templates', currentTemplate, 'index.html');
+    console.log('📄 Ruta del template:', templatePath);
     
     if (fs.existsSync(templatePath)) {
       // Leer el HTML del template
       let html = fs.readFileSync(templatePath, 'utf8');
+      console.log('✅ HTML del template cargado correctamente');
       
       // Reemplazar rutas relativas con rutas absolutas al template
       html = html.replace(/href="assets\//g, `href="/templates/${currentTemplate}/assets/`);
@@ -54,13 +59,20 @@ app.get('/', (req, res) => {
       html = html.replace(/href='assets\//g, `href='/templates/${currentTemplate}/assets/`);
       html = html.replace(/src='assets\//g, `src='/templates/${currentTemplate}/assets/`);
       
+      // Headers para evitar caché
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       // Enviar el HTML modificado
       res.send(html);
+      console.log('✅ HTML enviado al cliente');
     } else {
+      console.log('⚠️ Template no encontrado, sirviendo index.html de raíz');
       res.sendFile(path.join(__dirname, 'index.html'));
     }
   } catch (error) {
-    console.error('Error serving template:', error);
+    console.error('❌ Error serving template:', error);
     res.sendFile(path.join(__dirname, 'index.html'));
   }
 });
