@@ -25,28 +25,42 @@ app.use(express.static('.', {
   etag: true
 }));
 
-// Ruta principal - sirve el template configurado directamente
-app.get('/', async (req, res) => {
+// Leer configuración al inicio
+const fs = require('fs');
+let currentTemplate = 'template5'; // Default
+
+try {
+  const configPath = path.join(__dirname, 'config', 'config.json');
+  const configData = fs.readFileSync(configPath, 'utf8');
+  const config = JSON.parse(configData);
+  currentTemplate = config.template || 'template5';
+  console.log(`📱 Template configurado: ${currentTemplate}`);
+} catch (error) {
+  console.error('Error loading config:', error);
+}
+
+// Ruta principal - sirve el template con rutas corregidas
+app.get('/', (req, res) => {
   try {
-    // Leer el config para saber qué template usar
-    const fs = require('fs');
-    const configPath = path.join(__dirname, 'config', 'config.json');
-    const configData = fs.readFileSync(configPath, 'utf8');
-    const config = JSON.parse(configData);
+    const templatePath = path.join(__dirname, 'templates', currentTemplate, 'index.html');
     
-    // Servir el index.html del template configurado
-    const templatePath = path.join(__dirname, 'templates', config.template, 'index.html');
-    
-    // Verificar si el archivo existe
     if (fs.existsSync(templatePath)) {
-      res.sendFile(templatePath);
+      // Leer el HTML del template
+      let html = fs.readFileSync(templatePath, 'utf8');
+      
+      // Reemplazar rutas relativas con rutas absolutas al template
+      html = html.replace(/href="assets\//g, `href="/templates/${currentTemplate}/assets/`);
+      html = html.replace(/src="assets\//g, `src="/templates/${currentTemplate}/assets/`);
+      html = html.replace(/href='assets\//g, `href='/templates/${currentTemplate}/assets/`);
+      html = html.replace(/src='assets\//g, `src='/templates/${currentTemplate}/assets/`);
+      
+      // Enviar el HTML modificado
+      res.send(html);
     } else {
-      // Fallback al index.html de la raíz si no existe el template
       res.sendFile(path.join(__dirname, 'index.html'));
     }
   } catch (error) {
-    console.error('Error loading template:', error);
-    // En caso de error, servir el index.html de la raíz
+    console.error('Error serving template:', error);
     res.sendFile(path.join(__dirname, 'index.html'));
   }
 });
