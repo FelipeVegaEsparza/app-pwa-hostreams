@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Modals - Radio Nexus</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container" style="padding: 50px 20px;">
+    <h1 style="text-align: center; margin-bottom: 50px; color: white;">Test de Modales</h1>
+    
+    <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+      <button class="glass-btn" onclick="testNewsModal()" style="padding: 15px 25px;">
+        <i class="fas fa-newspaper"></i>
+        <span>Test Modal Noticias</span>
+      </button>
+      
+      <button class="glass-btn" onclick="testPodcastModal()" style="padding: 15px 25px;">
+        <i class="fas fa-podcast"></i>
+        <span>Test Modal Podcast</span>
+      </button>
+      
+      <button class="glass-btn" onclick="testVideocastModal()" style="padding: 15px 25px;">
+        <i class="fas fa-video"></i>
+        <span>Test Modal Videocast</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- News Modal -->
+  <div class="modal-overlay glass-effect" id="news-modal">
+    <div class="modal-content glass-effect news-modal-content">
+      <button class="modal-close glass-btn" onclick="closeNewsModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="modal-header">
+        <div class="news-modal-category">Noticias</div>
+        <h2 class="news-modal-title" id="news-modal-title">Título de la noticia</h2>
+        <div class="news-modal-meta">
+          <span class="news-modal-date" id="news-modal-date">Fecha</span>
+          <span class="news-modal-views" id="news-modal-views">
+            <i class="fas fa-eye"></i> 0 vistas
+          </span>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="news-modal-image" id="news-modal-image-container">
+          <!-- Image will be loaded here -->
+        </div>
+        <div class="news-modal-content" id="news-modal-content">
+          <!-- News content will be loaded here -->
+        </div>
+        <div class="news-modal-actions">
+          <button class="glass-btn share-btn primary-share-btn" onclick="shareNews()">
+            <i class="fas fa-share-nodes"></i>
+            <span>Compartir Noticia</span>
+          </button>
+          <div class="share-options" id="news-share-options" style="display: none;">
+            <button class="glass-btn share-option" onclick="shareToFacebook('news')">
+              <i class="fab fa-facebook-f"></i>
+              <span>Facebook</span>
+            </button>
+            <button class="glass-btn share-option" onclick="shareToTwitter('news')">
+              <i class="fab fa-twitter"></i>
+              <span>Twitter</span>
+            </button>
+            <button class="glass-btn share-option" onclick="shareToWhatsApp('news')">
+              <i class="fab fa-whatsapp"></i>
+              <span>WhatsApp</span>
+            </button>
+            <button class="glass-btn share-option" onclick="copyNewsLink()">
+              <i class="fas fa-link"></i>
+              <span>Copiar enlace</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Podcast Modal -->
+  <div class="modal-overlay glass-effect" id="podcast-modal">
+    <div class="modal-content glass-effect podcast-modal-content">
+      <button class="modal-close glass-btn" onclick="closePodcastModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="modal-header">
+        <div class="podcast-modal-category">
+          <i class="fas fa-podcast"></i>
+          Podcast
+        </div>
+        <h2 class="podcast-modal-title" id="podcast-modal-title">Título del podcast</h2>
+        <div class="podcast-modal-meta">
+          <span class="podcast-modal-date" id="podcast-modal-date">Fecha</span>
+          <span class="podcast-modal-duration" id="podcast-modal-duration">
+            <i class="fas fa-clock"></i> 45:00
+          </span>
+          <span class="podcast-modal-downloads" id="podcast-modal-downloads">
+            <i class="fas fa-download"></i> 0 descargas
+          </span>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="podcast-modal-image" id="podcast-modal-image-container">
+          <!-- Image will be loaded here -->
+        </div>
+        <div class="podcast-modal-player">
+          <audio id="podcast-audio" controls preload="none">
+            Tu navegador no soporta el elemento de audio.
+          </audio>
+        </div>
+        <div class="podcast-modal-description" id="podcast-modal-description">
+          <!-- Podcast description will be loaded here -->
+        </div>
+        <div class="podcast-modal-actions">
+          <button class="glass-btn download-btn" id="podcast-download-btn">
+            <i class="fas fa-download"></i>
+            <span>Descargar</span>
+          </button>
+          <button class="glass-btn share-btn primary-share-btn" onclick="sharePodcast()">
+            <i class="fas fa-share-nodes"></i>
+            <span>Compartir Podcast</span>
+          </button>
+          <div class="share-options" id="podcast-share-options" style="display: none;">
+            <button class="glass-btn share-option" onclick="shareToFacebook('podcast')">
+              <i class="fab fa-facebook-f"></i>
+              <span>Facebook</span>
+            </button>
+            <button class="glass-btn share-option" onclick="shareToTwitter('podcast')">
+              <i class="fab fa-twitter"></i>
+              <span>Twitter</span>
+            </button>
+            <button class="glass-btn share-option" onclick="shareToWhatsApp('podcast')">
+              <i class="fab fa-whatsapp"></i>
+              <span>WhatsApp</span>
+            </button>
+            <button class="glass-btn share-option" onclick="copyPodcastLink()">
+              <i class="fas fa-link"></i>
+              <span>Copiar enlace</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Videocast Modal -->
+  <div class="modal-overlay glass-effect" id="videocast-modal">
+    <div class="modal-content glass-effect videocast-modal-content">
+      <button class="modal-close glass-btn" onclick="closeVideocastModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="modal-header">
+        <div class="videocast-modal-category">
+          <i class="fas fa-video"></i>
+          Videocast
+        </div>
+        <h2 class="videocast-modal-title" id="videocast-modal-title">Título del videocast</h2>
+        <div class="videocast-modal-meta">
+          <span class="videocast-modal-date" id="videocast-modal-date">Fecha</span>
+          <span class="videocast-modal-duration" id="videocast-modal-duration">
+            <i class="fas fa-clock"></i> 30:00
+          </span>
+          <span class="videocast-modal-views" id="videocast-modal-views">
+            <i class="fas fa-eye"></i> 0 vistas
+          </span>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="videocast-modal-player">
+          <video id="videocast-video" controls preload="none" poster="">
+            Tu navegador no soporta el elemento de video.
+          </video>
+        </div>
+        <div class="videocast-modal-description" id="videocast-modal-description">
+          <!-- Videocast description will be loaded here -->
+        </div>
+        <div class="videocast-modal-actions">
+          <button class="glass-btn fullscreen-btn" onclick="toggleVideoFullscreen()">
+            <i class="fas fa-expand"></i>
+            <span>Pantalla completa</span>
+          </button>
+          <button class="glass-btn share-btn primary-share-btn" onclick="shareVideocast()">
+            <i class="fas fa-share-nodes"></i>
+            <span>Compartir Video</span>
+          </button>
+          <div class="share-options" id="videocast-share-options" style="display: none;">
+            <button class="glass-btn share-option" onclick="shareToFacebook('videocast')">
+              <i class="fab fa-facebook-f"></i>
+              <span>Facebook</span>
+            </button>
+            <button class="glass-btn share-option" onclick="shareToTwitter('videocast')">
+              <i class="fab fa-twitter"></i>
+              <span>Twitter</span>
+            </button>
+            <button class="glass-btn share-option" onclick="shareToWhatsApp('videocast')">
+              <i class="fab fa-whatsapp"></i>
+              <span>WhatsApp</span>
+            </button>
+            <button class="glass-btn share-option" onclick="copyVideocastLink()">
+              <i class="fas fa-link"></i>
+              <span>Copiar enlace</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function testNewsModal() {
+      const modal = document.getElementById('news-modal');
+      document.getElementById('news-modal-title').textContent = 'Noticia de Prueba';
+      document.getElementById('news-modal-date').textContent = new Date().toLocaleDateString('es-ES');
+      document.getElementById('news-modal-views').innerHTML = '<i class="fas fa-eye"></i> 150 vistas';
+      document.getElementById('news-modal-content').innerHTML = `
+        <p>Esta es una noticia de prueba para verificar que el modal funciona correctamente.</p>
+        <p>El contenido se muestra de manera elegante con el efecto glassmorphism y es completamente responsive.</p>
+        <p>Los usuarios pueden leer el contenido completo, compartir la noticia y guardarla para más tarde.</p>
+      `;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function testPodcastModal() {
+      const modal = document.getElementById('podcast-modal');
+      document.getElementById('podcast-modal-title').textContent = 'Podcast de Prueba';
+      document.getElementById('podcast-modal-date').textContent = new Date().toLocaleDateString('es-ES');
+      document.getElementById('podcast-modal-duration').innerHTML = '<i class="fas fa-clock"></i> 45:30';
+      document.getElementById('podcast-modal-downloads').innerHTML = '<i class="fas fa-download"></i> 250 descargas';
+      document.getElementById('podcast-modal-description').innerHTML = `
+        <p>Este es un podcast de prueba para verificar que el modal funciona correctamente.</p>
+        <p>Los usuarios pueden reproducir el audio directamente desde el modal, descargarlo y compartirlo.</p>
+      `;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function testVideocastModal() {
+      const modal = document.getElementById('videocast-modal');
+      document.getElementById('videocast-modal-title').textContent = 'Videocast de Prueba';
+      document.getElementById('videocast-modal-date').textContent = new Date().toLocaleDateString('es-ES');
+      document.getElementById('videocast-modal-duration').innerHTML = '<i class="fas fa-clock"></i> 32:15';
+      document.getElementById('videocast-modal-views').innerHTML = '<i class="fas fa-eye"></i> 420 vistas';
+      document.getElementById('videocast-modal-description').innerHTML = `
+        <p>Este es un videocast de prueba para verificar que el modal funciona correctamente.</p>
+        <p>Los usuarios pueden reproducir el video directamente desde el modal, verlo en pantalla completa y compartirlo.</p>
+      `;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeNewsModal() {
+      const modal = document.getElementById('news-modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+
+    function closePodcastModal() {
+      const modal = document.getElementById('podcast-modal');
+      const audioPlayer = document.getElementById('podcast-audio');
+      if (!audioPlayer.paused) {
+        audioPlayer.pause();
+      }
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+
+    function closeVideocastModal() {
+      const modal = document.getElementById('videocast-modal');
+      const videoPlayer = document.getElementById('videocast-video');
+      if (!videoPlayer.paused) {
+        videoPlayer.pause();
+      }
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+
+    function toggleVideoFullscreen() {
+      const videoPlayer = document.getElementById('videocast-video');
+      if (videoPlayer.requestFullscreen) {
+        videoPlayer.requestFullscreen();
+      } else if (videoPlayer.webkitRequestFullscreen) {
+        videoPlayer.webkitRequestFullscreen();
+      } else if (videoPlayer.msRequestFullscreen) {
+        videoPlayer.msRequestFullscreen();
+      }
+    }
+
+    // Close modals when clicking outside
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+          document.body.style.overflow = 'auto';
+          
+          const audio = modal.querySelector('audio');
+          const video = modal.querySelector('video');
+          
+          if (audio && !audio.paused) {
+            audio.pause();
+          }
+          
+          if (video && !video.paused) {
+            video.pause();
+          }
+        }
+      });
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const activeModal = document.querySelector('.modal-overlay.active');
+        if (activeModal) {
+          activeModal.classList.remove('active');
+          document.body.style.overflow = 'auto';
+          
+          const audio = activeModal.querySelector('audio');
+          const video = activeModal.querySelector('video');
+          
+          if (audio && !audio.paused) {
+            audio.pause();
+          }
+          
+          if (video && !video.paused) {
+            video.pause();
+          }
+        }
+      }
+    });
+
+    // Share functionality
+    function shareNews() {
+      toggleShareOptions('news-share-options');
+    }
+
+    function sharePodcast() {
+      toggleShareOptions('podcast-share-options');
+    }
+
+    function shareVideocast() {
+      toggleShareOptions('videocast-share-options');
+    }
+
+    function toggleShareOptions(optionsId) {
+      const shareOptions = document.getElementById(optionsId);
+      const isVisible = shareOptions.style.display !== 'none';
+      
+      // Hide all share options first
+      document.querySelectorAll('.share-options').forEach(option => {
+        option.style.display = 'none';
+      });
+      
+      if (!isVisible) {
+        shareOptions.style.display = 'flex';
+      }
+    }
+
+    function shareToFacebook(type) {
+      const content = getCurrentShareContent(type);
+      const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(content.url)}&quote=${encodeURIComponent(content.text)}`;
+      openShareWindow(url);
+    }
+
+    function shareToTwitter(type) {
+      const content = getCurrentShareContent(type);
+      const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(content.text)}&url=${encodeURIComponent(content.url)}`;
+      openShareWindow(url);
+    }
+
+    function shareToWhatsApp(type) {
+      const content = getCurrentShareContent(type);
+      const text = `${content.text} ${content.url}`;
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      openShareWindow(url);
+    }
+
+    function copyNewsLink() {
+      copyToClipboard('news');
+    }
+
+    function copyPodcastLink() {
+      copyToClipboard('podcast');
+    }
+
+    function copyVideocastLink() {
+      copyToClipboard('videocast');
+    }
+
+    function getCurrentShareContent(type) {
+      const baseUrl = window.location.origin;
+      let title, url, text;
+
+      switch (type) {
+        case 'news':
+          title = document.getElementById('news-modal-title').textContent;
+          url = `${baseUrl}#noticia-${slugify(title)}`;
+          text = `📰 ${title} - Mantente informado con Radio Nexus`;
+          break;
+        case 'podcast':
+          title = document.getElementById('podcast-modal-title').textContent;
+          url = `${baseUrl}#podcast-${slugify(title)}`;
+          text = `🎧 Escucha: ${title} - Radio Nexus Podcast`;
+          break;
+        case 'videocast':
+          title = document.getElementById('videocast-modal-title').textContent;
+          url = `${baseUrl}#video-${slugify(title)}`;
+          text = `📹 Mira: ${title} - Radio Nexus Video`;
+          break;
+        default:
+          title = 'Radio Nexus';
+          url = baseUrl;
+          text = '🎵 Escucha Radio Nexus - Tu radio moderna las 24 horas';
+      }
+
+      return { title, url, text };
+    }
+
+    function slugify(text) {
+      return text
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    function openShareWindow(url) {
+      const width = 600;
+      const height = 400;
+      const left = (window.innerWidth - width) / 2;
+      const top = (window.innerHeight - height) / 2;
+      
+      window.open(
+        url,
+        'share',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
+    }
+
+    async function copyToClipboard(type) {
+      const content = getCurrentShareContent(type);
+      const textToCopy = `${content.text} ${content.url}`;
+      
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        showShareNotification('¡Enlace copiado al portapapeles!', 'success');
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showShareNotification('¡Enlace copiado al portapapeles!', 'success');
+      }
+    }
+
+    function showShareNotification(message, type = 'info') {
+      // Remove existing notifications
+      const existingNotification = document.querySelector('.share-notification');
+      if (existingNotification) {
+        existingNotification.remove();
+      }
+
+      // Create notification
+      const notification = document.createElement('div');
+      notification.className = `share-notification ${type}`;
+      notification.innerHTML = `
+        <div class="notification-content">
+          <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+          <span>${message}</span>
+        </div>
+      `;
+
+      // Add styles
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        z-index: 10002;
+        animation: slideInRight 0.3s ease;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      `;
+
+      document.body.appendChild(notification);
+
+      // Remove notification after 3 seconds
+      setTimeout(() => {
+        notification.style.animation = 'slideInRight 0.3s ease reverse';
+        setTimeout(() => {
+          notification.remove();
+        }, 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

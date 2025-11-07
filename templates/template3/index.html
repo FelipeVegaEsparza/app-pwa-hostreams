@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radio Stream</title>
+  
+  <!-- Favicon Configuration -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/icon-72x72.png">
+  <link rel="shortcut icon" href="/assets/icons/icon-96x96.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/icon-128x128.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/icon-128x128.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/assets/icons/icon-96x96.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/assets/icons/icon-72x72.png">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-152x152.png">
+  
+  <!-- PWA Configuration -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Radio Stream">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Radio Stream">
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/loading-styles.css">
+  <link rel="stylesheet" href="/assets/css/pwa-installer.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Main App Container -->
+  <div class="app-container">
+    
+    <!-- Main Content Area -->
+    <div class="main-content">
+      
+      <!-- Sidebar Navigation -->
+      <nav class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-container">
+            <img id="sidebar-logo" src="" alt="Logo" style="display: none;">
+            <div class="logo-placeholder">
+              <i class="fas fa-radio"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="sidebar-menu">
+          <div class="menu-section">
+            <div class="section-title">Explorar</div>
+            <ul class="menu-list">
+              <li><a href="#" class="menu-item active" data-section="now-playing">
+                <i class="fas fa-play-circle"></i>
+                <span>Ahora Suena</span>
+              </a></li>
+              <li><a href="#" class="menu-item" data-section="programs">
+                <i class="fas fa-microphone"></i>
+                <span>Programas</span>
+              </a></li>
+              <li><a href="#" class="menu-item" data-section="news">
+                <i class="fas fa-newspaper"></i>
+                <span>Noticias</span>
+              </a></li>
+
+            </ul>
+          </div>
+          
+          <div class="menu-section">
+            <div class="section-title">Contenido</div>
+            <ul class="menu-list">
+              <li><a href="#" class="menu-item" data-section="podcasts">
+                <i class="fas fa-podcast"></i>
+                <span>Podcasts</span>
+              </a></li>
+              <li><a href="#" class="menu-item" data-section="videocasts">
+                <i class="fas fa-film"></i>
+                <span>Videocasts</span>
+              </a></li>
+              <li><a href="#" class="menu-item" data-section="videos">
+                <i class="fas fa-video"></i>
+                <span>Ranking Musical</span>
+              </a></li>
+            </ul>
+          </div>
+          
+          <div class="menu-section">
+            <div class="section-title">Comunidad</div>
+            <ul class="menu-list">
+              <li><a href="#" class="menu-item" data-section="sponsors">
+                <i class="fas fa-handshake"></i>
+                <span>Patrocinadores</span>
+              </a></li>
+              <li><a href="#" class="menu-item" data-section="promotions">
+                <i class="fas fa-bullhorn"></i>
+                <span>Anuncios</span>
+              </a></li>
+              <li><a href="#" class="menu-item" data-section="social">
+                <i class="fas fa-share-alt"></i>
+                <span>Redes Sociales</span>
+              </a></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="sidebar-footer">
+          <div class="social-links">
+            <!-- Social links will be loaded here -->
+          </div>
+        </div>
+      </nav>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        
+        <!-- Top Bar -->
+        <header class="top-bar">
+        <div class="top-bar-left">
+          <button class="nav-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="breadcrumb">
+            <span id="breadcrumb-title">Ahora Suena</span>
+          </div>
+        </div>
+        
+        <div class="top-bar-right">
+          <div class="live-indicator">
+            <div class="live-dot"></div>
+            EN VIVO
+          </div>
+          <div class="listener-count">
+            <i class="fas fa-users"></i>
+            <span id="listener-count">0</span> oyentes
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Container -->
+      <div class="content-container">
+        
+        <!-- Now Playing View -->
+        <div id="now-playing-view" class="content-view active">
+          <div class="now-playing-container">
+            <div class="current-song-display">
+              <div class="song-artwork-large">
+                <img id="main-artwork" src="" alt="Album Art" style="display: none;">
+                <div class="default-artwork-large">
+                  <i class="fas fa-music"></i>
+                </div>
+              </div>
+              <div class="song-details-large">
+                <h1 id="main-song-title">Conectando...</h1>
+                <p id="main-song-artist">Radio Stream</p>
+                <div class="song-stats">
+                  <span id="main-listeners"><i class="fas fa-users"></i> 0 oyentes</span>
+                  <span id="main-bitrate"><i class="fas fa-signal"></i> N/A kbps</span>
+                  <span class="live-badge">
+                    <span class="live-dot"></span>
+                    EN VIVO
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Recently Played -->
+            <div class="recently-played-section">
+              <h2>Reproducidas Recientemente</h2>
+              <div class="track-list" id="recent-tracks">
+                <div class="loading-tracks">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Cargando historial...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Programs View -->
+        <div id="programs-view" class="content-view">
+          <div class="view-header">
+            <h1>Programas de Radio</h1>
+            <p>Descubre nuestra programación completa</p>
+          </div>
+          
+          <div class="programs-tabs">
+            <button class="programs-tab-btn" data-day="monday">
+              <i class="fas fa-calendar-day"></i>
+              <span>Lunes</span>
+            </button>
+            <button class="programs-tab-btn" data-day="tuesday">
+              <i class="fas fa-calendar-day"></i>
+              <span>Martes</span>
+            </button>
+            <button class="programs-tab-btn" data-day="wednesday">
+              <i class="fas fa-calendar-day"></i>
+              <span>Miércoles</span>
+            </button>
+            <button class="programs-tab-btn" data-day="thursday">
+              <i class="fas fa-calendar-day"></i>
+              <span>Jueves</span>
+            </button>
+            <button class="programs-tab-btn" data-day="friday">
+              <i class="fas fa-calendar-day"></i>
+              <span>Viernes</span>
+            </button>
+            <button class="programs-tab-btn" data-day="saturday">
+              <i class="fas fa-calendar-day"></i>
+              <span>Sábado</span>
+            </button>
+            <button class="programs-tab-btn" data-day="sunday">
+              <i class="fas fa-calendar-day"></i>
+              <span>Domingo</span>
+            </button>
+          </div>
+          
+          <div class="programs-content">
+            <div class="programs-day-content" id="monday-programs">
+              <div class="programs-timeline">
+                <div class="timeline-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Cargando programación del lunes...</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="programs-day-content" id="tuesday-programs">
+              <div class="programs-timeline">
+                <div class="timeline-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Cargando programación del martes...</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="programs-day-content" id="wednesday-programs">
+              <div class="programs-timeline">
+                <div class="timeline-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Cargando programación del miércoles...</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="programs-day-content" id="thursday-programs">
+              <div class="programs-timeline">
+                <div class="timeline-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Cargando programación del jueves...</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="programs-day-content" id="friday-programs">
+              <div class="programs-timeline">
+                <div class="timeline-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Cargando programación del viernes...</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="programs-day-content" id="saturday-programs">
+              <div class="programs-timeline">
+                <div class="timeline-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Cargando programación del sábado...</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="programs-day-content" id="sunday-programs">
+              <div class="programs-timeline">
+                <div class="timeline-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Cargando programación del domingo...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- News View -->
+        <div id="news-view" class="content-view">
+          <div class="view-header">
+            <h1>Últimas Noticias</h1>
+            <p>Mantente informado con las últimas novedades</p>
+          </div>
+          <div class="news-feed" id="news-feed">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando noticias...</span>
+            </div>
+          </div>
+        </div>
+
+
+
+        <!-- Podcasts View -->
+        <div id="podcasts-view" class="content-view">
+          <div class="view-header">
+            <h1>Podcasts</h1>
+            <p>Escucha nuestros episodios de audio</p>
+          </div>
+          <div class="podcasts-grid" id="podcast-library">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando podcasts...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Videocasts View -->
+        <div id="videocasts-view" class="content-view">
+          <div class="view-header">
+            <h1>Videocasts</h1>
+            <p>Contenido audiovisual exclusivo</p>
+          </div>
+          <div class="videocasts-grid" id="videocast-library">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando videocasts...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Videos View -->
+        <div id="videos-view" class="content-view">
+          <div class="view-header">
+            <h1>Ranking Musical</h1>
+            <p>Los videos más populares de la semana</p>
+          </div>
+          <div class="videos-ranking" id="video-ranking">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando ranking...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sponsors View -->
+        <div id="sponsors-view" class="content-view">
+          <div class="view-header">
+            <h1>Nuestros Patrocinadores</h1>
+            <p>Empresas que confían en nosotros</p>
+          </div>
+          <div class="sponsors-showcase" id="sponsors-showcase">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando patrocinadores...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Anuncios View -->
+        <div id="promotions-view" class="content-view">
+          <div class="view-header">
+            <h1>Anuncios</h1>
+            <p>Descubre las mejores ofertas y promociones</p>
+          </div>
+          <div class="promotions-showcase" id="promotions-grid">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando anuncios...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social View -->
+        <div id="social-view" class="content-view">
+          <div class="view-header">
+            <h1>Redes Sociales</h1>
+            <p>Síguenos en todas nuestras plataformas</p>
+          </div>
+          <div class="social-hub" id="social-hub">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando redes sociales...</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      
+      </div> <!-- End content-area -->
+    </div>
+
+    <!-- Bottom Player -->
+    <footer class="bottom-player">
+      <div class="player-left">
+        <div class="current-track-info">
+          <div class="track-artwork">
+            <img id="player-artwork" src="" alt="Now Playing" style="display: none;">
+            <div class="default-player-artwork">
+              <i class="fas fa-music"></i>
+            </div>
+          </div>
+          <div class="track-details">
+            <div class="track-title" id="player-title">Radio Stream</div>
+            <div class="track-artist" id="player-artist">En Vivo</div>
+          </div>
+          <button class="like-btn">
+            <i class="far fa-heart"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="player-center">
+        <div class="player-controls">
+          <button class="control-btn shuffle-btn">
+            <i class="fas fa-random"></i>
+          </button>
+          <button class="control-btn prev-btn">
+            <i class="fas fa-step-backward"></i>
+          </button>
+          <button class="control-btn play-btn main-play-btn" id="main-play-btn">
+            <i class="fas fa-play"></i>
+          </button>
+          <button class="control-btn next-btn">
+            <i class="fas fa-step-forward"></i>
+          </button>
+          <button class="control-btn repeat-btn">
+            <i class="fas fa-redo"></i>
+          </button>
+        </div>
+        <div class="progress-container">
+          <span class="time-current">0:00</span>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+            <div class="progress-handle"></div>
+          </div>
+          <span class="time-total">∞</span>
+        </div>
+      </div>
+      
+      <div class="player-right">
+        <div class="player-extras">
+          <button class="extra-btn queue-btn">
+            <i class="fas fa-list"></i>
+          </button>
+          <button class="extra-btn devices-btn">
+            <i class="fas fa-desktop"></i>
+          </button>
+          <div class="volume-control">
+            <button class="volume-btn">
+              <i class="fas fa-volume-up"></i>
+            </button>
+            <div class="volume-slider-container">
+              <input type="range" class="volume-slider" min="0" max="100" value="50">
+            </div>
+          </div>
+          <button class="extra-btn fullscreen-btn">
+            <i class="fas fa-expand"></i>
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Audio Element -->
+  <audio id="radio-stream" preload="none"></audio>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <img id="loading-logo-img" src="/assets/icons/icon-512x512.png" alt="Logo" class="loading-logo-image">
+        <div class="logo-animation"></div>
+      </div>
+      <h2 id="loading-title">Cargando...</h2>
+      <div class="loading-progress">
+        <div class="progress-bar"></div>
+      </div>
+      <p id="loading-subtitle">Preparando la mejor experiencia musical...</p>
+    </div>
+  </div>
+
+  <!-- News Modal -->
+  <div class="news-modal" id="news-modal">
+    <div class="news-modal-content">
+      <div class="news-modal-header">
+        <h2>Noticia</h2>
+        <button class="news-modal-close" onclick="streamApp.closeNewsModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="news-modal-body">
+        <img class="news-modal-image" id="news-modal-image" src="" alt="" style="display: none;">
+        <h1 class="news-modal-title" id="news-modal-title"></h1>
+        <div class="news-modal-meta">
+          <span id="news-modal-date">
+            <i class="fas fa-calendar"></i>
+            <span></span>
+          </span>
+          <span id="news-modal-author" style="display: none;">
+            <i class="fas fa-user"></i>
+            <span></span>
+          </span>
+        </div>
+        <div class="news-modal-content-text" id="news-modal-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Podcast Modal -->
+  <div class="podcast-modal" id="podcast-modal">
+    <div class="podcast-modal-content">
+      <div class="podcast-modal-header">
+        <div class="podcast-modal-info">
+          <img class="podcast-modal-image" id="podcast-modal-image" src="" alt="">
+          <div class="podcast-modal-text">
+            <h2 id="podcast-modal-title">Podcast Title</h2>
+            <p id="podcast-modal-episode">Episodio #1</p>
+          </div>
+        </div>
+        <button class="podcast-modal-close" onclick="streamApp.closePodcastModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="podcast-modal-body">
+        <div class="podcast-description">
+          <p id="podcast-modal-description">Podcast description</p>
+        </div>
+        <div class="podcast-player">
+          <audio controls id="podcast-audio" style="width: 100%;">
+            <!-- Audio source will be loaded here -->
+          </audio>
+        </div>
+        <div class="podcast-meta">
+          <span id="podcast-modal-duration">
+            <i class="fas fa-clock"></i>
+            <span>Duración</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Videocast Modal -->
+  <div class="videocast-modal" id="videocast-modal">
+    <div class="videocast-modal-content">
+      <div class="videocast-modal-header">
+        <div class="videocast-modal-info">
+          <h2 id="videocast-modal-title">Videocast Title</h2>
+          <p id="videocast-modal-episode">Episodio #1</p>
+        </div>
+        <button class="videocast-modal-close" onclick="streamApp.closeVideocastModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="videocast-modal-body">
+        <div class="videocast-container" id="videocast-container">
+          <!-- Video iframe will be loaded here -->
+        </div>
+        <div class="videocast-description">
+          <p id="videocast-modal-description">Videocast description</p>
+        </div>
+        <div class="videocast-meta">
+          <span id="videocast-modal-duration">
+            <i class="fas fa-clock"></i>
+            <span>Duración</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Modal -->
+  <div class="video-modal" id="video-modal">
+    <div class="video-modal-content">
+      <div class="video-modal-header">
+        <div class="video-modal-info">
+          <span class="video-rank-badge" id="video-modal-rank">#1</span>
+          <h2 id="video-modal-title">Video Title</h2>
+        </div>
+        <button class="video-modal-close" onclick="streamApp.closeVideoModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="video-modal-body">
+        <div class="video-container" id="video-container">
+          <!-- Video iframe will be loaded here -->
+        </div>
+        <div class="video-description">
+          <p id="video-modal-description">Video description</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anuncio Modal -->
+  <div class="anuncio-modal" id="anuncio-modal">
+    <div class="anuncio-modal-content">
+      <div class="anuncio-modal-header">
+        <div class="anuncio-modal-info">
+          <i class="fas fa-bullhorn anuncio-icon"></i>
+          <h2 id="anuncio-modal-title">Anuncio Title</h2>
+        </div>
+        <button class="anuncio-modal-close" onclick="streamApp.closeAnuncioModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="anuncio-modal-body">
+        <img class="anuncio-modal-image" id="anuncio-modal-image" src="" alt="" style="display: none;">
+        <div class="anuncio-description">
+          <p id="anuncio-modal-description">Anuncio description</p>
+        </div>
+        <div class="anuncio-actions" id="anuncio-actions" style="display: none;">
+          <a class="anuncio-link-btn" id="anuncio-link" href="#" target="_blank">
+            <i class="fas fa-external-link-alt"></i>
+            Ver Oferta
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/title-updater.js"></script>
+  <script src="/assets/js/mobile-enhancements.js"></script>
+  <script src="/assets/js/pwa-installer.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
+  
+  <!-- Loading Manager Inline -->
+  <script>
+    // Loading Manager ejecutado inmediatamente
+    class LoadingManager {
+      constructor() {
+        this.loadingOverlay = null;
+        this.loadingTitle = null;
+        this.loadingSubtitle = null;
+        this.loadingLogo = null;
+        this.progressBar = null;
+        this.currentProgress = 0;
+        this.init();
+      }
+
+      init() {
+        this.loadingOverlay = document.getElementById('loading-overlay');
+        this.loadingTitle = document.getElementById('loading-title');
+        this.loadingSubtitle = document.getElementById('loading-subtitle');
+        this.loadingLogo = document.getElementById('loading-logo-img');
+        this.progressBar = document.querySelector('.progress-bar');
+        
+        console.log('LoadingManager: Inicializado');
+        if (this.loadingOverlay) {
+          this.startLoading();
+        }
+      }
+
+      async startLoading() {
+        try {
+          console.log('LoadingManager: Iniciando carga...');
+          await this.loadBasicData();
+          await this.simulateProgress();
+        } catch (error) {
+          console.error('LoadingManager: Error:', error);
+          setTimeout(() => this.hide(), 1000);
+        }
+      }
+
+      async loadBasicData() {
+        try {
+          this.updateProgress(10, 'Iniciando aplicación...');
+          await this.delay(900);
+          
+          this.updateProgress(25, 'Conectando con IPStream...');
+          await this.delay(1100);
+          
+          const configResponse = await fetch('/config/config.json');
+          const config = await configResponse.json();
+          
+          this.updateProgress(45, 'Cargando datos de la radio...');
+          await this.delay(1300);
+          
+          // Usar el project_name del config local
+          if (config.project_name) {
+            this.updateTitle(`Cargando ${config.project_name}`);
+            await this.delay(600);
+          }
+          
+          this.updateProgress(65, 'Personalizando experiencia...');
+          await this.delay(900);
+          
+          // Cargar datos de la API para el logo
+          try {
+            const apiUrl = `${config.ipstream_base_url}/${config.clientId}/basic-data`;
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            
+            if (data.logoUrl) {
+              this.updateLogo(`https://dashboard.ipstream.cl${data.logoUrl}`);
+              await this.delay(600);
+            }
+          } catch (apiError) {
+            console.warn('LoadingManager: Error cargando logo desde API:', apiError);
+          }
+          
+          this.updateProgress(85, 'Aplicando configuración...');
+          await this.delay(1100);
+          
+        } catch (error) {
+          console.error('LoadingManager: Error cargando datos:', error);
+          await this.delay(1000);
+        }
+      }
+
+      async simulateProgress() {
+        this.updateProgress(95, 'Preparando interfaz...');
+        await this.delay(800);
+        
+        this.updateProgress(100, '¡Listo para comenzar!');
+        await this.delay(1200);
+        
+        this.hide();
+      }
+
+      updateProgress(percentage, message = null) {
+        this.currentProgress = percentage;
+        
+        if (this.progressBar) {
+          this.progressBar.style.width = `${percentage}%`;
+        }
+        
+        if (message && this.loadingSubtitle) {
+          this.loadingSubtitle.textContent = message;
+        }
+        
+        console.log(`LoadingManager: ${percentage}% - ${message}`);
+      }
+
+      updateTitle(title) {
+        if (this.loadingTitle) {
+          this.loadingTitle.textContent = title;
+        }
+      }
+
+      updateSubtitle(subtitle) {
+        if (this.loadingSubtitle) {
+          this.loadingSubtitle.textContent = subtitle;
+        }
+      }
+
+      updateLogo(logoUrl) {
+        if (this.loadingLogo) {
+          const img = new Image();
+          img.onload = () => {
+            this.loadingLogo.src = logoUrl;
+          };
+          img.src = logoUrl;
+        }
+      }
+
+      hide() {
+        if (this.loadingOverlay) {
+          this.loadingOverlay.classList.add('hidden');
+          setTimeout(() => {
+            this.loadingOverlay.style.display = 'none';
+          }, 500);
+        }
+      }
+
+      delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+    }
+
+    // Crear instancia inmediatamente
+    window.loadingManager = new LoadingManager();
+  </script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  </script>
+</body>
+</html>

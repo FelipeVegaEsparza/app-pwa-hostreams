@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radio Landing</title>
+  
+  <!-- Favicon Configuration -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/icon-72x72.png">
+  <link rel="shortcut icon" href="/assets/icons/icon-96x96.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/icon-128x128.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/icon-128x128.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/assets/icons/icon-96x96.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/assets/icons/icon-72x72.png">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-152x152.png">
+  
+  <!-- PWA Configuration -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Radio Landing">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Radio Landing">
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/loading-styles.css">
+  <link rel="stylesheet" href="/assets/css/pwa-installer.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <img id="loading-logo-img" src="/assets/icons/icon-512x512.png" alt="Logo" class="loading-logo-image">
+        <div class="logo-animation"></div>
+      </div>
+      <h2 id="loading-title">Cargando...</h2>
+      <div class="loading-progress">
+        <div class="progress-bar"></div>
+      </div>
+      <p id="loading-subtitle">Preparando la experiencia...</p>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-logo">
+        <img id="nav-logo" src="" alt="Logo" style="display: none;">
+      </div>
+      
+      <div class="nav-menu" id="nav-menu">
+        <a href="#hero" class="nav-link active">
+          <i class="fas fa-home"></i>
+          <span>Inicio</span>
+        </a>
+        <a href="#programs" class="nav-link">
+          <i class="fas fa-microphone"></i>
+          <span>Programas</span>
+        </a>
+        <a href="#news" class="nav-link">
+          <i class="fas fa-newspaper"></i>
+          <span>Noticias</span>
+        </a>
+        <a href="#multimedia" class="nav-link">
+          <i class="fas fa-play-circle"></i>
+          <span>Multimedia</span>
+        </a>
+        <a href="#sponsors" class="nav-link">
+          <i class="fas fa-handshake"></i>
+          <span>Patrocinadores</span>
+        </a>
+      </div>
+      
+      <div class="nav-actions">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle mobile menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section id="hero" class="hero">
+    <div class="hero-background">
+      <div class="hero-cover-bg" id="hero-cover-bg"></div>
+      <div class="hero-overlay"></div>
+    </div>
+    
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 id="hero-title">Tu Radio Favorita</h1>
+        <p id="hero-description">Conectando corazones a través de la música</p>
+        
+        <div class="hero-social">
+          <p class="social-text">Síguenos en nuestras redes</p>
+          <div class="hero-social-links" id="hero-social-links">
+            <!-- Social links will be loaded here -->
+          </div>
+        </div>
+      </div>
+      
+      <div class="hero-cover">
+        <div class="cover-frame">
+          <div class="cover-image-container">
+            <img id="hero-cover-image" src="" alt="Album Cover" style="display: none;">
+            <div class="default-cover">
+              <div class="cover-animation"></div>
+              <i class="fas fa-music"></i>
+            </div>
+          </div>
+          
+          <div class="cover-info">
+            <div class="live-indicator">
+              <span class="live-dot"></span>
+              <span class="live-text">EN VIVO</span>
+            </div>
+            <h3 id="hero-song-title">Cargando...</h3>
+            <div class="song-meta">
+              <span id="hero-song-listeners">
+                <i class="fas fa-users"></i>
+                0 oyentes
+              </span>
+              <span id="hero-dj-info" style="display: none;">
+                <i class="fas fa-microphone"></i>
+                DJ: <strong></strong>
+              </span>
+            </div>
+          </div>
+          
+          <div class="cover-controls">
+            <button class="cover-play-btn modern-btn" id="hero-control-play">
+              <i class="fas fa-play"></i>
+              <div class="btn-ripple"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="scroll-indicator">
+      <i class="fas fa-chevron-down"></i>
+    </div>
+  </section>
+
+  <!-- Programs Section -->
+  <section id="programs" class="section programs-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Programación</h2>
+        <p>Descubre nuestros programas y horarios</p>
+      </div>
+      
+      <div class="programs-tabs">
+        <button class="programs-tab-btn" data-day="monday">
+          <i class="fas fa-calendar-day"></i>
+          <span>Lunes</span>
+        </button>
+        <button class="programs-tab-btn" data-day="tuesday">
+          <i class="fas fa-calendar-day"></i>
+          <span>Martes</span>
+        </button>
+        <button class="programs-tab-btn" data-day="wednesday">
+          <i class="fas fa-calendar-day"></i>
+          <span>Miércoles</span>
+        </button>
+        <button class="programs-tab-btn" data-day="thursday">
+          <i class="fas fa-calendar-day"></i>
+          <span>Jueves</span>
+        </button>
+        <button class="programs-tab-btn" data-day="friday">
+          <i class="fas fa-calendar-day"></i>
+          <span>Viernes</span>
+        </button>
+        <button class="programs-tab-btn" data-day="saturday">
+          <i class="fas fa-calendar-day"></i>
+          <span>Sábado</span>
+        </button>
+        <button class="programs-tab-btn" data-day="sunday">
+          <i class="fas fa-calendar-day"></i>
+          <span>Domingo</span>
+        </button>
+      </div>
+      
+      <div class="programs-content">
+        <div class="programs-day-content" id="monday-programs">
+          <div class="programs-timeline">
+            <div class="timeline-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando programación del lunes...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="programs-day-content" id="tuesday-programs">
+          <div class="programs-timeline">
+            <div class="timeline-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando programación del martes...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="programs-day-content" id="wednesday-programs">
+          <div class="programs-timeline">
+            <div class="timeline-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando programación del miércoles...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="programs-day-content" id="thursday-programs">
+          <div class="programs-timeline">
+            <div class="timeline-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando programación del jueves...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="programs-day-content" id="friday-programs">
+          <div class="programs-timeline">
+            <div class="timeline-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando programación del viernes...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="programs-day-content" id="saturday-programs">
+          <div class="programs-timeline">
+            <div class="timeline-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando programación del sábado...</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="programs-day-content" id="sunday-programs">
+          <div class="programs-timeline">
+            <div class="timeline-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando programación del domingo...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- News Section -->
+  <section id="news" class="section news-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Últimas Noticias</h2>
+        <p>Mantente informado con las últimas novedades</p>
+      </div>
+      
+      <div class="news-grid" id="news-grid">
+        <div class="loading-placeholder">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>Cargando noticias...</span>
+        </div>
+      </div>
+      
+      <div class="news-pagination" id="news-pagination" style="display: none;">
+        <!-- Pagination will be loaded here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Multimedia Section -->
+  <section id="multimedia" class="section multimedia-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Multimedia</h2>
+        <p>Podcasts y videocasts exclusivos</p>
+      </div>
+      
+      <div class="multimedia-tabs">
+        <button class="tab-btn active" data-tab="podcasts">
+          <i class="fas fa-podcast"></i>
+          Podcasts
+        </button>
+        <button class="tab-btn" data-tab="videocasts">
+          <i class="fas fa-film"></i>
+          Videocasts
+        </button>
+      </div>
+      
+      <div class="multimedia-content">
+        <div class="tab-content active" id="podcasts-content">
+          <div class="loading-placeholder">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Cargando podcasts...</span>
+          </div>
+        </div>
+        
+        <div class="tab-content" id="videocasts-content">
+          <div class="loading-placeholder">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Cargando videocasts...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ranking Musical Section -->
+  <section id="ranking" class="section ranking-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Ranking Musical</h2>
+        <p>Los videos más populares de la semana</p>
+      </div>
+      
+      <div class="ranking-content">
+        <div id="videos-content">
+          <div class="loading-placeholder">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Cargando ranking musical...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sponsors Section -->
+  <section id="sponsors" class="section sponsors-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Nuestros Patrocinadores</h2>
+        <p>Empresas que confían en nosotros</p>
+      </div>
+      
+      <div class="sponsors-grid" id="sponsors-grid">
+        <div class="loading-placeholder">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>Cargando patrocinadores...</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Anuncios Section -->
+  <section id="anuncios" class="section anuncios-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Anuncios</h2>
+        <p>Descubre las mejores ofertas y promociones</p>
+      </div>
+      
+      <div class="anuncios-grid" id="anuncios-grid">
+        <div class="loading-placeholder">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>Cargando anuncios...</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <div class="footer-logo">
+            <img id="footer-logo" src="" alt="Logo" style="display: none;">
+          </div>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Síguenos</h4>
+          <div class="footer-social-networks" id="footer-social-networks">
+            <!-- Social networks will be loaded here -->
+          </div>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Contacto</h4>
+          <div class="contact-info">
+            <p><i class="fas fa-broadcast-tower"></i> Transmitiendo 24/7</p>
+            <p><i class="fas fa-headphones"></i> Calidad HD</p>
+          </div>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Escúchanos</h4>
+          <div class="listen-options">
+            <button class="footer-listen-btn" id="footer-play-btn">
+              <i class="fas fa-play"></i>
+              Reproducir Ahora
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2025. Todos los derechos reservados Radio Fusion Austral.</p>
+        <p>Desarrollado con ❤️ por www.hostreams.com</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Audio Player (Hidden) -->
+  <audio id="radio-stream" preload="none"></audio>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <img id="loading-logo-img" src="/assets/icons/icon-512x512.png" alt="Logo" class="loading-logo-image">
+        <div class="logo-animation"></div>
+      </div>
+      <h2 id="loading-title">Cargando...</h2>
+      <div class="loading-progress">
+        <div class="progress-bar"></div>
+      </div>
+      <p id="loading-subtitle">Preparando la mejor música para ti...</p>
+    </div>
+  </div>
+
+  <!-- News Modal -->
+  <div class="news-modal" id="news-modal">
+    <div class="news-modal-content">
+      <div class="news-modal-header">
+        <h2>Noticia</h2>
+        <button class="news-modal-close" id="news-modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="news-modal-body">
+        <img class="news-modal-image" id="news-modal-image" src="" alt="" style="display: none;">
+        <h1 class="news-modal-title" id="news-modal-title"></h1>
+        <div class="news-modal-meta">
+          <span id="news-modal-date">
+            <i class="fas fa-calendar"></i>
+            <span></span>
+          </span>
+          <span id="news-modal-author" style="display: none;">
+            <i class="fas fa-user"></i>
+            <span></span>
+          </span>
+        </div>
+        <div class="news-modal-content-text" id="news-modal-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Modal -->
+  <div class="video-modal" id="video-modal">
+    <div class="video-modal-content">
+      <div class="video-modal-header">
+        <div class="video-modal-info">
+          <span class="video-rank-badge" id="video-modal-rank">#1</span>
+          <h2 id="video-modal-title">Video Title</h2>
+        </div>
+        <button class="video-modal-close" id="video-modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="video-modal-body">
+        <div class="video-container" id="video-container">
+          <!-- Video iframe will be loaded here -->
+        </div>
+        <div class="video-description">
+          <p id="video-modal-description">Video description</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Podcast Modal -->
+  <div class="podcast-modal" id="podcast-modal">
+    <div class="podcast-modal-content">
+      <div class="podcast-modal-header">
+        <div class="podcast-modal-info">
+          <img class="podcast-modal-image" id="podcast-modal-image" src="" alt="">
+          <div class="podcast-modal-text">
+            <h2 id="podcast-modal-title">Podcast Title</h2>
+            <p id="podcast-modal-episode">Episodio #1</p>
+          </div>
+        </div>
+        <button class="podcast-modal-close" id="podcast-modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="podcast-modal-body">
+        <div class="podcast-description">
+          <p id="podcast-modal-description">Podcast description</p>
+        </div>
+        <div class="podcast-player">
+          <audio controls id="podcast-audio" style="width: 100%;">
+            <!-- Audio source will be loaded here -->
+          </audio>
+        </div>
+        <div class="podcast-meta">
+          <span id="podcast-modal-duration">
+            <i class="fas fa-clock"></i>
+            <span>Duración</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Videocast Modal -->
+  <div class="videocast-modal" id="videocast-modal">
+    <div class="videocast-modal-content">
+      <div class="videocast-modal-header">
+        <div class="videocast-modal-info">
+          <h2 id="videocast-modal-title">Videocast Title</h2>
+          <p id="videocast-modal-episode">Episodio #1</p>
+        </div>
+        <button class="videocast-modal-close" id="videocast-modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="videocast-modal-body">
+        <div class="videocast-container" id="videocast-container">
+          <!-- Video iframe will be loaded here -->
+        </div>
+        <div class="videocast-description">
+          <p id="videocast-modal-description">Videocast description</p>
+        </div>
+        <div class="videocast-meta">
+          <span id="videocast-modal-duration">
+            <i class="fas fa-clock"></i>
+            <span>Duración</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anuncio Modal -->
+  <div class="anuncio-modal" id="anuncio-modal">
+    <div class="anuncio-modal-content">
+      <div class="anuncio-modal-header">
+        <div class="anuncio-modal-info">
+          <i class="fas fa-bullhorn anuncio-icon"></i>
+          <h2 id="anuncio-modal-title">Anuncio Title</h2>
+        </div>
+        <button class="anuncio-modal-close" id="anuncio-modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="anuncio-modal-body">
+        <img class="anuncio-modal-image" id="anuncio-modal-image" src="" alt="" style="display: none;">
+        <div class="anuncio-description">
+          <p id="anuncio-modal-description">Anuncio description</p>
+        </div>
+        <div class="anuncio-actions" id="anuncio-actions" style="display: none;">
+          <a class="anuncio-link-btn" id="anuncio-link" href="#" target="_blank">
+            <i class="fas fa-external-link-alt"></i>
+            Ver Oferta
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/title-updater.js"></script>
+  <script src="/assets/js/mobile-enhancements.js"></script>
+  <script src="/assets/js/pwa-installer.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
+  
+  <!-- Loading Manager Inline -->
+  <script>
+    // Loading Manager ejecutado inmediatamente
+    class LoadingManager {
+      constructor() {
+        this.loadingOverlay = null;
+        this.loadingTitle = null;
+        this.loadingSubtitle = null;
+        this.loadingLogo = null;
+        this.progressBar = null;
+        this.currentProgress = 0;
+        this.init();
+      }
+
+      init() {
+        this.loadingOverlay = document.getElementById('loading-overlay');
+        this.loadingTitle = document.getElementById('loading-title');
+        this.loadingSubtitle = document.getElementById('loading-subtitle');
+        this.loadingLogo = document.getElementById('loading-logo-img');
+        this.progressBar = document.querySelector('.progress-bar');
+        
+        console.log('LoadingManager: Inicializado');
+        if (this.loadingOverlay) {
+          this.loadingOverlay.classList.add('active');
+          this.startLoading();
+        }
+      }
+
+      async startLoading() {
+        try {
+          console.log('LoadingManager: Iniciando carga...');
+          await this.loadBasicData();
+          await this.simulateProgress();
+        } catch (error) {
+          console.error('LoadingManager: Error:', error);
+          setTimeout(() => this.hide(), 1000);
+        }
+      }
+
+      async loadBasicData() {
+        try {
+          this.updateProgress(10, 'Iniciando aplicación...');
+          await this.delay(900);
+          
+          this.updateProgress(25, 'Conectando con IPStream...');
+          await this.delay(1100);
+          
+          const configResponse = await fetch('/config/config.json');
+          const config = await configResponse.json();
+          
+          this.updateProgress(45, 'Cargando datos de la radio...');
+          await this.delay(1300);
+          
+          // Usar el project_name del config local
+          if (config.project_name) {
+            this.updateTitle(`Cargando ${config.project_name}`);
+            await this.delay(600);
+          }
+          
+          this.updateProgress(65, 'Personalizando experiencia...');
+          await this.delay(900);
+          
+          // Cargar datos de la API para el logo
+          try {
+            const apiUrl = `${config.ipstream_base_url}/${config.clientId}/basic-data`;
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            
+            if (data.logoUrl) {
+              this.updateLogo(`https://dashboard.ipstream.cl${data.logoUrl}`);
+              await this.delay(600);
+            }
+          } catch (apiError) {
+            console.warn('LoadingManager: Error cargando logo desde API:', apiError);
+          }
+          
+          this.updateProgress(85, 'Aplicando configuración...');
+          await this.delay(1100);
+          
+        } catch (error) {
+          console.error('LoadingManager: Error cargando datos:', error);
+          await this.delay(1000);
+        }
+      }
+
+      async simulateProgress() {
+        this.updateProgress(95, 'Preparando interfaz...');
+        await this.delay(800);
+        
+        this.updateProgress(100, '¡Listo para comenzar!');
+        await this.delay(1200);
+        
+        this.hide();
+      }
+
+      updateProgress(percentage, message = null) {
+        this.currentProgress = percentage;
+        
+        if (this.progressBar) {
+          this.progressBar.style.width = `${percentage}%`;
+        }
+        
+        if (message && this.loadingSubtitle) {
+          this.loadingSubtitle.textContent = message;
+        }
+        
+        console.log(`LoadingManager: ${percentage}% - ${message}`);
+      }
+
+      updateTitle(title) {
+        if (this.loadingTitle) {
+          this.loadingTitle.textContent = title;
+        }
+      }
+
+      updateSubtitle(subtitle) {
+        if (this.loadingSubtitle) {
+          this.loadingSubtitle.textContent = subtitle;
+        }
+      }
+
+      updateLogo(logoUrl) {
+        if (this.loadingLogo) {
+          const img = new Image();
+          img.onload = () => {
+            this.loadingLogo.src = logoUrl;
+          };
+          img.src = logoUrl;
+        }
+      }
+
+      hide() {
+        if (this.loadingOverlay) {
+          this.loadingOverlay.classList.remove('active');
+          setTimeout(() => {
+            this.loadingOverlay.style.display = 'none';
+          }, 500);
+        }
+      }
+
+      forceHide() {
+        this.hide();
+      }
+
+      delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+    }
+
+    // Crear instancia inmediatamente
+    window.loadingManager = new LoadingManager();
+  </script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  </script>
+</body>
+</html>

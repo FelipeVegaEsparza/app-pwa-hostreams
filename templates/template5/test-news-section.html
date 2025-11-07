@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test News Section - Radio Nexus</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container" style="padding: 50px 20px;">
+    <h1 style="text-align: center; margin-bottom: 50px; color: white;">Test Sección Noticias</h1>
+    
+    <!-- Simular la sección de noticias -->
+    <section id="news-section" class="modern-section active">
+      <div class="container">
+        <div class="news-grid-container glass-effect">
+          <div class="news-grid" id="all-news-grid">
+            <!-- Test news cards -->
+            <article class="news-card">
+              <div class="news-image">
+                <div class="news-category">Noticias</div>
+              </div>
+              <div class="news-content">
+                <h3 class="news-title">Noticia de Prueba 1</h3>
+                <p class="news-excerpt">Esta es una noticia de prueba para verificar el modal</p>
+                <div class="news-meta">
+                  <span class="news-date">
+                    <i class="fas fa-calendar"></i>
+                    6/11/2025
+                  </span>
+                  <button class="read-more-btn glass-btn" onclick="testNewsModal(0)">
+                    <i class="fas fa-book-open"></i>
+                    <span>Leer más</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+            
+            <article class="news-card">
+              <div class="news-image">
+                <div class="news-category">Noticias</div>
+              </div>
+              <div class="news-content">
+                <h3 class="news-title">Noticia de Prueba 2</h3>
+                <p class="news-excerpt">Segunda noticia de prueba para verificar el modal</p>
+                <div class="news-meta">
+                  <span class="news-date">
+                    <i class="fas fa-calendar"></i>
+                    6/11/2025
+                  </span>
+                  <button class="read-more-btn glass-btn" onclick="testNewsModal(1)">
+                    <i class="fas fa-book-open"></i>
+                    <span>Leer más</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- News Modal -->
+  <div class="modal-overlay glass-effect" id="news-modal">
+    <div class="modal-content glass-effect news-modal-content">
+      <button class="modal-close glass-btn" onclick="closeNewsModal()">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="modal-header">
+        <div class="news-modal-category">Noticias</div>
+        <h2 class="news-modal-title" id="news-modal-title">Título de la noticia</h2>
+        <div class="news-modal-meta">
+          <span class="news-modal-date" id="news-modal-date">Fecha</span>
+          <span class="news-modal-views" id="news-modal-views">
+            <i class="fas fa-eye"></i> 0 vistas
+          </span>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="news-modal-image" id="news-modal-image-container">
+          <!-- Image will be loaded here -->
+        </div>
+        <div class="news-modal-content" id="news-modal-content">
+          <!-- News content will be loaded here -->
+        </div>
+        <div class="news-modal-actions">
+          <button class="glass-btn share-btn">
+            <i class="fas fa-share-alt"></i>
+            <span>Compartir</span>
+          </button>
+          <button class="glass-btn bookmark-btn">
+            <i class="fas fa-bookmark"></i>
+            <span>Guardar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Test data
+    const testNewsData = [
+      {
+        name: 'Noticia de Prueba 1',
+        createdAt: new Date().toISOString(),
+        shortText: 'Esta es una noticia de prueba para verificar que el modal funciona correctamente en la sección de noticias.',
+        content: 'Contenido completo de la primera noticia de prueba. Aquí se mostraría todo el texto de la noticia con todos los detalles importantes.',
+        imageUrl: null
+      },
+      {
+        name: 'Noticia de Prueba 2',
+        createdAt: new Date().toISOString(),
+        shortText: 'Segunda noticia de prueba para verificar el funcionamiento del modal.',
+        content: 'Contenido completo de la segunda noticia de prueba. Esta noticia también tiene contenido extenso para mostrar en el modal.',
+        imageUrl: null
+      }
+    ];
+
+    function testNewsModal(index) {
+      const article = testNewsData[index];
+      const modal = document.getElementById('news-modal');
+      
+      // Populate modal content
+      document.getElementById('news-modal-title').textContent = article.name;
+      document.getElementById('news-modal-date').textContent = new Date(article.createdAt).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      document.getElementById('news-modal-views').innerHTML = `<i class="fas fa-eye"></i> ${Math.floor(Math.random() * 1000) + 100} vistas`;
+      
+      // Set image
+      const imageContainer = document.getElementById('news-modal-image-container');
+      imageContainer.innerHTML = '';
+      
+      // Set content
+      const contentContainer = document.getElementById('news-modal-content');
+      contentContainer.innerHTML = `
+        <p>${article.shortText}</p>
+        <p>${article.content}</p>
+        <p>Esta es una prueba del modal de noticias funcionando correctamente en la sección de noticias.</p>
+      `;
+      
+      // Show modal
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeNewsModal() {
+      const modal = document.getElementById('news-modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('news-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'news-modal') {
+        closeNewsModal();
+      }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const activeModal = document.querySelector('.modal-overlay.active');
+        if (activeModal) {
+          closeNewsModal();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

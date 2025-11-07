@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cargando...</title>
+  <script src="/assets/js/title-updater.js"></script>
+  <script type="module">
+    import { config } from './assets/js/config.js';
+    (async () => {
+      const conf = await config;
+      window.location.href = `/templates/${conf.template}/index.html`;
+    })();
+  </script>
+</head>
+<body>
+  <noscript>Por favor activa JavaScript para continuar.</noscript>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "ipstream-pwa-icons",
+  "version": "1.0.0",
+  "description": "Generador de iconos PWA para IPStream Radio",
+  "main": "generate-icons.js",
+  "scripts": {
+    "generate-icons": "node generate-icons.js",
+    "generate-icons-canvas": "node generate-icons-canvas.js",
+    "install-sharp": "npm install sharp",
+    "install-canvas": "npm install canvas",
+    "setup": "npm install sharp || npm install canvas"
+  },
+  "keywords": ["pwa", "icons", "generator", "radio", "ipstream"],
+  "author": "IPStream",
+  "license": "MIT",
+  "optionalDependencies": {
+    "sharp": "^0.32.0",
+    "canvas": "^2.11.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

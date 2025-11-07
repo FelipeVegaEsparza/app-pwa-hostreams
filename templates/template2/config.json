@@ -1,0 +1,42 @@
+{
+  "name": "Modern Radio Landing",
+  "version": "2.0.0",
+  "description": "Template moderno para landing de radio con diseño glassmorphism y funcionalidades avanzadas",
+  "features": [
+    "Diseño glassmorphism moderno",
+    "Animaciones suaves con Intersection Observer",
+    "Reproductor de audio integrado",
+    "Navegación móvil mejorada",
+    "Skeleton loaders para mejor UX",
+    "Notificaciones toast",
+    "Botón flotante para móviles",
+    "Efectos de ripple en botones",
+    "Responsive design completo",
+    "Integración con APIs de radio",
+    "Actualizaciones en tiempo real",
+    "Optimizado para rendimiento"
+  ],
+  "technologies": [
+    "HTML5",
+    "CSS3 (Grid, Flexbox, Animations)",
+    "JavaScript ES6+ (Modules, Async/Await)",
+    "Web APIs (Intersection Observer, Audio API)",
+    "Font Awesome Icons",
+    "Google Fonts"
+  ],
+  "responsive": true,
+  "accessibility": "Enhanced",
+  "performance": "Optimized",
+  "browser_support": {
+    "chrome": ">=60",
+    "firefox": ">=55",
+    "safari": ">=12",
+    "edge": ">=79"
+  },
+  "customization": {
+    "colors": "CSS custom properties ready",
+    "fonts": "Google Fonts integration",
+    "layout": "Modular CSS structure",
+    "animations": "Configurable timing and effects"
+  }
+}

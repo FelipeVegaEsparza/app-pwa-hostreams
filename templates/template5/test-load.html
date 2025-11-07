@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Template 8 Loading</title>
+</head>
+<body>
+  <h1>Test Template 8 Loading</h1>
+  <div id="test-output"></div>
+  
+  <script type="module">
+    console.log('Test: Starting module load test');
+    
+    try {
+      const { getBasicData } = await import('/assets/js/api.js');
+      console.log('Test: API module loaded successfully');
+      document.getElementById('test-output').innerHTML = '<p style="color: green;">✅ API module loaded successfully</p>';
+      
+      // Test API call
+      const data = await getBasicData();
+      console.log('Test: Basic data loaded:', data);
+      document.getElementById('test-output').innerHTML += '<p style="color: green;">✅ Basic data loaded successfully</p>';
+      
+    } catch (error) {
+      console.error('Test: Error loading module or data:', error);
+      document.getElementById('test-output').innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+    }
+  </script>
+</body>
+</html>
