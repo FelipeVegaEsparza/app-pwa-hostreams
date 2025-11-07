@@ -1,23 +1,35 @@
 {
-  "name": "ipstream-pwa-icons",
+  "name": "radio-pwa-templates",
   "version": "1.0.0",
-  "description": "Generador de iconos PWA para IPStream Radio",
-  "main": "generate-icons.js",
+  "description": "PWA Radio Templates with multiple designs",
+  "main": "server.js",
   "scripts": {
-    "generate-icons": "node generate-icons.js",
-    "generate-icons-canvas": "node generate-icons-canvas.js",
-    "install-sharp": "npm install sharp",
-    "install-canvas": "npm install canvas",
-    "setup": "npm install sharp || npm install canvas"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'No build step required for static files'",
+    "serve": "node server.js"
   },
-  "keywords": ["pwa", "icons", "generator", "radio", "ipstream"],
-  "author": "IPStream",
+  "keywords": [
+    "radio",
+    "pwa",
+    "templates",
+    "streaming",
+    "responsive"
+  ],
+  "author": "Radio PWA Templates",
   "license": "MIT",
-  "optionalDependencies": {
-    "sharp": "^0.32.0",
-    "canvas": "^2.11.0"
+  "dependencies": {
+    "express": "^4.18.2",
+    "compression": "^1.7.4",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/radio-pwa-templates.git"
   }
 }
