@@ -25,9 +25,30 @@ app.use(express.static('.', {
   etag: true
 }));
 
-// Ruta principal - redirige al template configurado
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+// Ruta principal - sirve el template configurado directamente
+app.get('/', async (req, res) => {
+  try {
+    // Leer el config para saber qué template usar
+    const fs = require('fs');
+    const configPath = path.join(__dirname, 'config', 'config.json');
+    const configData = fs.readFileSync(configPath, 'utf8');
+    const config = JSON.parse(configData);
+    
+    // Servir el index.html del template configurado
+    const templatePath = path.join(__dirname, 'templates', config.template, 'index.html');
+    
+    // Verificar si el archivo existe
+    if (fs.existsSync(templatePath)) {
+      res.sendFile(templatePath);
+    } else {
+      // Fallback al index.html de la raíz si no existe el template
+      res.sendFile(path.join(__dirname, 'index.html'));
+    }
+  } catch (error) {
+    console.error('Error loading template:', error);
+    // En caso de error, servir el index.html de la raíz
+    res.sendFile(path.join(__dirname, 'index.html'));
+  }
 });
 
 // Ruta para servir templates específicos
