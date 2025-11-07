@@ -24,12 +24,34 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Radio Fusion Austral">
   
-  <script src="/assets/js/title-updater.js"></script>
   <script type="module">
     import { config } from './assets/js/config.js';
+    
     (async () => {
-      const conf = await config;
-      window.location.href = `/templates/${conf.template}/index.html`;
+      try {
+        // Cargar el config
+        const conf = await config;
+        
+        // Actualizar el título antes de redirigir
+        if (conf.project_name) {
+          document.title = conf.project_name;
+          
+          // Actualizar meta tags
+          const appNameMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+          if (appNameMeta) {
+            appNameMeta.setAttribute('content', conf.project_name);
+          }
+        }
+        
+        // Pequeña pausa para que el título se actualice
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Redirigir al template
+        window.location.href = `/templates/${conf.template}/index.html`;
+      } catch (error) {
+        console.error('Error loading config:', error);
+        document.title = 'Error al cargar';
+      }
     })();
   </script>
 </head>
