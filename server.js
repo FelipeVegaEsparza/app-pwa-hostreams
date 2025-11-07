@@ -19,12 +19,6 @@ app.use(compression());
 // CORS
 app.use(cors());
 
-// Servir archivos estáticos
-app.use(express.static('.', {
-  maxAge: '1d', // Cache por 1 día
-  etag: true
-}));
-
 // Leer configuración al inicio
 const fs = require('fs');
 let currentTemplate = 'template5'; // Default
@@ -39,6 +33,7 @@ try {
   console.error('Error loading config:', error);
 }
 
+// IMPORTANTE: Definir rutas específicas ANTES del middleware estático
 // Ruta principal - sirve el template con rutas corregidas
 app.get('/', (req, res) => {
   console.log('📍 Acceso a ruta raíz /');
@@ -152,6 +147,13 @@ app.get('/assets/*', (req, res, next) => {
 app.get('/offline.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'offline.html'));
 });
+
+// Servir archivos estáticos DESPUÉS de las rutas específicas
+app.use(express.static('.', {
+  maxAge: '1d',
+  etag: true,
+  index: false // No servir index.html automáticamente
+}));
 
 // Manejo de errores 404
 app.use((req, res) => {
