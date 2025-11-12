@@ -2757,13 +2757,21 @@ y Schedule Navigation */
 .video-player {
   padding: 0;
   background: transparent;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 450px;
 }
 
-.video-player video {
+.video-player video,
+.video-player iframe {
   width: 100%;
-  max-height: 500px;
+  height: 100%;
   border-radius: 20px;
   background: #000;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .media-modal-description {
@@ -3208,6 +3216,15 @@ y Schedule Navigation */
   .media-modal-actions {
     flex-direction: column;
     align-items: center;
+  }
+  
+  .video-player {
+    min-height: 250px;
+  }
+  
+  .video-player video,
+  .video-player iframe {
+    min-height: 250px;
   }
   
   .share-btn,

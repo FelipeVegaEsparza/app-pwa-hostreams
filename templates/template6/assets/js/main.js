@@ -1411,10 +1411,15 @@ class RadioPulse {
           audio.currentTime = 0;
         }
       } else if (modalId === 'videocast-modal') {
-        const video = document.getElementById('videocast-video');
-        if (video) {
-          video.pause();
-          video.currentTime = 0;
+        // Clear video container to stop playback
+        const videoContainer = document.querySelector('.media-modal-player.video-player');
+        if (videoContainer) {
+          videoContainer.innerHTML = `
+            <video id="videocast-video" controls preload="none" poster="">
+              <source src="" type="video/mp4">
+              Tu navegador no soporta el elemento de video.
+            </video>
+          `;
         }
       }
     }
@@ -1500,13 +1505,39 @@ class RadioPulse {
         document.getElementById('videocast-modal-duration').innerHTML = `<i class="fas fa-clock"></i> ${videocast.duration || '30:00'}`;
         document.getElementById('videocast-modal-description').innerHTML = videocast.description || 'Descripción no disponible';
         
-        // Setup video
-        const video = document.getElementById('videocast-video');
+        // Setup video player
+        const videoContainer = document.querySelector('.media-modal-player.video-player');
         if (videocast.videoUrl) {
-          video.src = `https://dashboard.ipstream.cl${videocast.videoUrl}`;
-          if (videocast.imageUrl) {
-            video.poster = `https://dashboard.ipstream.cl${videocast.imageUrl}`;
+          const embedUrl = this.getEmbedUrl(videocast.videoUrl);
+          
+          if (embedUrl) {
+            // Use iframe for YouTube/Vimeo
+            videoContainer.innerHTML = `
+              <iframe 
+                src="${embedUrl}" 
+                title="${videocast.title}"
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen
+                style="width: 100%; height: 100%; border-radius: 12px;">
+              </iframe>
+            `;
+          } else {
+            // Fallback message
+            videoContainer.innerHTML = `
+              <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: rgba(0,0,0,0.5); color: white; border-radius: 12px;">
+                <div style="text-align: center; padding: 2rem;">
+                  <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                  <p>No se puede reproducir este video</p>
+                  <a href="${videocast.videoUrl}" target="_blank" style="color: #667eea; text-decoration: none; margin-top: 1rem; display: inline-block;">
+                    Ver en sitio original
+                  </a>
+                </div>
+              </div>
+            `;
           }
+        } else {
+          videoContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: white;">No hay video disponible</p>';
         }
         
         this.currentVideocastData = videocast;
@@ -1572,6 +1603,34 @@ class RadioPulse {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  getEmbedUrl(videoUrl) {
+    if (!videoUrl) return null;
+    
+    // YouTube URL patterns
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeMatch = videoUrl.match(youtubeRegex);
+    
+    if (youtubeMatch) {
+      return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&rel=0`;
+    }
+    
+    // Vimeo URL patterns
+    const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/;
+    const vimeoMatch = videoUrl.match(vimeoRegex);
+    
+    if (vimeoMatch) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+    }
+    
+    // If it's already an embed URL, return as is
+    if (videoUrl.includes('embed') || videoUrl.includes('player')) {
+      return videoUrl;
+    }
+    
+    // Return null if we can't create an embed URL
+    return null;
   }
 
   // Share Functions

@@ -145,10 +145,10 @@ class PWAInstaller {
       this.deferredPrompt = e;
       this.showFloatingButton();
       
-      // Mostrar modal automáticamente después de 3 segundos
+      // Mostrar modal automáticamente después de 10 segundos (dar tiempo a que cargue el sitio)
       setTimeout(() => {
         this.showModalAutomatically();
-      }, 3000);
+      }, 10000);
     });
 
     // Event listener para cuando la app se instala
@@ -211,20 +211,20 @@ class PWAInstaller {
     if (this.isIOS) {
       setTimeout(() => {
         this.showFloatingButton();
-        // Mostrar modal automáticamente después de 3 segundos adicionales
+        // Mostrar modal automáticamente después de 10 segundos adicionales
         setTimeout(() => {
           this.showModalAutomatically();
-        }, 3000);
+        }, 10000);
       }, 5000);
     } else {
       // Para otros navegadores, mostrar modal automáticamente si no hay prompt nativo
       setTimeout(() => {
         if (!this.deferredPrompt) {
           this.showFloatingButton();
-          // Mostrar modal automáticamente después de 2 segundos adicionales
+          // Mostrar modal automáticamente después de 10 segundos adicionales
           setTimeout(() => {
             this.showModalAutomatically();
-          }, 2000);
+          }, 10000);
         }
       }, 5000);
     }

@@ -1514,28 +1514,34 @@ class NewsHub {
     // Setup video player
     const videoContainer = document.getElementById('videocast-container');
     if (videocast.videoUrl) {
-      // Check if it's a YouTube URL
-      if (videocast.videoUrl.includes('youtube.com') || videocast.videoUrl.includes('youtu.be')) {
-        const videoId = this.extractYouTubeId(videocast.videoUrl);
+      const embedUrl = this.getEmbedUrl(videocast.videoUrl);
+      
+      if (embedUrl) {
         videoContainer.innerHTML = `
-          <iframe width="100%" height="400" 
-                  src="https://www.youtube.com/embed/${videoId}" 
-                  frameborder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                  allowfullscreen>
+          <iframe 
+            src="${embedUrl}" 
+            title="${videocast.title || videocast.name}"
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen
+            style="width: 100%; height: 400px; border-radius: 8px;">
           </iframe>
         `;
       } else {
-        // For other video URLs, use video element
         videoContainer.innerHTML = `
-          <video controls style="width: 100%; height: 400px; border-radius: 8px;">
-            <source src="${videocast.videoUrl}" type="video/mp4">
-            Tu navegador no soporta el elemento video.
-          </video>
+          <div style="display: flex; align-items: center; justify-content: center; height: 400px; background: #1a1a1a; color: white; border-radius: 8px;">
+            <div style="text-align: center;">
+              <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+              <p>No se puede reproducir este video</p>
+              <a href="${videocast.videoUrl}" target="_blank" style="color: #1db954; text-decoration: none; margin-top: 1rem; display: inline-block;">
+                Ver en sitio original
+              </a>
+            </div>
+          </div>
         `;
       }
     } else {
-      videoContainer.innerHTML = '<p>No hay video disponible</p>';
+      videoContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">No hay video disponible</p>';
     }
 
     // Show modal
@@ -1557,6 +1563,34 @@ class NewsHub {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
+  }
+
+  getEmbedUrl(videoUrl) {
+    if (!videoUrl) return null;
+    
+    // YouTube URL patterns
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeMatch = videoUrl.match(youtubeRegex);
+    
+    if (youtubeMatch) {
+      return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&rel=0`;
+    }
+    
+    // Vimeo URL patterns
+    const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/;
+    const vimeoMatch = videoUrl.match(vimeoRegex);
+    
+    if (vimeoMatch) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+    }
+    
+    // If it's already an embed URL, return as is
+    if (videoUrl.includes('embed') || videoUrl.includes('player')) {
+      return videoUrl;
+    }
+    
+    // Return null if we can't create an embed URL
+    return null;
   }
 
   // Legacy methods for backward compatibility

@@ -1621,23 +1621,45 @@ class RadioNexus {
     document.getElementById('videocast-modal-duration').innerHTML = `<i class="fas fa-clock"></i> ${videocast.duration || '30:00'}`;
     document.getElementById('videocast-modal-views').innerHTML = `<i class="fas fa-eye"></i> ${Math.floor(Math.random() * 800) + 100} vistas`;
     
-    // Set video source and poster
-    const videoPlayer = document.getElementById('videocast-video');
+    // Setup video player
+    const videoContainer = document.querySelector('.videocast-modal-player');
     if (videocast.videoUrl) {
-      videoPlayer.src = `https://dashboard.ipstream.cl${videocast.videoUrl}`;
+      const embedUrl = this.getEmbedUrl(videocast.videoUrl);
+      
+      if (embedUrl) {
+        // Use iframe for YouTube/Vimeo
+        videoContainer.innerHTML = `
+          <iframe 
+            src="${embedUrl}" 
+            title="${videocast.title || videocast.name}"
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen
+            style="width: 100%; height: 100%; border-radius: 12px;">
+          </iframe>
+        `;
+      } else {
+        // Fallback message
+        videoContainer.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: rgba(0,0,0,0.5); color: white; border-radius: 12px;">
+            <div style="text-align: center; padding: 2rem;">
+              <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+              <p>No se puede reproducir este video</p>
+              <a href="${videocast.videoUrl}" target="_blank" style="color: #667eea; text-decoration: none; margin-top: 1rem; display: inline-block;">
+                Ver en sitio original
+              </a>
+            </div>
+          </div>
+        `;
+      }
     } else {
-      videoPlayer.src = '';
-    }
-    
-    if (videocast.imageUrl) {
-      videoPlayer.poster = `https://dashboard.ipstream.cl${videocast.imageUrl}`;
+      videoContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: white;">No hay video disponible</p>';
     }
     
     // Set description
     const descriptionContainer = document.getElementById('videocast-modal-description');
     descriptionContainer.innerHTML = `
       <p>${videocast.description || 'Descripción del videocast no disponible'}</p>
-      <p>Disfruta de este episodio completo de nuestro videocast. Contenido audiovisual de calidad con los mejores momentos y entrevistas exclusivas.</p>
     `;
     
     // Show modal
@@ -1647,11 +1669,15 @@ class RadioNexus {
 
   closeVideocastModal() {
     const modal = document.getElementById('videocast-modal');
-    const videoPlayer = document.getElementById('videocast-video');
+    const videoContainer = document.querySelector('.videocast-modal-player');
     
-    // Pause video if playing
-    if (!videoPlayer.paused) {
-      videoPlayer.pause();
+    // Clear video container to stop playback
+    if (videoContainer) {
+      videoContainer.innerHTML = `
+        <video id="videocast-video" controls preload="none" poster="">
+          Tu navegador no soporta el elemento de video.
+        </video>
+      `;
     }
     
     modal.classList.remove('active');
@@ -1668,6 +1694,34 @@ class RadioNexus {
     } else if (videoPlayer.msRequestFullscreen) {
       videoPlayer.msRequestFullscreen();
     }
+  }
+
+  getEmbedUrl(videoUrl) {
+    if (!videoUrl) return null;
+    
+    // YouTube URL patterns
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeMatch = videoUrl.match(youtubeRegex);
+    
+    if (youtubeMatch) {
+      return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&rel=0`;
+    }
+    
+    // Vimeo URL patterns
+    const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/;
+    const vimeoMatch = videoUrl.match(vimeoRegex);
+    
+    if (vimeoMatch) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+    }
+    
+    // If it's already an embed URL, return as is
+    if (videoUrl.includes('embed') || videoUrl.includes('player')) {
+      return videoUrl;
+    }
+    
+    // Return null if we can't create an embed URL
+    return null;
   }
 
   downloadPodcast(audioUrl, title) {

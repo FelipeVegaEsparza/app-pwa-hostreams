@@ -2917,25 +2917,26 @@ body::before {
 }
 
 .loading-logo {
-  width: 150px;
-  height: 150px;
+  width: 200px;
+  height: 200px;
   background: linear-gradient(135deg, #e43f5a, #533483);
-  border-radius: 50%;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2.5rem;
   margin: 0 auto 30px;
-  animation: pulse 2s infinite;
+  animation: gentlePulse 3s ease-in-out infinite;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .loading-logo-image {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
   object-fit: contain;
-  border-radius: 50%;
+  border-radius: 20px;
   z-index: 2;
   position: relative;
 }
@@ -2946,13 +2947,17 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
-  animation: logoShine 2s infinite;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  animation: gentleGlow 4s ease-in-out infinite;
 }
 
-@keyframes logoShine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+@keyframes gentleGlow {
+  0%, 100% { 
+    opacity: 0.3;
+  }
+  50% { 
+    opacity: 0.6;
+  }
 }
 
 .loading-content h2 {
@@ -2984,14 +2989,14 @@ body::before {
   100% { width: 100%; }
 }
 
-@keyframes pulse {
+@keyframes gentlePulse {
   0%, 100% { 
-    opacity: 1; 
     transform: scale(1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   }
   50% { 
-    opacity: 0.8;
-    transform: scale(1.05);
+    transform: scale(1.02);
+    box-shadow: 0 15px 50px rgba(228, 63, 90, 0.4), 0 15px 50px rgba(83, 52, 131, 0.4);
   }
 }
 

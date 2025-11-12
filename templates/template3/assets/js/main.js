@@ -839,10 +839,13 @@ class RadioStreamApp {
             ${sponsor.address ? `<p style="font-size: 0.9rem; color: #b3b3b3; margin: 0.5rem 0;"><i class="fas fa-map-marker-alt"></i> ${sponsor.address}</p>` : ''}
             <div class="card-meta">
               ${sponsor.website ? `<a href="${sponsor.website}" target="_blank" class="card-action">Visitar Sitio</a>` : ''}
-              <div style="display: flex; gap: 0.5rem;">
-                ${sponsor.facebook ? `<a href="${sponsor.facebook}" style="color: #1db954;"><i class="fab fa-facebook"></i></a>` : ''}
-                ${sponsor.instagram ? `<a href="${sponsor.instagram}" style="color: #1db954;"><i class="fab fa-instagram"></i></a>` : ''}
-                ${sponsor.whatsapp ? `<a href="${sponsor.whatsapp}" style="color: #1db954;"><i class="fab fa-whatsapp"></i></a>` : ''}
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                ${sponsor.facebook ? `<a href="${sponsor.facebook}" target="_blank" style="color: #1db954;" title="Facebook"><i class="fab fa-facebook"></i></a>` : ''}
+                ${sponsor.instagram ? `<a href="${sponsor.instagram}" target="_blank" style="color: #1db954;" title="Instagram"><i class="fab fa-instagram"></i></a>` : ''}
+                ${sponsor.youtube ? `<a href="${sponsor.youtube}" target="_blank" style="color: #1db954;" title="YouTube"><i class="fab fa-youtube"></i></a>` : ''}
+                ${sponsor.tiktok ? `<a href="${sponsor.tiktok}" target="_blank" style="color: #1db954;" title="TikTok"><i class="fab fa-tiktok"></i></a>` : ''}
+                ${sponsor.x ? `<a href="${sponsor.x}" target="_blank" style="color: #1db954;" title="X (Twitter)"><i class="fab fa-x-twitter"></i></a>` : ''}
+                ${sponsor.whatsapp ? `<a href="${sponsor.whatsapp}" target="_blank" style="color: #1db954;" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
               </div>
             </div>
           </div>

@@ -3063,13 +3063,21 @@ l Styles */
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 15px;
   overflow: hidden;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 400px;
 }
 
-.videocast-modal-player video {
+.videocast-modal-player video,
+.videocast-modal-player iframe {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
-  min-height: 300px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 15px;
 }
 
 .videocast-modal-description {
@@ -3185,8 +3193,13 @@ l Styles */
     flex-direction: column;
   }
   
-  .videocast-modal-player video {
-    min-height: 200px;
+  .videocast-modal-player {
+    min-height: 250px;
+  }
+  
+  .videocast-modal-player video,
+  .videocast-modal-player iframe {
+    min-height: 250px;
   }
 }
 

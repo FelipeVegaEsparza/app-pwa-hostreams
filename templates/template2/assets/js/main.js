@@ -597,10 +597,13 @@ class RadioLanding {
             <div style="margin-top: 1rem;">
               ${sponsor.website ? `<a href="${sponsor.website}" target="_blank" style="color: #d1d5db; text-decoration: none; font-weight: 500;">Visitar Sitio <i class="fas fa-external-link-alt"></i></a>` : ''}
             </div>
-            <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">
-              ${sponsor.facebook ? `<a href="${sponsor.facebook}" class="social-link"><i class="fab fa-facebook"></i></a>` : ''}
-              ${sponsor.instagram ? `<a href="${sponsor.instagram}" class="social-link"><i class="fab fa-instagram"></i></a>` : ''}
-              ${sponsor.whatsapp ? `<a href="${sponsor.whatsapp}" class="social-link"><i class="fab fa-whatsapp"></i></a>` : ''}
+            <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
+              ${sponsor.facebook ? `<a href="${sponsor.facebook}" target="_blank" class="social-link" title="Facebook"><i class="fab fa-facebook"></i></a>` : ''}
+              ${sponsor.instagram ? `<a href="${sponsor.instagram}" target="_blank" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>` : ''}
+              ${sponsor.youtube ? `<a href="${sponsor.youtube}" target="_blank" class="social-link" title="YouTube"><i class="fab fa-youtube"></i></a>` : ''}
+              ${sponsor.tiktok ? `<a href="${sponsor.tiktok}" target="_blank" class="social-link" title="TikTok"><i class="fab fa-tiktok"></i></a>` : ''}
+              ${sponsor.x ? `<a href="${sponsor.x}" target="_blank" class="social-link" title="X (Twitter)"><i class="fab fa-x-twitter"></i></a>` : ''}
+              ${sponsor.whatsapp ? `<a href="${sponsor.whatsapp}" target="_blank" class="social-link" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
             </div>
           </div>
         `).join('');
@@ -1823,19 +1826,24 @@ window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
           landing = new RadioLanding();
           window.radioLanding = landing;
+          window.landing = landing; // Make available globally for onclick handlers
         }, 600);
       };
     } else {
       // Fallback if LoadingManager is not available
       landing = new RadioLanding();
       window.radioLanding = landing;
+      window.landing = landing; // Make available globally for onclick handlers
     }
   }, 100);
 });
 
-// Make landing available globally for onclick handlers
-window.landing = landing;
-window.scrollToSection = (sectionId) => landing.scrollToSection(sectionId);
+// Helper function for onclick handlers
+window.scrollToSection = (sectionId) => {
+  if (window.landing) {
+    window.landing.scrollToSection(sectionId);
+  }
+};
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
