@@ -119,11 +119,33 @@ export async function getSonicPanelInfo() {
 export async function getCurrentSong() {
   try {
     const data = await getSonicPanelInfo();
+    
+    // Separar título en artista y canción si viene en formato "Artista - Canción"
+    let artist = 'En Vivo';
+    let songTitle = 'Radio Fusion Austral';
+    
+    if (data.title && data.title.trim() !== '') {
+      if (data.title.includes(' - ')) {
+        const parts = data.title.split(' - ');
+        artist = parts[0].trim();
+        songTitle = parts.slice(1).join(' - ').trim();
+      } else {
+        songTitle = data.title.trim();
+      }
+    }
+    
+    // Si hay DJ, usar su nombre como artista
+    if (data.djusername && data.djusername !== 'No DJ' && data.djusername !== 'AutoDJ') {
+      artist = data.djusername;
+    }
+    
     return {
-      title: data.title || 'Sin información',
+      title: songTitle,
+      artist: artist,
+      fullTitle: data.title || 'Radio Fusion Austral',
       art: data.art || null,
-      listeners: data.listeners || 0,
-      uniqueListeners: data.ulistener || 0,
+      listeners: parseInt(data.listeners) || 0,
+      uniqueListeners: parseInt(data.ulistener) || 0,
       bitrate: data.bitrate || 'N/A',
       djUsername: data.djusername || null,
       djProfile: data.djprofile || null,
@@ -132,7 +154,9 @@ export async function getCurrentSong() {
   } catch (error) {
     console.error('Error getting current song:', error);
     return {
-      title: 'Radio en Vivo',
+      title: 'Radio Fusion Austral',
+      artist: 'En Vivo',
+      fullTitle: 'Radio Fusion Austral',
       art: null,
       listeners: 0,
       uniqueListeners: 0,

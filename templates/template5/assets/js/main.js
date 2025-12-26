@@ -964,12 +964,22 @@ class RadioNexus {
     
     document.getElementById('footer-listeners').textContent = songData.listeners || '0';
     
-    if (songData.art) {
-      const playerArtwork = document.getElementById('player-artwork');
+    const playerArtwork = document.getElementById('player-artwork');
+    const defaultArtwork = document.querySelector('.default-artwork');
+    
+    if (songData.art && songData.art.trim() !== '') {
       if (playerArtwork) {
         playerArtwork.src = songData.art;
         playerArtwork.style.display = 'block';
+        playerArtwork.onerror = () => {
+          playerArtwork.style.display = 'none';
+          if (defaultArtwork) defaultArtwork.style.display = 'flex';
+        };
+        if (defaultArtwork) defaultArtwork.style.display = 'none';
       }
+    } else {
+      if (playerArtwork) playerArtwork.style.display = 'none';
+      if (defaultArtwork) defaultArtwork.style.display = 'flex';
     }
   }
 

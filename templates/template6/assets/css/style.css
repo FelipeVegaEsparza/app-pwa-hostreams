@@ -371,7 +371,6 @@ a:hover {
   max-height: 60px;
   width: auto;
   object-fit: contain;
-  filter: brightness(0) invert(1);
 }
 
 .header-actions {
@@ -2224,7 +2223,6 @@ y Schedule Navigation */
   width: auto;
   object-fit: contain;
   margin-bottom: 25px;
-  filter: brightness(0) invert(1);
 }
 
 .footer-brand p {
