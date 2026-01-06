@@ -490,17 +490,19 @@ class NewsHub {
     
     programs.forEach(program => {
       // Si el programa tiene días específicos, usarlos
-      if (program.days && Array.isArray(program.days)) {
-        program.days.forEach(day => {
+      if (program.weekDays && Array.isArray(program.weekDays)) {
+        program.weekDays.forEach(day => {
           const dayKey = this.normalizeDayName(day);
           if (programsByDay[dayKey]) {
             programsByDay[dayKey].push(program);
           }
         });
-      } else {
-        // Si no tiene días específicos, agregarlo a todos los días de lunes a viernes
-        ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'].forEach(day => {
-          programsByDay[day].push(program);
+      } else if (program.days && Array.isArray(program.days)) {
+        program.days.forEach(day => {
+          const dayKey = this.normalizeDayName(day);
+          if (programsByDay[dayKey]) {
+            programsByDay[dayKey].push(program);
+          }
         });
       }
     });

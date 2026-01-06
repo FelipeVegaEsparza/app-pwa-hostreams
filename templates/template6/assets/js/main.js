@@ -523,16 +523,19 @@ class RadioPulse {
     };
     
     programs.forEach(program => {
-      if (program.days && Array.isArray(program.days)) {
-        program.days.forEach(day => {
+      if (program.weekDays && Array.isArray(program.weekDays)) {
+        program.weekDays.forEach(day => {
           const dayKey = this.normalizeDayName(day);
           if (programsByDay[dayKey]) {
             programsByDay[dayKey].push(program);
           }
         });
-      } else {
-        ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'].forEach(day => {
-          programsByDay[day].push(program);
+      } else if (program.days && Array.isArray(program.days)) {
+        program.days.forEach(day => {
+          const dayKey = this.normalizeDayName(day);
+          if (programsByDay[dayKey]) {
+            programsByDay[dayKey].push(program);
+          }
         });
       }
     });
