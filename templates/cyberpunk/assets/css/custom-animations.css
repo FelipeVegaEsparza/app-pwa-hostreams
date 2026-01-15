@@ -1,0 +1,31 @@
+/* Template 15 - Animaciones Neón Cyberpunk */
+
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.8), 0 0 60px rgba(139, 92, 246, 0.5);
+  }
+}
+
+.glass-effect {
+  animation: neonPulse 3s ease-in-out infinite;
+}
+
+.glass-btn:hover {
+  animation: neonPulse 1s ease-in-out infinite;
+}
+
+@keyframes glitchEffect {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.news-card:hover {
+  animation: glitchEffect 0.3s ease-in-out;
+}

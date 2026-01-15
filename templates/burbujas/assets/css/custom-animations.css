@@ -1,0 +1,46 @@
+/* Template 16 - Animaciones Burbujas Suaves */
+
+@keyframes floatBubble {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+.glass-effect {
+  animation: floatBubble 4s ease-in-out infinite;
+}
+
+@keyframes bubblePop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.glass-btn:hover {
+  animation: bubblePop 0.6s ease-in-out;
+}
+
+@keyframes gentleWave {
+  0% {
+    border-radius: 40px 50px 45px 55px / 50px 40px 55px 45px;
+  }
+  50% {
+    border-radius: 50px 40px 55px 45px / 40px 50px 45px 55px;
+  }
+  100% {
+    border-radius: 40px 50px 45px 55px / 50px 40px 55px 45px;
+  }
+}
+
+.news-card {
+  animation: gentleWave 8s ease-in-out infinite;
+}
