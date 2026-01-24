@@ -1,5 +1,5 @@
 {
-  "name": "cliente-test-radio",
+  "name": "@felipevegaesparza/radio-pwa-core",
   "version": "1.0.1",
   "private": true,
   "description": "Cliente de prueba para Radio PWA",
