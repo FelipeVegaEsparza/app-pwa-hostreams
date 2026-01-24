@@ -1,5 +1,5 @@
 {
-  "name": "@hostreams/radio-pwa-core",
+  "name": "@felipevegaesparza/radio-pwa-core",
   "version": "1.0.0",
   "description": "PWA Radio Core - Sistema de radio streaming con templates personalizables",
   "main": "server.js",

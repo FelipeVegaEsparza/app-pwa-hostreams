@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '18'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@hostreams'
+          scope: '@felipevegaesparza'
 
       - name: Install dependencies
         run: npm ci

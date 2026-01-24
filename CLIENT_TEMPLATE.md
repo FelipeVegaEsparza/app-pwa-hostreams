@@ -32,11 +32,11 @@ cliente-radio/
   "private": true,
   "description": "Radio PWA para [Nombre del Cliente]",
   "scripts": {
-    "start": "node node_modules/@hostreams/radio-pwa-core/server.js",
-    "dev": "node node_modules/@hostreams/radio-pwa-core/server.js"
+    "start": "node node_modules/@felipevegaesparza/radio-pwa-core/server.js",
+    "dev": "node node_modules/@felipevegaesparza/radio-pwa-core/server.js"
   },
   "dependencies": {
-    "@hostreams/radio-pwa-core": "^1.0.0"
+    "@felipevegaesparza/radio-pwa-core": "^1.0.0"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -47,7 +47,7 @@ cliente-radio/
 ## .npmrc del cliente
 
 ```
-@hostreams:registry=https://npm.pkg.github.com
+@felipevegaesparza:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
 ```
 
