@@ -21,22 +21,78 @@ app.use(cors());
 
 // Leer configuración al inicio
 const fs = require('fs');
-let currentTemplate = 'template5'; // Default
+const https = require('https');
+let currentTemplate = 'minimalista'; // Default fallback
+let clientId = null;
+let ipstreamBaseUrl = null;
 
+// Cargar config.json para obtener clientId y URL base
 try {
   const configPath = path.join(__dirname, 'config', 'config.json');
   const configData = fs.readFileSync(configPath, 'utf8');
   const config = JSON.parse(configData);
-  currentTemplate = config.template || 'template5';
-  console.log(`📱 Template configurado: ${currentTemplate}`);
+  clientId = config.clientId;
+  ipstreamBaseUrl = config.ipstream_base_url;
+  currentTemplate = config.template || 'minimalista'; // Fallback local
+  console.log(`📱 Template fallback local: ${currentTemplate}`);
 } catch (error) {
   console.error('Error loading config:', error);
 }
 
+// Función para obtener el template desde la API
+async function fetchTemplateFromAPI() {
+  if (!clientId || !ipstreamBaseUrl) {
+    console.log('⚠️ No se puede obtener template de API: falta clientId o URL');
+    return currentTemplate;
+  }
+
+  return new Promise((resolve) => {
+    const apiUrl = `${ipstreamBaseUrl}/${clientId}`;
+    console.log(`🔍 Consultando template desde API: ${apiUrl}`);
+
+    https.get(apiUrl, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          const apiData = JSON.parse(data);
+          if (apiData.selectedTemplate) {
+            currentTemplate = apiData.selectedTemplate;
+            console.log(`✅ Template obtenido de API: ${currentTemplate}`);
+          } else {
+            console.log(`⚠️ API no devolvió selectedTemplate, usando fallback: ${currentTemplate}`);
+          }
+          resolve(currentTemplate);
+        } catch (error) {
+          console.error('❌ Error parseando respuesta de API:', error);
+          resolve(currentTemplate);
+        }
+      });
+    }).on('error', (error) => {
+      console.error('❌ Error consultando API para template:', error.message);
+      console.log(`⚠️ Usando template fallback: ${currentTemplate}`);
+      resolve(currentTemplate);
+    });
+  });
+}
+
+// Obtener template de la API al iniciar
+fetchTemplateFromAPI().then((template) => {
+  currentTemplate = template;
+  console.log(`🎨 Template activo: ${currentTemplate}`);
+});
+
 // IMPORTANTE: Definir rutas específicas ANTES del middleware estático
 // Ruta principal - sirve el template con rutas corregidas
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
   try {
+    // Refrescar template desde API en cada request para cambios instantáneos
+    await fetchTemplateFromAPI();
+
     const templatePath = path.join(__dirname, 'templates', currentTemplate, 'index.html');
     
     if (fs.existsSync(templatePath)) {
@@ -95,6 +151,15 @@ app.get('/service-worker.js', (req, res) => {
 // Ruta para archivos de configuración
 app.get('/config/:file', (req, res) => {
   res.sendFile(path.join(__dirname, 'config', req.params.file));
+});
+
+// Endpoint para obtener el template actual
+app.get('/api/current-template', (req, res) => {
+  res.json({ 
+    template: currentTemplate,
+    source: clientId ? 'api' : 'local',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Ruta para assets - primero intenta del template, luego de la raíz

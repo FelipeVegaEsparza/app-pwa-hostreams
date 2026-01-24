@@ -1,5 +1,6 @@
 {
-  "template": "blue",
+  "template": "minimalista",
+  "_template_note": "El template se obtiene automáticamente desde la API de IPStream usando el campo 'selectedTemplate'. Este valor es solo un fallback si la API no está disponible.",
   "project_name": "Radio Fusion Austral",
   "clientId": "cmf4du07u000313x255b7jy2t",
   "ipstream_base_url": "https://dashboard.ipstream.cl/api/public",
