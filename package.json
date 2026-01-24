@@ -1,7 +1,6 @@
 {
   "name": "@felipevegaesparza/radio-pwa-core",
   "version": "1.0.1",
-  "private": true,
   "description": "Cliente de prueba para Radio PWA",
   "scripts": {
     "start": "node node_modules/@felipevegaesparza/radio-pwa-core/server.js",
