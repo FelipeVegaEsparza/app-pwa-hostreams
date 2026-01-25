@@ -137,9 +137,24 @@ app.get('/templates/:template/*', (req, res, next) => {
   });
 });
 
-// Ruta para el manifest.json
+// Ruta para el manifest.json - priorizar el del cliente
 app.get('/manifest.json', (req, res) => {
-  res.sendFile(path.join(__dirname, 'manifest.json'));
+  // Primero intentar desde la raíz (cliente)
+  const clientManifest = path.join(__dirname, 'manifest.json');
+  
+  // Si no existe, intentar desde node_modules (core instalado como package)
+  const coreManifest = path.join(__dirname, 'node_modules', '@felipevegaesparza', 'radio-pwa-core', 'manifest.json');
+  
+  if (fs.existsSync(clientManifest)) {
+    console.log('📱 Sirviendo manifest.json del cliente');
+    res.sendFile(clientManifest);
+  } else if (fs.existsSync(coreManifest)) {
+    console.log('📦 Sirviendo manifest.json del core');
+    res.sendFile(coreManifest);
+  } else {
+    console.error('❌ manifest.json no encontrado');
+    res.status(404).send('Manifest not found');
+  }
 });
 
 // Ruta para el service worker

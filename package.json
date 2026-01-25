@@ -1,15 +1,50 @@
 {
   "name": "@felipevegaesparza/radio-pwa-core",
-  "version": "1.0.1",
-  "description": "Cliente de prueba para Radio PWA",
+  "version": "1.0.2",
+  "description": "PWA Radio Core - Sistema de radio streaming con templates personalizables",
+  "main": "server.js",
   "scripts": {
-    "start": "node node_modules/@felipevegaesparza/radio-pwa-core/server.js",
-    "dev": "node node_modules/@felipevegaesparza/radio-pwa-core/server.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'No build step required for static files'",
+    "serve": "node server.js"
   },
+  "keywords": [
+    "radio",
+    "pwa",
+    "templates",
+    "streaming",
+    "responsive",
+    "hostreams"
+  ],
+  "author": "Hostreams",
+  "license": "MIT",
   "dependencies": {
-    "@felipevegaesparza/radio-pwa-core": "^1.0.0"
+    "express": "^4.18.2",
+    "compression": "^1.7.4",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5"
   },
   "engines": {
-    "node": ">=16.0.0"
-  }
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FelipeVegaEsparza/app-pwa-hostreams.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "server.js",
+    "service-worker.js",
+    "index.html",
+    "offline.html",
+    "manifest.json",
+    "start.js",
+    "templates/",
+    "assets/",
+    "config/config.json"
+  ]
 }
