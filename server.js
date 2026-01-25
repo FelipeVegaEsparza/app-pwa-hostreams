@@ -25,6 +25,7 @@ const https = require('https');
 let currentTemplate = 'minimalista'; // Default fallback
 let clientId = null;
 let ipstreamBaseUrl = null;
+let clientConfig = null; // Guardar config completo
 
 // Cargar config.json - buscar en múltiples ubicaciones
 try {
@@ -53,12 +54,12 @@ try {
   
   console.log(`📂 Cargando config desde: ${configPath}`);
   const configData = fs.readFileSync(configPath, 'utf8');
-  const config = JSON.parse(configData);
-  clientId = config.clientId;
-  ipstreamBaseUrl = config.ipstream_base_url;
-  currentTemplate = config.template || 'minimalista'; // Fallback local
+  clientConfig = JSON.parse(configData); // Guardar config completo
+  clientId = clientConfig.clientId;
+  ipstreamBaseUrl = clientConfig.ipstream_base_url;
+  currentTemplate = clientConfig.template || 'minimalista'; // Fallback local
   console.log(`📱 Template fallback local: ${currentTemplate}`);
-  console.log(`📱 Project name: ${config.project_name}`);
+  console.log(`📱 Project name: ${clientConfig.project_name}`);
 } catch (error) {
   console.error('Error loading config:', error);
 }
