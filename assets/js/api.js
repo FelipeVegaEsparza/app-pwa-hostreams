@@ -118,11 +118,13 @@ export async function getSonicPanelInfo() {
 
 export async function getCurrentSong() {
   try {
+    const configData = await config;
+    const projectName = configData.project_name || 'Radio';
     const data = await getSonicPanelInfo();
     
     // Separar título en artista y canción si viene en formato "Artista - Canción"
     let artist = 'En Vivo';
-    let songTitle = 'Radio Fusion Austral';
+    let songTitle = projectName;
     
     if (data.title && data.title.trim() !== '') {
       if (data.title.includes(' - ')) {
@@ -142,7 +144,7 @@ export async function getCurrentSong() {
     return {
       title: songTitle,
       artist: artist,
-      fullTitle: data.title || 'Radio Fusion Austral',
+      fullTitle: data.title || projectName,
       art: data.art || null,
       listeners: parseInt(data.listeners) || 0,
       uniqueListeners: parseInt(data.ulistener) || 0,
@@ -152,11 +154,13 @@ export async function getCurrentSong() {
       history: data.history || []
     };
   } catch (error) {
+    const configData = await config;
+    const projectName = configData.project_name || 'Radio';
     console.error('Error getting current song:', error);
     return {
-      title: 'Radio Fusion Austral',
+      title: projectName,
       artist: 'En Vivo',
-      fullTitle: 'Radio Fusion Austral',
+      fullTitle: projectName,
       art: null,
       listeners: 0,
       uniqueListeners: 0,
