@@ -26,9 +26,17 @@ let currentTemplate = 'minimalista'; // Default fallback
 let clientId = null;
 let ipstreamBaseUrl = null;
 
-// Cargar config.json para obtener clientId y URL base
+// Cargar config.json - priorizar el del cliente
 try {
-  const configPath = path.join(__dirname, 'config', 'config.json');
+  // Intentar desde la raíz del proyecto (cliente)
+  let configPath = path.join(process.cwd(), 'config', 'config.json');
+  
+  // Si no existe, intentar desde __dirname (cuando se ejecuta directamente el core)
+  if (!fs.existsSync(configPath)) {
+    configPath = path.join(__dirname, 'config', 'config.json');
+  }
+  
+  console.log(`📂 Cargando config desde: ${configPath}`);
   const configData = fs.readFileSync(configPath, 'utf8');
   const config = JSON.parse(configData);
   clientId = config.clientId;
@@ -163,9 +171,23 @@ app.get('/service-worker.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'service-worker.js'));
 });
 
-// Ruta para archivos de configuración
+// Ruta para archivos de configuración - priorizar el del cliente
 app.get('/config/:file', (req, res) => {
-  res.sendFile(path.join(__dirname, 'config', req.params.file));
+  // Intentar desde la raíz del proyecto (cliente)
+  let configPath = path.join(process.cwd(), 'config', req.params.file);
+  
+  // Si no existe, intentar desde __dirname (core)
+  if (!fs.existsSync(configPath)) {
+    configPath = path.join(__dirname, 'config', req.params.file);
+  }
+  
+  if (fs.existsSync(configPath)) {
+    console.log(`📂 Sirviendo config desde: ${configPath}`);
+    res.sendFile(configPath);
+  } else {
+    console.error(`❌ Config no encontrado: ${req.params.file}`);
+    res.status(404).send('Config file not found');
+  }
 });
 
 // Endpoint para obtener el template actual
