@@ -1,10 +1,11 @@
-{
-  "template": "blue",
-  "project_name": "Radio Test",
+﻿{
+  "template": "minimalista",
+  "project_name": "Radio Fusion Austral",
   "clientId": "cmf4du07u000313x255b7jy2t",
+  "sonicpanel_port": "8018",
   "ipstream_base_url": "https://dashboard.ipstream.cl/api/public",
-  "sonicpanel_stream_url": "https://stream.ipstream.cl/8066/stream",
-  "sonicpanel_api_url": "https://stream.ipstream.cl/cp/get_info.php?p=8066",
+  "sonicpanel_stream_url": "https://stream.ipstream.cl/8018/stream",
+  "sonicpanel_api_url": "https://stream.ipstream.cl/cp/get_info.php?p=8018",
   "cache_version": "v1",
   "offline_page": "/offline.html",
   "pagination": {
