@@ -26,14 +26,29 @@ let currentTemplate = 'minimalista'; // Default fallback
 let clientId = null;
 let ipstreamBaseUrl = null;
 
-// Cargar config.json - priorizar el del cliente
+// Cargar config.json - buscar en múltiples ubicaciones
 try {
-  // Intentar desde la raíz del proyecto (cliente)
-  let configPath = path.join(process.cwd(), 'config', 'config.json');
+  const possiblePaths = [
+    // 1. Raíz del proyecto (cuando se ejecuta desde el cliente)
+    path.join(process.cwd(), 'config', 'config.json'),
+    // 2. Dos niveles arriba (cuando está en node_modules/@scope/package)
+    path.join(__dirname, '..', '..', '..', 'config', 'config.json'),
+    // 3. Tres niveles arriba (por si acaso)
+    path.join(__dirname, '..', '..', '..', '..', 'config', 'config.json'),
+    // 4. Mismo directorio que __dirname (cuando se ejecuta directamente)
+    path.join(__dirname, 'config', 'config.json')
+  ];
   
-  // Si no existe, intentar desde __dirname (cuando se ejecuta directamente el core)
-  if (!fs.existsSync(configPath)) {
-    configPath = path.join(__dirname, 'config', 'config.json');
+  let configPath = null;
+  for (const testPath of possiblePaths) {
+    if (fs.existsSync(testPath)) {
+      configPath = testPath;
+      break;
+    }
+  }
+  
+  if (!configPath) {
+    throw new Error('config.json not found in any expected location');
   }
   
   console.log(`📂 Cargando config desde: ${configPath}`);
@@ -43,6 +58,7 @@ try {
   ipstreamBaseUrl = config.ipstream_base_url;
   currentTemplate = config.template || 'minimalista'; // Fallback local
   console.log(`📱 Template fallback local: ${currentTemplate}`);
+  console.log(`📱 Project name: ${config.project_name}`);
 } catch (error) {
   console.error('Error loading config:', error);
 }
@@ -171,17 +187,24 @@ app.get('/service-worker.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'service-worker.js'));
 });
 
-// Ruta para archivos de configuración - priorizar el del cliente
+// Ruta para archivos de configuración - buscar en múltiples ubicaciones
 app.get('/config/:file', (req, res) => {
-  // Intentar desde la raíz del proyecto (cliente)
-  let configPath = path.join(process.cwd(), 'config', req.params.file);
+  const possiblePaths = [
+    path.join(process.cwd(), 'config', req.params.file),
+    path.join(__dirname, '..', '..', '..', 'config', req.params.file),
+    path.join(__dirname, '..', '..', '..', '..', 'config', req.params.file),
+    path.join(__dirname, 'config', req.params.file)
+  ];
   
-  // Si no existe, intentar desde __dirname (core)
-  if (!fs.existsSync(configPath)) {
-    configPath = path.join(__dirname, 'config', req.params.file);
+  let configPath = null;
+  for (const testPath of possiblePaths) {
+    if (fs.existsSync(testPath)) {
+      configPath = testPath;
+      break;
+    }
   }
   
-  if (fs.existsSync(configPath)) {
+  if (configPath) {
     console.log(`📂 Sirviendo config desde: ${configPath}`);
     res.sendFile(configPath);
   } else {
