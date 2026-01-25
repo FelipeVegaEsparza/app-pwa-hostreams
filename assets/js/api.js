@@ -95,13 +95,18 @@ export async function buildImageUrl(path) {
 export async function getSonicPanelInfo() {
   const configData = await config;
   
-  // Extraer el puerto del stream URL
-  const streamUrl = configData.sonicpanel_stream_url;
-  const portMatch = streamUrl.match(/:(\d+)/);
-  const port = portMatch ? portMatch[1] : '8018';
+  // Usar puerto directo si existe, sino extraer del stream URL
+  let port = configData.sonicpanel_port;
+  
+  if (!port) {
+    // Extraer el puerto del stream URL como fallback
+    const streamUrl = configData.sonicpanel_stream_url;
+    const portMatch = streamUrl.match(/:(\d+)/);
+    port = portMatch ? portMatch[1] : '8018';
+  }
   
   // Construir la URL de la API de SonicPanel
-  const apiUrl = `https://stream.ipstream.cl/cp/get_info.php?p=${port}`;
+  const apiUrl = configData.sonicpanel_api_url || `https://stream.ipstream.cl/cp/get_info.php?p=${port}`;
   
   try {
     const response = await fetch(apiUrl);
