@@ -69,6 +69,22 @@ class PWAInstaller {
                   <span>En tu pantalla de inicio</span>
                 </div>
               </div>
+              
+              <!-- Opción de notificaciones -->
+              <div class="pwa-notifications-option" id="pwa-notifications-option" style="display: none;">
+                <label class="pwa-checkbox-label">
+                  <input type="checkbox" id="pwa-enable-notifications" checked>
+                  <span class="pwa-checkbox-custom"></span>
+                  <span class="pwa-checkbox-text">
+                    <i class="fas fa-bell"></i>
+                    Activar notificaciones push
+                  </span>
+                </label>
+                <p class="pwa-notifications-description">
+                  Recibe noticias, eventos y actualizaciones importantes
+                </p>
+              </div>
+              
               <div class="pwa-modal-buttons">
                 <button class="pwa-install-btn" id="pwa-install-btn">
                   <i class="fas fa-download"></i>
@@ -238,6 +254,7 @@ class PWAInstaller {
     // Configurar contenido según el dispositivo
     const normalContent = document.getElementById('pwa-install-normal');
     const iosContent = document.getElementById('pwa-install-ios');
+    const notificationsOption = document.getElementById('pwa-notifications-option');
 
     if (this.isIOS) {
       normalContent.style.display = 'none';
@@ -249,10 +266,39 @@ class PWAInstaller {
       iosContent.style.display = 'none';
       document.getElementById('pwa-modal-title').textContent = 'Instalar Aplicación';
       document.getElementById('pwa-modal-subtitle').textContent = 'Accede más rápido y disfruta de una mejor experiencia';
+      
+      // Mostrar opción de notificaciones si OneSignal está disponible
+      this.checkNotificationAvailability(notificationsOption);
     }
 
     this.modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+  }
+
+  async checkNotificationAvailability(notificationsOption) {
+    if (!notificationsOption) return;
+
+    // Verificar si las notificaciones están soportadas
+    if (!('Notification' in window)) {
+      notificationsOption.style.display = 'none';
+      return;
+    }
+
+    // Verificar si OneSignal está disponible
+    if (typeof window.oneSignalManager === 'undefined') {
+      notificationsOption.style.display = 'none';
+      return;
+    }
+
+    // Esperar un poco a que OneSignal se inicialice
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Si OneSignal está inicializado, mostrar la opción
+    if (window.oneSignalManager.initialized) {
+      notificationsOption.style.display = 'block';
+    } else {
+      notificationsOption.style.display = 'none';
+    }
   }
 
   hideModal() {
@@ -294,6 +340,10 @@ class PWAInstaller {
     }
 
     try {
+      // Verificar si el usuario quiere activar notificaciones
+      const enableNotifications = document.getElementById('pwa-enable-notifications');
+      const shouldEnableNotifications = enableNotifications && enableNotifications.checked;
+      
       // Mostrar el prompt de instalación
       this.deferredPrompt.prompt();
       
@@ -304,6 +354,13 @@ class PWAInstaller {
       
       if (outcome === 'accepted') {
         console.log('PWA: User accepted the install prompt');
+        
+        // Si el usuario aceptó y quiere notificaciones, solicitarlas
+        if (shouldEnableNotifications) {
+          setTimeout(() => {
+            this.requestNotificationPermission();
+          }, 1000);
+        }
       } else {
         console.log('PWA: User dismissed the install prompt');
       }
@@ -315,6 +372,40 @@ class PWAInstaller {
     } catch (error) {
       console.error('PWA: Error during installation:', error);
       this.showToast('Error al instalar la aplicación', 'error');
+    }
+  }
+
+  async requestNotificationPermission() {
+    // Verificar si OneSignal está disponible
+    if (typeof window.oneSignalManager === 'undefined') {
+      console.log('PWA: OneSignal not available');
+      return;
+    }
+
+    try {
+      // Esperar a que OneSignal esté inicializado
+      let attempts = 0;
+      while (!window.oneSignalManager.initialized && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (!window.oneSignalManager.initialized) {
+        console.log('PWA: OneSignal not initialized');
+        return;
+      }
+
+      // Solicitar permisos de notificación
+      const granted = await window.oneSignalManager.requestPermission();
+      
+      if (granted) {
+        console.log('PWA: Notification permission granted');
+        this.showToast('¡Notificaciones activadas correctamente!', 'success');
+      } else {
+        console.log('PWA: Notification permission denied');
+      }
+    } catch (error) {
+      console.error('PWA: Error requesting notification permission:', error);
     }
   }
 

@@ -45,6 +45,9 @@
     "start.js",
     "templates/",
     "assets/",
-    "config/config.json"
+    "config/config.json",
+    "public/OneSignalSDKWorker.js",
+    "ONESIGNAL_INTEGRATION.md",
+    "ONESIGNAL_QUICK_START.md"
   ]
 }

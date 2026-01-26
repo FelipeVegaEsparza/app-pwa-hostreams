@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/assets/css/loading-styles.css">
   <link rel="stylesheet" href="/assets/css/pwa-installer.css">
   <link rel="stylesheet" href="/assets/css/promotion-popup.css">
+  <link rel="stylesheet" href="/assets/css/notification-button.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -158,6 +159,9 @@
       </div>
       
       <div class="social-section">
+        <!-- Notification Button -->
+        <div id="notification-button-container"></div>
+        
         <div class="social-links" id="social-links">
           <!-- Social links will be loaded here -->
         </div>
@@ -269,6 +273,7 @@
   <script src="/assets/js/mobile-enhancements.js"></script>
   <script src="/assets/js/pwa-installer.js"></script>
   <script src="/assets/js/promotion-popup.js"></script>
+  <script type="module" src="/assets/js/onesignal-init.js"></script>
   <script type="module" src="assets/js/main.js"></script>
   
   <!-- Loading Manager Inline -->

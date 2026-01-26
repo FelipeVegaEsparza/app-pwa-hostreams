@@ -121,6 +121,75 @@
   text-align: center;
 }
 
+/* Opción de notificaciones */
+.pwa-notifications-option {
+  background: rgba(102, 126, 234, 0.05);
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.pwa-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pwa-checkbox-label input[type="checkbox"] {
+  display: none;
+}
+
+.pwa-checkbox-custom {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #667eea;
+  border-radius: 6px;
+  position: relative;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  background: white;
+}
+
+.pwa-checkbox-label input[type="checkbox"]:checked + .pwa-checkbox-custom {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+}
+
+.pwa-checkbox-label input[type="checkbox"]:checked + .pwa-checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.pwa-checkbox-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.pwa-checkbox-text i {
+  color: #667eea;
+  font-size: 16px;
+}
+
+.pwa-notifications-description {
+  margin: 8px 0 0 36px;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.4;
+}
+
 /* Botones del modal */
 .pwa-modal-buttons {
   display: flex;
@@ -405,6 +474,24 @@
   .pwa-benefit {
     background: rgba(102, 126, 234, 0.2);
     color: white;
+  }
+  
+  .pwa-notifications-option {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: rgba(102, 126, 234, 0.3);
+  }
+  
+  .pwa-checkbox-text {
+    color: white;
+  }
+  
+  .pwa-notifications-description {
+    color: #d1d5db;
+  }
+  
+  .pwa-checkbox-custom {
+    background: #374151;
+    border-color: #667eea;
   }
   
   .pwa-ios-step {
