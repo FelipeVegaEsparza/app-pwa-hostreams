@@ -1,5 +1,5 @@
-﻿{
-  "template": "minimalista",
+{
+  "template": "playlist",
   "project_name": "Radio Fusion Austral",
   "clientId": "cmf4du07u000313x255b7jy2t",
   "sonicpanel_port": "8018",
