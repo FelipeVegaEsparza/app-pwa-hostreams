@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="/assets/css/pwa-installer.css">
   <link rel="stylesheet" href="/assets/css/promotion-popup.css">
   <link rel="stylesheet" href="/assets/css/notification-button.css">
+  <link rel="stylesheet" href="/assets/css/video-player.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -162,6 +163,12 @@
         <!-- Notification Button -->
         <div id="notification-button-container"></div>
         
+        <!-- TV Online Button -->
+        <button class="tv-online-btn" id="tv-online-btn" style="display: none;">
+          <i class="fas fa-tv"></i>
+          <span>TV Online</span>
+        </button>
+        
         <div class="social-links" id="social-links">
           <!-- Social links will be loaded here -->
         </div>
@@ -169,7 +176,7 @@
     </header>
 
     <!-- Main Player -->
-    <div class="main-player">
+    <div class="main-player" id="radio-player">
       
       <!-- Track Artwork -->
       <div class="track-artwork-container">
@@ -251,6 +258,26 @@
 
   </div>
 
+  <!-- TV Online Popup Modal -->
+  <div class="tv-popup-overlay" id="tv-popup-overlay">
+    <div class="tv-popup-modal">
+      <div class="tv-popup-header">
+        <h3>
+          <i class="fas fa-tv"></i>
+          TV Online - Transmisión en Vivo
+        </h3>
+        <button class="tv-popup-close" id="tv-popup-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="tv-popup-content">
+        <div id="tv-player-container">
+          <!-- TV Player will be injected here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Loading Overlay -->
   <div class="loading-overlay" id="loading-overlay">
     <div class="loading-content">
@@ -274,6 +301,7 @@
   <script src="/assets/js/pwa-installer.js"></script>
   <script src="/assets/js/promotion-popup.js"></script>
   <script type="module" src="/assets/js/onesignal-init.js"></script>
+  <script type="module" src="/assets/js/video-player.js"></script>
   <script type="module" src="assets/js/main.js"></script>
   
   <!-- Loading Manager Inline -->

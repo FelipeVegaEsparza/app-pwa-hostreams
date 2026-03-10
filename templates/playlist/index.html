@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/assets/css/loading-styles.css">
   <link rel="stylesheet" href="/assets/css/pwa-installer.css">
   <link rel="stylesheet" href="/assets/css/promotion-popup.css">
+  <link rel="stylesheet" href="/assets/css/video-player.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
@@ -112,6 +113,10 @@
               <li><a href="#" class="menu-item active" data-section="now-playing">
                 <i class="fas fa-play-circle"></i>
                 <span>Ahora Suena</span>
+              </a></li>
+              <li><a href="#" class="menu-item" data-section="tv-online">
+                <i class="fas fa-tv"></i>
+                <span>TV Online</span>
               </a></li>
               <li><a href="#" class="menu-item" data-section="programs">
                 <i class="fas fa-microphone"></i>
@@ -231,6 +236,20 @@
                   <span>Cargando historial...</span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TV Online View -->
+        <div id="tv-online-view" class="content-view">
+          <div class="view-header">
+            <h1>TV Online</h1>
+            <p>Disfruta de nuestra señal de televisión en vivo</p>
+          </div>
+          
+          <div class="tv-online-container">
+            <div id="tv-player-container">
+              <!-- TV Player will be injected here -->
             </div>
           </div>
         </div>
@@ -662,6 +681,7 @@
   <script src="/assets/js/mobile-enhancements.js"></script>
   <script src="/assets/js/pwa-installer.js"></script>
   <script src="/assets/js/promotion-popup.js"></script>
+  <script type="module" src="/assets/js/video-player.js"></script>
   
   <!-- Mobile Menu Initialization -->
   <script>

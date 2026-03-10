@@ -118,6 +118,8 @@ class NewsHub {
       
       // Load social networks
       await this.loadSocialNetworks();
+      await this.checkTVAvailability();
+      this.setupMediaToggle();
       
     } catch (error) {
       console.error('NewsHub: Error loading basic data:', error);
@@ -1632,6 +1634,10 @@ class NewsHub {
     if (this.audioPlayer) {
       this.audioPlayer.pause();
       this.audioPlayer.src = '';
+
+    if (this.tvPlayer) {
+      this.tvPlayer.destroy();
+    }
     }
   }
 }

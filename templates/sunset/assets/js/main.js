@@ -135,6 +135,8 @@ class RadioNexus {
       
       // Load social networks
       await this.loadSocialNetworks();
+      await this.checkTVAvailability();
+      this.setupMediaToggle();
       
     } catch (error) {
       console.error('RadioNexus: Error loading basic data:', error);
@@ -1990,6 +1992,10 @@ class RadioNexus {
     if (this.audioPlayer) {
       this.audioPlayer.pause();
       this.audioPlayer.src = '';
+
+    if (this.tvPlayer) {
+      this.tvPlayer.destroy();
+    }
     }
   }
 }

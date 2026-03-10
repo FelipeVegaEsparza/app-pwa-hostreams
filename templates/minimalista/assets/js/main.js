@@ -13,6 +13,9 @@ class RadioPulsePlayer {
     this.sonicPanelInterval = null;
     this.currentSongData = null;
     this.visualizerInterval = null;
+    this.tvPlayer = null;
+    this.currentMode = 'radio';
+    this.videoStreamUrl = null;
     
     this.init();
   }
@@ -24,6 +27,13 @@ class RadioPulsePlayer {
     try {
       await this.loadBasicData();
       await this.loadSocialNetworks();
+      await this.checkTVAvailability();
+      
+      // Setup media toggle with a small delay to ensure DOM is ready
+      setTimeout(() => {
+        this.setupMediaToggle();
+      }, 100);
+      
       this.setupAudioPlayer();
       this.setupVolumeControl();
       this.setupRippleEffects();
@@ -412,6 +422,446 @@ class RadioPulsePlayer {
       this.audioPlayer.pause();
       this.audioPlayer.src = '';
     }
+
+    if (this.tvPlayer) {
+      this.tvPlayer.destroy();
+    }
+  }
+
+  async checkTVAvailability() {
+    try {
+      const { getVideoStreamingUrl } = await import('/assets/js/api.js');
+      this.videoStreamUrl = await getVideoStreamingUrl();
+      
+      console.log('RadioPulsePlayer: Video URL obtenida:', this.videoStreamUrl);
+      
+      if (this.videoStreamUrl && this.videoStreamUrl.trim() !== '') {
+        const tvButton = document.getElementById('tv-online-btn');
+        if (tvButton) {
+          tvButton.style.display = 'flex';
+        }
+        console.log('RadioPulsePlayer: TV Online available with URL:', this.videoStreamUrl);
+      } else {
+        console.log('RadioPulsePlayer: TV Online not available - no video URL');
+        console.log('RadioPulsePlayer: Para habilitar TV Online, configura videoStreamingUrl en el panel de IPStream');
+      }
+    } catch (error) {
+      console.error('RadioPulsePlayer: Error checking TV availability:', error);
+    }
+  }
+
+  setupMediaToggle() {
+    const tvButton = document.getElementById('tv-online-btn');
+    const popupOverlay = document.getElementById('tv-popup-overlay');
+    const closeButton = document.getElementById('tv-popup-close');
+    
+    console.log('RadioPulsePlayer: Setting up media toggle');
+    console.log('TV Button found:', !!tvButton);
+    console.log('Popup Overlay found:', !!popupOverlay);
+    console.log('Close Button found:', !!closeButton);
+    
+    // Open TV popup
+    if (tvButton) {
+      tvButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('RadioPulsePlayer: TV button clicked');
+        this.openTVPopup();
+      });
+    } else {
+      console.error('RadioPulsePlayer: TV button not found');
+    }
+    
+    // Close TV popup
+    if (closeButton) {
+      closeButton.addEventListener('click', () => {
+        this.closeTVPopup();
+      });
+    }
+    
+    // Close popup when clicking overlay
+    if (popupOverlay) {
+      popupOverlay.addEventListener('click', (e) => {
+        if (e.target === popupOverlay) {
+          this.closeTVPopup();
+        }
+      });
+    }
+    
+    // Close popup with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && popupOverlay && popupOverlay.classList.contains('active')) {
+        this.closeTVPopup();
+      }
+    });
+  }
+
+  openTVPopup() {
+    console.log('RadioPulsePlayer: Opening TV popup');
+    const popupOverlay = document.getElementById('tv-popup-overlay');
+    console.log('Popup overlay element:', popupOverlay);
+    
+    if (popupOverlay) {
+      console.log('RadioPulsePlayer: Adding active class to popup');
+      popupOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      
+      // Initialize TV player if not already done
+      if (!this.tvPlayer) {
+        console.log('RadioPulsePlayer: Initializing TV player');
+        this.initializeTVPlayer();
+      }
+    } else {
+      console.error('RadioPulsePlayer: Popup overlay not found');
+    }
+  }
+
+  closeTVPopup() {
+    const popupOverlay = document.getElementById('tv-popup-overlay');
+    if (popupOverlay) {
+      popupOverlay.classList.remove('active');
+      document.body.style.overflow = ''; // Restore scrolling
+      
+      // Pause TV player when closing popup
+      this.pauseTVPlayer();
+    }
+  }
+
+  switchMode(mode) {
+    // This method is no longer needed since we use popup
+    console.log('RadioPulsePlayer: switchMode deprecated - using popup instead');
+  }
+
+  async initializeTVPlayer() {
+    const container = document.getElementById('tv-player-container');
+    if (!container) return;
+
+    console.log('RadioPulsePlayer: Inicializando TV Player...');
+    console.log('RadioPulsePlayer: Video URL:', this.videoStreamUrl);
+
+    // Si no hay URL de video, mostrar mensaje y opción de prueba
+    if (!this.videoStreamUrl || this.videoStreamUrl.trim() === '') {
+      container.innerHTML = `
+        <div class="tv-mode">
+          <div class="tv-unavailable">
+            <i class="fas fa-tv"></i>
+            <h3>TV Online no configurada</h3>
+            <p>Esta radio no tiene señal de televisión configurada en el panel de IPStream.</p>
+            <p><small>Para habilitar TV Online, agrega una URL en el campo "videoStreamingUrl" en tu panel de IPStream.</small></p>
+            <br>
+            <button onclick="window.radioPulsePlayer.testWithSampleVideo()" style="background: #ff6b6b; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+              🧪 Probar con video de ejemplo
+            </button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    try {
+      // Crear un reproductor de video simple y funcional
+      container.innerHTML = `
+        <div class="tv-mode">
+          <div style="position: relative; width: 100%; height: 500px; background: #000;">
+            <video 
+              id="tv-video-simple" 
+              controls 
+              muted
+              style="width: 100%; height: 100%; background: #000; object-fit: contain;"
+            >
+              <source src="${this.videoStreamUrl}" type="application/x-mpegURL">
+              <source src="${this.videoStreamUrl}" type="video/mp4">
+              Tu navegador no soporta la reproducción de video.
+            </video>
+            <div class="tv-status">
+              <div class="status-dot"></div>
+              <span>Cargando señal...</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Configurar el reproductor
+      setTimeout(async () => {
+        const video = document.getElementById('tv-video-simple');
+        const statusElement = container.querySelector('.tv-status span');
+        
+        if (video && this.videoStreamUrl) {
+          console.log('RadioPulsePlayer: Configurando video con URL:', this.videoStreamUrl);
+          
+          // Event listeners para debug
+          video.addEventListener('loadstart', () => {
+            console.log('RadioPulsePlayer: Video - loadstart');
+            if (statusElement) statusElement.textContent = 'Conectando...';
+          });
+          
+          video.addEventListener('loadedmetadata', () => {
+            console.log('RadioPulsePlayer: Video - loadedmetadata');
+            if (statusElement) statusElement.textContent = 'Señal cargada';
+          });
+          
+          video.addEventListener('canplay', () => {
+            console.log('RadioPulsePlayer: Video - canplay');
+            if (statusElement) statusElement.textContent = 'Señal en vivo disponible';
+          });
+          
+          video.addEventListener('error', (e) => {
+            console.error('RadioPulsePlayer: Video error:', e);
+            console.error('RadioPulsePlayer: Video error details:', video.error);
+            if (statusElement) statusElement.textContent = 'Error al cargar señal';
+            
+            // Mostrar error detallado
+            container.innerHTML = `
+              <div class="tv-mode">
+                <div class="tv-unavailable">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <h3>Error al cargar video</h3>
+                  <p>No se pudo cargar la señal de video.</p>
+                  <p><small>URL: ${this.videoStreamUrl}</small></p>
+                  <p><small>Error: ${video.error ? video.error.message : 'Desconocido'}</small></p>
+                  <br>
+                  <button onclick="window.radioPulsePlayer.testWithSampleVideo()" style="background: #ff6b6b; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    🧪 Probar con video de ejemplo
+                  </button>
+                </div>
+              </div>
+            `;
+          });
+          
+          // Si es un stream HLS (.m3u8), intentar usar HLS.js
+          if (this.videoStreamUrl.includes('.m3u8')) {
+            try {
+              console.log('RadioPulsePlayer: Detectado stream HLS, cargando HLS.js...');
+              
+              // Cargar HLS.js si no está cargado
+              if (!window.Hls) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+                document.head.appendChild(script);
+                
+                await new Promise((resolve, reject) => {
+                  script.onload = resolve;
+                  script.onerror = reject;
+                });
+              }
+
+              if (window.Hls && window.Hls.isSupported()) {
+                console.log('RadioPulsePlayer: Usando HLS.js para reproducción');
+                const hls = new window.Hls({
+                  enableWorker: true,
+                  lowLatencyMode: true,
+                  backBufferLength: 90
+                });
+                
+                hls.loadSource(this.videoStreamUrl);
+                hls.attachMedia(video);
+                
+                hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+                  console.log('RadioPulsePlayer: HLS manifest cargado correctamente');
+                  if (statusElement) statusElement.textContent = 'Señal en vivo disponible';
+                  video.play().catch(e => console.log('Autoplay prevented:', e));
+                });
+                
+                hls.on(window.Hls.Events.ERROR, (event, data) => {
+                  console.error('RadioPulsePlayer: HLS error:', data);
+                  if (statusElement) statusElement.textContent = 'Error en stream HLS';
+                });
+                
+                this.tvPlayer = { hls, video };
+              } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Soporte nativo HLS (Safari)
+                console.log('RadioPulsePlayer: Usando soporte nativo HLS');
+                video.src = this.videoStreamUrl;
+                video.play().catch(e => console.log('Autoplay prevented:', e));
+                this.tvPlayer = { video };
+              } else {
+                console.error('RadioPulsePlayer: HLS no soportado en este navegador');
+                if (statusElement) statusElement.textContent = 'HLS no soportado';
+              }
+            } catch (error) {
+              console.error('RadioPulsePlayer: Error configurando HLS:', error);
+              // Fallback simple
+              video.src = this.videoStreamUrl;
+              this.tvPlayer = { video };
+            }
+          } else {
+            // Para otros tipos de video
+            console.log('RadioPulsePlayer: Usando reproductor estándar');
+            video.src = this.videoStreamUrl;
+            video.play().catch(e => console.log('Autoplay prevented:', e));
+            this.tvPlayer = { video };
+          }
+        }
+      }, 500);
+
+    } catch (error) {
+      console.error('RadioPulsePlayer: Error inicializando TV player:', error);
+      container.innerHTML = `
+        <div class="tv-mode">
+          <div class="tv-unavailable">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Error al inicializar reproductor</h3>
+            <p>Hubo un problema técnico al inicializar el reproductor de video.</p>
+            <p><small>Error: ${error.message}</small></p>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  pauseTVPlayer() {
+    if (this.tvPlayer) {
+      if (this.tvPlayer.video) {
+        this.tvPlayer.video.pause();
+      }
+      if (this.tvPlayer.hls) {
+        this.tvPlayer.hls.destroy();
+      }
+    }
+  }
+
+  // Test function for debugging
+  testTVPopup() {
+    console.log('Testing TV popup...');
+    const tvButton = document.getElementById('tv-online-btn');
+    const popupOverlay = document.getElementById('tv-popup-overlay');
+    
+    console.log('TV Button:', tvButton);
+    console.log('Popup Overlay:', popupOverlay);
+    
+    if (tvButton) {
+      console.log('TV Button display:', window.getComputedStyle(tvButton).display);
+      console.log('TV Button visibility:', window.getComputedStyle(tvButton).visibility);
+    }
+    
+    if (popupOverlay) {
+      console.log('Popup classes:', popupOverlay.classList.toString());
+      console.log('Popup display:', window.getComputedStyle(popupOverlay).display);
+      console.log('Popup visibility:', window.getComputedStyle(popupOverlay).visibility);
+      console.log('Popup opacity:', window.getComputedStyle(popupOverlay).opacity);
+    }
+    
+    // Try to open popup manually
+    this.openTVPopup();
+  }
+
+  // Simple debug popup
+  showDebugPopup() {
+    // Remove any existing debug popup
+    const existing = document.querySelector('.debug-popup');
+    if (existing) existing.remove();
+    
+    // Create debug popup
+    const debugPopup = document.createElement('div');
+    debugPopup.className = 'debug-popup';
+    debugPopup.innerHTML = `
+      <h3>Debug TV Popup</h3>
+      <p>Video URL: ${this.videoStreamUrl || 'No configurada'}</p>
+      <p>TV Player: ${this.tvPlayer ? 'Inicializado' : 'No inicializado'}</p>
+      <button onclick="this.parentElement.remove()">Close</button>
+      <button onclick="window.radioPulsePlayer.testVideoURL()">Test Video</button>
+    `;
+    
+    document.body.appendChild(debugPopup);
+    console.log('Debug popup created');
+  }
+
+  // Test video URL
+  testVideoURL() {
+    console.log('Testing video URL:', this.videoStreamUrl);
+    
+    if (!this.videoStreamUrl) {
+      alert('No hay URL de video configurada. Verifica que el cliente tenga videoStreamingUrl en la API de IPStream.');
+      return;
+    }
+    
+    // Test if URL is accessible
+    fetch(this.videoStreamUrl, { method: 'HEAD' })
+      .then(response => {
+        console.log('Video URL response:', response.status);
+        if (response.ok) {
+          alert('URL de video accesible: ' + response.status);
+        } else {
+          alert('URL de video no accesible: ' + response.status);
+        }
+      })
+      .catch(error => {
+        console.error('Error testing video URL:', error);
+        alert('Error al probar URL: ' + error.message);
+      });
+  }
+
+  // Test with sample video
+  testWithSampleVideo() {
+    console.log('RadioPulsePlayer: Probando con video de ejemplo...');
+    
+    // URL de video de prueba (stream HLS público)
+    const sampleVideoURL = 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
+    
+    const container = document.getElementById('tv-player-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="tv-mode">
+        <div style="position: relative; width: 100%; height: 500px; background: #000;">
+          <video 
+            id="tv-video-test" 
+            controls 
+            muted
+            autoplay
+            style="width: 100%; height: 100%; background: #000; object-fit: contain;"
+          >
+            <source src="${sampleVideoURL}" type="application/x-mpegURL">
+            Tu navegador no soporta la reproducción de video.
+          </video>
+          <div class="tv-status">
+            <div class="status-dot"></div>
+            <span>Video de prueba - Tears of Steel</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Configurar video de prueba
+    setTimeout(async () => {
+      const video = document.getElementById('tv-video-test');
+      if (video) {
+        console.log('RadioPulsePlayer: Configurando video de prueba...');
+        
+        video.addEventListener('loadstart', () => console.log('Test video: loadstart'));
+        video.addEventListener('canplay', () => console.log('Test video: canplay'));
+        video.addEventListener('error', (e) => console.error('Test video error:', e));
+        
+        // Usar HLS.js para el video de prueba
+        try {
+          if (!window.Hls) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+            document.head.appendChild(script);
+            
+            await new Promise((resolve) => {
+              script.onload = resolve;
+            });
+          }
+
+          if (window.Hls && window.Hls.isSupported()) {
+            const hls = new window.Hls();
+            hls.loadSource(sampleVideoURL);
+            hls.attachMedia(video);
+            
+            hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+              console.log('RadioPulsePlayer: Video de prueba cargado');
+              video.play().catch(e => console.log('Autoplay prevented:', e));
+            });
+          } else {
+            video.src = sampleVideoURL;
+            video.play().catch(e => console.log('Autoplay prevented:', e));
+          }
+        } catch (error) {
+          console.error('Error con video de prueba:', error);
+          video.src = sampleVideoURL;
+        }
+      }
+    }, 500);
   }
 }
 

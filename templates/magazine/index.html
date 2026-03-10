@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/assets/css/loading-styles.css">
   <link rel="stylesheet" href="/assets/css/pwa-installer.css">
   <link rel="stylesheet" href="/assets/css/promotion-popup.css">
+  <link rel="stylesheet" href="/assets/css/video-player.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
@@ -505,6 +506,14 @@
     </section>
 
   </main>
+    <!-- TV Player -->
+    <div class="tv-player" id="tv-player" style="display: none;">
+      <div id="tv-player-container">
+        <!-- TV Player will be injected here -->
+      </div>
+    </div>
+
+
 
   <!-- Footer -->
   <footer class="dynamic-footer glass-effect">
@@ -889,6 +898,7 @@
   <script src="/assets/js/mobile-enhancements.js"></script>
   <script src="/assets/js/pwa-installer.js"></script>
   <script src="/assets/js/promotion-popup.js"></script>
+    <script type="module" src="/assets/js/video-player.js"></script>
   <script type="module" src="assets/js/main.js"></script>
   
   <!-- PWA Service Worker Registration -->

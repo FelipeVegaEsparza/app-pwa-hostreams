@@ -139,6 +139,8 @@ class RadioPulse {
       
       // Load social networks
       await this.loadSocialNetworks();
+      await this.checkTVAvailability();
+      this.setupMediaToggle();
       
     } catch (error) {
       console.error('RadioPulse: Error loading basic data:', error);
@@ -1747,6 +1749,10 @@ class RadioPulse {
     if (this.audioPlayer) {
       this.audioPlayer.pause();
       this.audioPlayer.src = '';
+
+    if (this.tvPlayer) {
+      this.tvPlayer.destroy();
+    }
     }
   }
 }

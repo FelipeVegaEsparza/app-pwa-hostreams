@@ -94,6 +94,8 @@ class RadioLanding {
       
       // Load social networks
       await this.loadSocialNetworks();
+      await this.checkTVAvailability();
+      this.setupMediaToggle();
       
     } catch (error) {
       console.error('Error loading basic data:', error);

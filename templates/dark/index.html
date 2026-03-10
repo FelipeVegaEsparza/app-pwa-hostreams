@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/assets/css/loading-styles.css">
   <link rel="stylesheet" href="/assets/css/pwa-installer.css">
   <link rel="stylesheet" href="/assets/css/promotion-popup.css">
+  <link rel="stylesheet" href="/assets/css/video-player.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
@@ -123,7 +124,19 @@
   </header>
 
   <!-- Fixed Audio Player -->
+  <div class="section-toggle" id="media-toggle" style="display: none;">
+    <button class="toggle-btn active" data-mode="radio">
+      <i class="fas fa-radio"></i>
+      <span>Radio</span>
+    </button>
+    <button class="toggle-btn" data-mode="tv">
+      <i class="fas fa-tv"></i>
+      <span>TV Online</span>
+    </button>
+  </div>
+
   <div class="fixed-player glass-effect" id="fixed-player">
+    <div id="radio-player">
     <div class="player-content">
       <div class="now-playing">
         <div class="track-artwork">
@@ -157,6 +170,7 @@
       <button class="player-toggle glass-btn" id="player-toggle">
         <i class="fas fa-chevron-up"></i>
       </button>
+    </div>
     </div>
   </div>
 
@@ -505,6 +519,14 @@
     </section>
 
   </main>
+    <!-- TV Player -->
+    <div class="tv-player" id="tv-player" style="display: none;">
+      <div id="tv-player-container">
+        <!-- TV Player will be injected here -->
+      </div>
+    </div>
+
+
 
   <!-- Footer -->
   <footer class="dynamic-footer glass-effect">
@@ -889,6 +911,7 @@
   <script src="/assets/js/mobile-enhancements.js"></script>
   <script src="/assets/js/pwa-installer.js"></script>
   <script src="/assets/js/promotion-popup.js"></script>
+    <script type="module" src="/assets/js/video-player.js"></script>
   <script type="module" src="assets/js/main.js"></script>
   
   <!-- PWA Service Worker Registration -->

@@ -29,6 +29,16 @@ export async function getBasicData() {
   return await fetchJSON(`${base}/basic-data`); 
 }
 
+export async function getVideoStreamingUrl() {
+  try {
+    const basicData = await getBasicData();
+    return basicData.videoStreamingUrl || null;
+  } catch (error) {
+    console.error('Error getting video streaming URL:', error);
+    return null;
+  }
+}
+
 export async function getPrograms() { 
   const base = await getApiBase();
   return await fetchJSON(`${base}/programs`); 

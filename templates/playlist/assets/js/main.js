@@ -1221,7 +1221,9 @@ class RadioStreamApp {
         case 'social':
           await this.loadSocialNetworks();
           break;
-
+        case 'tv-online':
+          await this.loadTVOnline();
+          break;
         default:
           console.log('Template3: No specific content loader for:', section);
       }
@@ -1356,6 +1358,90 @@ class RadioStreamApp {
 
   viewNews(slug) {
     console.log('View news:', slug);
+  }
+
+  async loadTVOnline() {
+    console.log('Template3: Loading TV Online section');
+    
+    try {
+      // Import the video player and media player modules
+      const { default: VideoPlayer } = await import('/assets/js/video-player.js');
+      const { getVideoStreamingUrl } = await import('/assets/js/api.js');
+      
+      const container = document.getElementById('tv-player-container');
+      if (!container) {
+        console.error('TV player container not found');
+        return;
+      }
+
+      // Get video streaming URL
+      const videoStreamUrl = await getVideoStreamingUrl();
+      
+      if (!videoStreamUrl) {
+        // Show unavailable message
+        container.innerHTML = `
+          <div class="tv-mode">
+            <div class="tv-unavailable">
+              <i class="fas fa-tv"></i>
+              <h3>TV Online no disponible</h3>
+              <p>Esta radio no tiene señal de televisión configurada en este momento</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Create video player container
+      container.innerHTML = `
+        <div class="tv-mode">
+          <div class="tv-header">
+            <i class="fas fa-tv"></i>
+            <h3>Transmisión en Vivo</h3>
+          </div>
+          <div id="tv-video-player">
+            <!-- Video player will be injected here -->
+          </div>
+          <div class="tv-status">
+            <div class="status-dot"></div>
+            <span>Señal en vivo disponible</span>
+          </div>
+        </div>
+      `;
+
+      // Initialize video player
+      setTimeout(() => {
+        if (window.VideoPlayer) {
+          this.tvPlayer = new window.VideoPlayer('tv-video-player', {
+            autoplay: false,
+            controls: true,
+            muted: false
+          });
+
+          // Load the video stream
+          if (this.tvPlayer && videoStreamUrl) {
+            this.tvPlayer.loadStream(videoStreamUrl);
+          }
+        } else {
+          console.error('VideoPlayer not available');
+        }
+      }, 500);
+
+    } catch (error) {
+      console.error('Template3: Error loading TV Online:', error);
+      
+      const container = document.getElementById('tv-player-container');
+      if (container) {
+        container.innerHTML = `
+          <div class="tv-mode">
+            <div class="tv-unavailable">
+              <i class="fas fa-exclamation-triangle"></i>
+              <h3>Error al cargar TV Online</h3>
+              <p>Hubo un problema al cargar la señal de televisión</p>
+            </div>
+          </div>
+        `;
+      }
+    }
   }
 }
 
