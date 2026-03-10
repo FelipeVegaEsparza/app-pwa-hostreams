@@ -10,7 +10,8 @@ import {
   getVideocastById,
   getSponsors, 
   getSocialNetworks,
-  getCurrentSong
+  getCurrentSong,
+  getVideoStreamingUrl
 } from '/assets/js/api.js';
 
 class RadioPulse {
@@ -30,6 +31,10 @@ class RadioPulse {
     this.currentTab = 'podcasts';
     this.currentScheduleDay = 'today';
     
+    // TV Player properties
+    this.tvPlayer = null;
+    this.videoStreamUrl = null;
+    
     // Swiper instances
     this.heroSwiper = null;
     this.sponsorsSwiper = null;
@@ -45,6 +50,7 @@ class RadioPulse {
     try {
       this.setCurrentDate();
       await this.loadBasicData();
+      await this.checkTVAvailability();
       await this.loadAllContent();
       this.setupNavigation();
       this.setupAudioPlayer();
@@ -68,7 +74,7 @@ class RadioPulse {
       if (overlay && !overlay.classList.contains('hidden')) {
         console.log('RadioPulse: Fallback - Ocultando loading');
         if (window.loadingManager) {
-          window.loadingManager.forceHide();
+          window.loadingManager.hide();
         } else {
           overlay.style.display = 'none';
         }
@@ -140,7 +146,6 @@ class RadioPulse {
       // Load social networks
       await this.loadSocialNetworks();
       await this.checkTVAvailability();
-      this.setupMediaToggle();
       
     } catch (error) {
       console.error('RadioPulse: Error loading basic data:', error);
@@ -1109,34 +1114,131 @@ class RadioPulse {
   }
 
   setupAudioPlayer() {
-    this.audioPlayer = document.getElementById('news-audio');
+    console.log('RadioPulse: Setting up audio player...');
     
-    document.getElementById('main-play-btn').addEventListener('click', () => {
-      this.toggleAudio();
-    });
-    
-    document.querySelector('.glass-slider').addEventListener('input', (e) => {
-      this.setVolume(e.target.value);
-    });
-    
-    document.getElementById('player-toggle').addEventListener('click', () => {
-      this.togglePlayer();
-    });
-    
-    if (this.audioPlayer) {
-      this.audioPlayer.addEventListener('loadstart', () => {
-        console.log('RadioPulse: Audio loading started');
+    // Wait for DOM to be fully ready
+    setTimeout(() => {
+      this.audioPlayer = document.getElementById('news-audio');
+      
+      const playBtn = document.getElementById('main-play-btn');
+      const volumeSlider = document.querySelector('.glass-slider');
+      const playerToggle = document.getElementById('player-toggle');
+      const fixedPlayer = document.getElementById('fixed-player');
+      const playerContent = document.querySelector('.player-content');
+      const nowPlaying = document.querySelector('.now-playing');
+      const playerControls = document.querySelector('.player-controls');
+      
+      console.log('RadioPulse: Audio elements found:', {
+        audioPlayer: !!this.audioPlayer,
+        playBtn: !!playBtn,
+        volumeSlider: !!volumeSlider,
+        playerToggle: !!playerToggle,
+        fixedPlayer: !!fixedPlayer,
+        playerContent: !!playerContent,
+        nowPlaying: !!nowPlaying,
+        playerControls: !!playerControls
       });
       
-      this.audioPlayer.addEventListener('canplay', () => {
-        console.log('RadioPulse: Audio can play');
-      });
+      // Force visibility of all player elements
+      if (fixedPlayer) {
+        fixedPlayer.style.display = 'block';
+        fixedPlayer.style.visibility = 'visible';
+        fixedPlayer.style.opacity = '1';
+        fixedPlayer.style.transform = 'translateX(-50%) translateY(0)';
+        fixedPlayer.style.pointerEvents = 'auto';
+        fixedPlayer.classList.remove('collapsed');
+        console.log('RadioPulse: Fixed player visibility forced');
+      }
       
-      this.audioPlayer.addEventListener('error', (e) => {
-        console.error('RadioPulse: Audio error:', e);
-        this.handleAudioError();
-      });
-    }
+      if (playerContent) {
+        playerContent.style.display = 'flex';
+        playerContent.style.visibility = 'visible';
+        playerContent.style.opacity = '1';
+        playerContent.style.pointerEvents = 'auto';
+      }
+      
+      if (nowPlaying) {
+        nowPlaying.style.display = 'flex';
+        nowPlaying.style.visibility = 'visible';
+      }
+      
+      if (playerControls) {
+        playerControls.style.display = 'flex';
+        playerControls.style.visibility = 'visible';
+        playerControls.style.pointerEvents = 'auto';
+      }
+      
+      if (playBtn) {
+        playBtn.style.display = 'flex';
+        playBtn.style.visibility = 'visible';
+        playBtn.style.pointerEvents = 'auto';
+        playBtn.style.cursor = 'pointer';
+        
+        // Remove any existing listeners
+        playBtn.replaceWith(playBtn.cloneNode(true));
+        const newPlayBtn = document.getElementById('main-play-btn');
+        
+        newPlayBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('RadioPulse: Play button clicked!');
+          this.toggleAudio();
+        });
+        
+        // Also add touch events for mobile
+        newPlayBtn.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('RadioPulse: Play button touched!');
+          this.toggleAudio();
+        });
+        
+        console.log('RadioPulse: Play button event listeners added');
+      }
+      
+      if (volumeSlider) {
+        volumeSlider.addEventListener('input', (e) => {
+          this.setVolume(e.target.value);
+        });
+      }
+      
+      if (playerToggle) {
+        playerToggle.style.display = 'flex';
+        playerToggle.style.visibility = 'visible';
+        playerToggle.style.pointerEvents = 'auto';
+        playerToggle.style.cursor = 'pointer';
+        
+        // Remove any existing listeners
+        playerToggle.replaceWith(playerToggle.cloneNode(true));
+        const newPlayerToggle = document.getElementById('player-toggle');
+        
+        newPlayerToggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('RadioPulse: Player toggle clicked!');
+          this.togglePlayer();
+        });
+        
+        console.log('RadioPulse: Player toggle event listeners added');
+      }
+      
+      if (this.audioPlayer) {
+        this.audioPlayer.addEventListener('loadstart', () => {
+          console.log('RadioPulse: Audio loading started');
+        });
+        
+        this.audioPlayer.addEventListener('canplay', () => {
+          console.log('RadioPulse: Audio can play');
+        });
+        
+        this.audioPlayer.addEventListener('error', (e) => {
+          console.error('RadioPulse: Audio error:', e);
+          this.handleAudioError();
+        });
+      }
+      
+      console.log('RadioPulse: Audio player setup completed');
+    }, 500);
   }
 
   setupCarousels() {
@@ -1738,6 +1840,146 @@ class RadioPulse {
     }
   }
 
+  // TV Player Methods
+  async checkTVAvailability() {
+    try {
+      this.videoStreamUrl = await getVideoStreamingUrl();
+      
+      if (this.videoStreamUrl && this.videoStreamUrl.trim() !== '') {
+        const tvSection = document.getElementById('tv-online-section');
+        if (tvSection) {
+          tvSection.style.display = 'block';
+          // Initialize TV player immediately
+          this.initializeTVPlayer();
+        }
+      }
+    } catch (error) {
+      console.error('RadioPulse: Error checking TV availability:', error);
+    }
+  }
+
+  async initializeTVPlayer() {
+    const container = document.getElementById('tv-player-container');
+    if (!container) return;
+
+    // Si no hay URL de video, mostrar mensaje
+    if (!this.videoStreamUrl || this.videoStreamUrl.trim() === '') {
+      container.innerHTML = `
+        <div class="tv-mode">
+          <div class="tv-unavailable">
+            <i class="fas fa-tv"></i>
+            <h3>TV Online no configurada</h3>
+            <p>Esta radio no tiene señal de televisión configurada en el panel de IPStream.</p>
+            <p><small>Para habilitar TV Online, agrega una URL en el campo "videoStreamingUrl" en tu panel de IPStream.</small></p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    try {
+      // Crear un reproductor de video funcional
+      container.innerHTML = `
+        <div class="tv-mode">
+          <div style="position: relative; width: 100%; height: 500px; background: #000;">
+            <video 
+              id="tv-video-blue" 
+              controls 
+              muted
+              style="width: 100%; height: 100%; background: #000; object-fit: contain;"
+            >
+              <source src="${this.videoStreamUrl}" type="application/x-mpegURL">
+              <source src="${this.videoStreamUrl}" type="video/mp4">
+              Tu navegador no soporta la reproducción de video.
+            </video>
+            <div class="tv-status">
+              <div class="status-dot"></div>
+              <span>Señal en vivo disponible</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Configurar el reproductor
+      setTimeout(async () => {
+        const video = document.getElementById('tv-video-blue');
+        
+        if (video && this.videoStreamUrl) {
+          // Si es un stream HLS (.m3u8), intentar usar HLS.js
+          if (this.videoStreamUrl.includes('.m3u8')) {
+            try {
+              // Cargar HLS.js si no está cargado
+              if (!window.Hls) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+                document.head.appendChild(script);
+                
+                await new Promise((resolve, reject) => {
+                  script.onload = resolve;
+                  script.onerror = reject;
+                });
+              }
+
+              if (window.Hls && window.Hls.isSupported()) {
+                const hls = new window.Hls({
+                  enableWorker: true,
+                  lowLatencyMode: true,
+                  backBufferLength: 90
+                });
+                
+                hls.loadSource(this.videoStreamUrl);
+                hls.attachMedia(video);
+                
+                hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+                  video.play().catch(e => console.log('Autoplay prevented:', e));
+                });
+                
+                this.tvPlayer = { hls, video };
+              } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Soporte nativo HLS (Safari)
+                video.src = this.videoStreamUrl;
+                video.play().catch(e => console.log('Autoplay prevented:', e));
+                this.tvPlayer = { video };
+              }
+            } catch (error) {
+              // Fallback simple
+              video.src = this.videoStreamUrl;
+              this.tvPlayer = { video };
+            }
+          } else {
+            // Para otros tipos de video
+            video.src = this.videoStreamUrl;
+            video.play().catch(e => console.log('Autoplay prevented:', e));
+            this.tvPlayer = { video };
+          }
+        }
+      }, 500);
+
+    } catch (error) {
+      console.error('RadioPulse: Error inicializando TV player:', error);
+      container.innerHTML = `
+        <div class="tv-mode">
+          <div class="tv-unavailable">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Error al inicializar reproductor</h3>
+            <p>Hubo un problema técnico al inicializar el reproductor de video.</p>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  pauseTVPlayer() {
+    if (this.tvPlayer) {
+      if (this.tvPlayer.video) {
+        this.tvPlayer.video.pause();
+      }
+      if (this.tvPlayer.hls) {
+        this.tvPlayer.hls.destroy();
+      }
+    }
+  }
+
   destroy() {
     if (this.sonicPanelInterval) {
       clearInterval(this.sonicPanelInterval);
@@ -1749,10 +1991,10 @@ class RadioPulse {
     if (this.audioPlayer) {
       this.audioPlayer.pause();
       this.audioPlayer.src = '';
+    }
 
     if (this.tvPlayer) {
-      this.tvPlayer.destroy();
-    }
+      this.pauseTVPlayer();
     }
   }
 }

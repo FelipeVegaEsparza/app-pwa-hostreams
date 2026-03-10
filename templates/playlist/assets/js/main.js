@@ -102,7 +102,8 @@ class RadioStreamApp {
         this.loadPodcasts(),
         this.loadVideocasts(),
         this.loadSponsors(),
-        this.loadPromotions()
+        this.loadPromotions(),
+        this.loadTVOnline()
       ]);
       console.log('Template3: All content loaded successfully');
     } catch (error) {
@@ -1290,9 +1291,9 @@ class RadioStreamApp {
     if (breadcrumb) {
       const titles = {
         'now-playing': 'Ahora Suena',
+        'tv-online': 'TV Online',
         'programs': 'Programas',
         'news': 'Noticias',
-
         'podcasts': 'Podcasts',
         'videocasts': 'Videocasts',
         'videos': 'Ranking Musical',
@@ -1365,7 +1366,6 @@ class RadioStreamApp {
     
     try {
       // Import the video player and media player modules
-      const { default: VideoPlayer } = await import('/assets/js/video-player.js');
       const { getVideoStreamingUrl } = await import('/assets/js/api.js');
       
       const container = document.getElementById('tv-player-container');
@@ -1391,15 +1391,25 @@ class RadioStreamApp {
         return;
       }
 
-      // Create video player container
+      // Create video player container with proper structure
       container.innerHTML = `
         <div class="tv-mode">
           <div class="tv-header">
             <i class="fas fa-tv"></i>
             <h3>Transmisión en Vivo</h3>
           </div>
-          <div id="tv-video-player">
-            <!-- Video player will be injected here -->
+          <div class="video-player-container">
+            <video id="tv-video-player" class="video-player" controls preload="none">
+              <source src="${videoStreamUrl}" type="application/x-mpegURL">
+              Tu navegador no soporta la reproducción de video.
+            </video>
+            <div class="video-overlay" id="tv-video-overlay">
+              <div class="video-controls">
+                <button class="video-play-btn" id="tv-play-btn">
+                  <i class="fas fa-play"></i>
+                </button>
+              </div>
+            </div>
           </div>
           <div class="tv-status">
             <div class="status-dot"></div>
@@ -1408,22 +1418,9 @@ class RadioStreamApp {
         </div>
       `;
 
-      // Initialize video player
+      // Initialize HLS player
       setTimeout(() => {
-        if (window.VideoPlayer) {
-          this.tvPlayer = new window.VideoPlayer('tv-video-player', {
-            autoplay: false,
-            controls: true,
-            muted: false
-          });
-
-          // Load the video stream
-          if (this.tvPlayer && videoStreamUrl) {
-            this.tvPlayer.loadStream(videoStreamUrl);
-          }
-        } else {
-          console.error('VideoPlayer not available');
-        }
+        this.initializeTVPlayer(videoStreamUrl);
       }, 500);
 
     } catch (error) {
@@ -1441,6 +1438,105 @@ class RadioStreamApp {
           </div>
         `;
       }
+    }
+  }
+
+  initializeTVPlayer(videoUrl) {
+    const video = document.getElementById('tv-video-player');
+    const playBtn = document.getElementById('tv-play-btn');
+    const overlay = document.getElementById('tv-video-overlay');
+    
+    if (!video || !videoUrl) {
+      console.error('TV player elements not found');
+      return;
+    }
+
+    // Load HLS.js if available
+    if (window.Hls && window.Hls.isSupported()) {
+      const hls = new window.Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 90
+      });
+      
+      hls.loadSource(videoUrl);
+      hls.attachMedia(video);
+      
+      hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+        console.log('TV: HLS manifest loaded successfully');
+      });
+      
+      hls.on(window.Hls.Events.ERROR, (event, data) => {
+        console.error('TV: HLS error:', data);
+        if (data.fatal) {
+          this.handleTVError();
+        }
+      });
+      
+      this.tvHls = hls;
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Native HLS support (Safari)
+      video.src = videoUrl;
+    } else {
+      console.error('TV: HLS not supported');
+      this.handleTVError();
+      return;
+    }
+
+    // Setup video controls
+    if (playBtn) {
+      playBtn.addEventListener('click', () => {
+        if (video.paused) {
+          video.play().then(() => {
+            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            if (overlay) overlay.style.display = 'none';
+          }).catch(error => {
+            console.error('TV: Error playing video:', error);
+          });
+        } else {
+          video.pause();
+          playBtn.innerHTML = '<i class="fas fa-play"></i>';
+          if (overlay) overlay.style.display = 'flex';
+        }
+      });
+    }
+
+    // Show/hide overlay on video events
+    video.addEventListener('play', () => {
+      if (overlay) overlay.style.display = 'none';
+    });
+
+    video.addEventListener('pause', () => {
+      if (overlay) overlay.style.display = 'flex';
+    });
+
+    video.addEventListener('ended', () => {
+      if (overlay) overlay.style.display = 'flex';
+      if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+    });
+
+    // Handle video click to toggle play/pause
+    video.addEventListener('click', () => {
+      if (video.paused) {
+        video.play();
+      } else {
+        video.pause();
+      }
+    });
+  }
+
+  handleTVError() {
+    const container = document.getElementById('tv-player-container');
+    if (container) {
+      container.innerHTML = `
+        <div class="tv-mode">
+          <div class="tv-unavailable">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Error de reproducción</h3>
+            <p>No se pudo cargar la señal de televisión. Verifica tu conexión e intenta nuevamente.</p>
+          </div>
+        </div>
+      `;
     }
   }
 }

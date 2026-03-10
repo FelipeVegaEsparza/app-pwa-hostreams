@@ -14,7 +14,7 @@ html {
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 25%, #3b6ea5 50%, #1a365d 75%, #0d2847 100%);
-  color: #1e3a5f;
+  color: #ffffff;
   line-height: 1.6;
   font-size: 16px;
   overflow-x: hidden;
@@ -45,7 +45,7 @@ body {
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(30, 58, 95, 0.1);
   border-radius: 15px;
-  color: #1e3a5f;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
@@ -91,7 +91,7 @@ body {
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(30, 58, 95, 0.1);
   border-radius: 15px;
-  color: #1e3a5f;
+  color: #ffffff;
   padding: 12px 18px;
   outline: none;
   transition: all 0.3s ease;
@@ -252,7 +252,8 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
   line-height: 1.2;
-  color: #1e3a5f;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   margin-bottom: 1rem;
 }
 
@@ -269,7 +270,7 @@ p {
 }
 
 a {
-  color: #1e3a5f;
+  color: #ffffff;
   text-decoration: none;
   transition: all 0.3s ease;
 }
@@ -394,7 +395,7 @@ a:hover {
   backdrop-filter: blur(15px);
   border: 1px solid rgba(30, 58, 95, 0.1);
   border-radius: 50%;
-  color: #1e3a5f;
+  color: #ffffff;
   font-size: 1.1rem;
   transition: all 0.3s ease;
   position: relative;
@@ -450,7 +451,7 @@ a:hover {
 .nav-link:hover,
 .nav-link.active {
   background: rgba(255, 255, 255, 0.12);
-  color: #1e3a5f;
+  color: #ffffff;
   transform: translateY(-2px);
 }
 
@@ -476,7 +477,7 @@ a:hover {
   backdrop-filter: blur(15px);
   border: 1px solid rgba(30, 58, 95, 0.1);
   border-radius: 10px;
-  color: #1e3a5f;
+  color: #ffffff;
   cursor: pointer;
   padding: 12px;
   transition: all 0.3s ease;
@@ -499,34 +500,44 @@ a:hover {
 .fixed-player {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  transform: translateY(0);
+  left: 50%;
+  transform: translateX(-50%) translateY(0) !important;
+  z-index: 9999;
   transition: transform 0.3s ease;
-  margin: 20px;
-  border-radius: 8px;
+  width: calc(100% - 40px);
+  max-width: 1200px;
+  border-radius: 20px;
+  min-height: 90px;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .fixed-player.collapsed {
-  transform: translateY(calc(100% - 70px));
+  transform: translateX(-50%) translateY(calc(100% - 90px)) !important;
 }
 
 .player-content {
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 25px;
+  padding: 8px 25px 16px 25px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  min-height: 50px;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .now-playing {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 20px;
   flex: 1;
+  visibility: visible !important;
 }
 
 .track-artwork {
@@ -588,9 +599,10 @@ a:hover {
 }
 
 .player-controls {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 25px;
+  visibility: visible !important;
 }
 
 .control-btn {
@@ -603,11 +615,14 @@ a:hover {
   font-size: 1.2rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 10000;
 }
 
 .control-btn:hover {
@@ -977,7 +992,7 @@ a:hover {
   font-size: 1.2rem;
   margin-bottom: 12px;
   line-height: 1.4;
-  color: #1e3a5f;
+  color: #ffffff;
   font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -1082,7 +1097,7 @@ a:hover {
 .timeline-title {
   font-weight: 600;
   margin-bottom: 8px;
-  color: #1e3a5f;
+  color: #ffffff;
   font-size: 1.1rem;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -1161,7 +1176,7 @@ a:hover {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1e3a5f;
+  color: #ffffff;
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -1228,7 +1243,7 @@ a:hover {
   display: block;
   font-size: 1.8rem;
   font-weight: 800;
-  color: #1e3a5f;
+  color: #ffffff;
   line-height: 1;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -1286,7 +1301,7 @@ a:hover {
   font-weight: 500;
   margin-bottom: 4px;
   font-size: 0.95rem;
-  color: #1e3a5f;
+  color: #ffffff;
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -1328,7 +1343,7 @@ a:hover {
   font-size: 0.95rem;
   font-weight: 500;
   margin-bottom: 6px;
-  color: #1e3a5f;
+  color: #ffffff;
   line-height: 1.4;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -1382,7 +1397,7 @@ a:hover {
 .sponsor-name {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1e3a5f;
+  color: #ffffff;
   font-family: 'JetBrains Mono', monospace;
 }
 /* Weekl
@@ -1444,7 +1459,7 @@ y Schedule Navigation */
 .day-title {
   text-align: center;
   margin-bottom: 40px;
-  color: #1e3a5f;
+  color: #ffffff;
   font-size: 2.5rem;
   font-weight: 800;
   position: relative;
@@ -1884,7 +1899,7 @@ y Schedule Navigation */
 .media-title {
   font-size: 1.2rem;
   margin-bottom: 10px;
-  color: #1e3a5f;
+  color: #ffffff;
   font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -1952,7 +1967,7 @@ y Schedule Navigation */
   font-size: 1.2rem;
   margin-bottom: 12px;
   line-height: 1.4;
-  color: #1e3a5f;
+  color: #ffffff;
   font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -2059,7 +2074,7 @@ y Schedule Navigation */
   font-size: 1.4rem;
   font-weight: 700;
   margin-bottom: 8px;
-  color: #1e3a5f;
+  color: #ffffff;
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -2190,7 +2205,7 @@ y Schedule Navigation */
 }
 
 .footer-section h4 {
-  color: #1e3a5f;
+  color: #ffffff;
   margin-bottom: 25px;
   font-size: 1.3rem;
   font-weight: 700;
@@ -2211,7 +2226,7 @@ y Schedule Navigation */
 }
 
 .footer-brand h3 {
-  color: #1e3a5f;
+  color: #ffffff;
   margin-bottom: 20px;
   font-size: 1.8rem;
   font-weight: 800;
@@ -2243,7 +2258,7 @@ y Schedule Navigation */
 
 .footer-social .social-links a {
   background: rgba(30, 58, 95, 0.05);
-  color: #1e3a5f;
+  color: #ffffff;
   width: 45px;
   height: 45px;
   display: flex;
@@ -2327,7 +2342,7 @@ y Schedule Navigation */
   backdrop-filter: blur(15px);
   border: 1px solid rgba(30, 58, 95, 0.1);
   border-radius: 10px;
-  color: #1e3a5f;
+  color: #ffffff;
   outline: none;
   font-size: 0.95rem;
   transition: all 0.3s ease;
@@ -2626,7 +2641,7 @@ y Schedule Navigation */
 
 .news-modal-content h3,
 .news-modal-content h4 {
-  color: #1e3a5f;
+  color: #ffffff;
   margin: 30px 0 15px;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -2975,33 +2990,58 @@ y Schedule Navigation */
   
   .player-content {
     flex-direction: row;
-    gap: 15px;
-    padding: 12px 15px;
+    gap: 20px;
+    padding: 8px 15px 12px 15px;
     align-items: center;
+    justify-content: space-between;
   }
   
   .now-playing {
     flex: 1;
     min-width: 0;
+    display: flex !important;
+    visibility: visible !important;
   }
   
   .player-controls {
     flex-shrink: 0;
+    display: flex !important;
+    visibility: visible !important;
   }
   
-  /* Ocultar elementos innecesarios en móvil */
-  .volume-control,
-  .player-stats,
-  .player-toggle {
+  /* Simplificar controles en móvil pero mantener funcionalidad básica */
+  .volume-control {
     display: none !important;
   }
   
-  /* Asegurar que el player siempre esté visible y no colapsado en móvil */
+  .player-stats {
+    display: none !important;
+  }
+  
+  .player-toggle {
+    display: flex !important;
+    visibility: visible !important;
+  }
+  
+  /* Asegurar que el botón de play siempre se muestre */
+  .control-btn {
+    display: flex !important;
+    width: 45px;
+    height: 45px;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  
+  /* Asegurar que el player siempre esté visible y centrado en móvil */
   .fixed-player {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
-    transform: translateY(0) !important;
+    transform: translateX(-50%) translateY(0) !important;
+    width: calc(100% - 20px);
+    left: 50%;
+    bottom: 10px;
+    pointer-events: auto !important;
   }
   
   .fixed-player.collapsed {
@@ -3550,4 +3590,190 @@ y Schedule Navigation */
 
 .loading-content p {
   color: #d0dae5 !important;
+}
+
+/* TV Online Section Styles */
+.tv-online-section {
+  padding: 40px 0;
+  margin-top: 20px;
+  position: relative;
+  z-index: 10;
+}
+
+.tv-section-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.tv-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.tv-section-title i {
+  font-size: 2.2rem;
+  color: #3b6ea5;
+}
+
+.tv-player-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(30, 58, 95, 0.03);
+}
+
+.tv-player-wrapper .tv-mode {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  background: #000;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.tv-player-wrapper video {
+  width: 100%;
+  height: 500px;
+  background: #000;
+  object-fit: contain;
+  border-radius: 20px;
+}
+
+.tv-player-wrapper .tv-status {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 25px;
+  color: white;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+}
+
+.tv-player-wrapper .status-dot {
+  width: 8px;
+  height: 8px;
+  background: #ff4757;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.tv-player-wrapper .tv-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 500px;
+  color: #64748b;
+  text-align: center;
+  padding: 40px;
+}
+
+.tv-player-wrapper .tv-unavailable i {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.tv-player-wrapper .tv-unavailable h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #475569;
+}
+
+.tv-player-wrapper .tv-unavailable p {
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 500px;
+  margin-bottom: 10px;
+}
+
+.tv-player-wrapper .tv-unavailable small {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* Live Indicator Animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive Design for TV Section */
+@media (max-width: 768px) {
+  .tv-online-section {
+    padding: 30px 0;
+  }
+  
+  .tv-section-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .tv-section-title i {
+    font-size: 1.8rem;
+  }
+  
+  .tv-player-wrapper {
+    margin: 0 10px;
+  }
+  
+  .tv-player-wrapper video {
+    height: 300px;
+  }
+  
+  .tv-player-wrapper .tv-mode {
+    min-height: 300px;
+  }
+  
+  .tv-player-wrapper .tv-unavailable {
+    height: 300px;
+    padding: 20px;
+  }
+  
+  .tv-player-wrapper .tv-unavailable i {
+    font-size: 2.5rem;
+  }
+  
+  .tv-player-wrapper .tv-unavailable h3 {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tv-player-wrapper video {
+    height: 250px;
+  }
+  
+  .tv-player-wrapper .tv-mode {
+    min-height: 250px;
+  }
+  
+  .tv-player-wrapper .tv-unavailable {
+    height: 250px;
+  }
 }

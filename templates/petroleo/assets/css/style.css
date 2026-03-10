@@ -499,34 +499,48 @@ a:hover {
 .fixed-player {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  transform: translateY(0);
+  left: 50%;
+  transform: translateX(-50%) translateY(0) !important;
+  z-index: 9999;
   transition: transform 0.3s ease;
-  margin: 20px;
+  width: calc(100% - 40px);
+  max-width: 1200px;
   border-radius: 20px;
+  min-height: 90px;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .fixed-player.collapsed {
-  transform: translateY(calc(100% - 70px));
+  transform: translateX(-50%) translateY(calc(100% - 90px)) !important;
+}
+
+.fixed-player.collapsed .player-content {
+  padding: 10px 25px;
 }
 
 .player-content {
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 25px;
+  padding: 8px 25px 16px 25px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  min-height: 50px;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .now-playing {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 20px;
   flex: 1;
+  visibility: visible !important;
 }
 
 .track-artwork {
@@ -588,9 +602,10 @@ a:hover {
 }
 
 .player-controls {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 25px;
+  visibility: visible !important;
 }
 
 .control-btn {
@@ -603,11 +618,14 @@ a:hover {
   font-size: 1.2rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 10000;
 }
 
 .control-btn:hover {
@@ -2975,37 +2993,73 @@ y Schedule Navigation */
   
   .player-content {
     flex-direction: row;
-    gap: 15px;
+    gap: 20px;
     padding: 12px 15px;
     align-items: center;
+    justify-content: center;
   }
   
   .now-playing {
-    flex: 1;
+    flex: 0 0 auto;
     min-width: 0;
   }
   
   .player-controls {
-    flex-shrink: 0;
+    flex: 0 0 auto;
   }
   
-  /* Ocultar elementos innecesarios en móvil */
-  .volume-control,
-  .player-stats,
-  .player-toggle {
+  /* Simplificar controles en móvil pero mantener funcionalidad básica */
+  .volume-control {
     display: none !important;
   }
   
-  /* Asegurar que el player siempre esté visible y no colapsado en móvil */
+  .player-stats {
+    display: none !important;
+  }
+  
+  .player-toggle {
+    display: flex !important;
+    visibility: visible !important;
+  }
+  
+  /* Asegurar que el botón de play siempre se muestre */
+  .control-btn {
+    display: flex !important;
+    width: 45px;
+    height: 45px;
+    visibility: visible !important;
+  }
+  
+  .player-controls {
+    display: flex !important;
+    gap: 15px;
+    visibility: visible !important;
+  }
+  
+  .now-playing {
+    display: flex !important;
+    visibility: visible !important;
+  }
+  
+  .player-content {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Asegurar que el player siempre esté visible y centrado en móvil */
   .fixed-player {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
-    transform: translateY(0) !important;
+    transform: translateX(-50%) translateY(0) !important;
+    width: calc(100% - 20px);
+    left: 50%;
+    bottom: 10px;
   }
   
   .fixed-player.collapsed {
-    transform: translateY(0) !important;
+    transform: translateX(-50%) translateY(0) !important;
   }
   
   .hero-title {
@@ -3542,4 +3596,192 @@ y Schedule Navigation */
 
 .loading-overlay {
   background: linear-gradient(135deg, #2c3e50, #1a202c) !important;
+}
+/* TV Online Section Styles - Petroleo Theme */
+.tv-online-section {
+  padding: 40px 0;
+  margin-top: 20px;
+  position: relative;
+  z-index: 10;
+}
+
+.tv-section-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.tv-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.tv-section-title i {
+  font-size: 2.2rem;
+  color: #4a5568;
+}
+
+.tv-player-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tv-player-wrapper .tv-mode {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  background: #000;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.tv-player-wrapper video {
+  width: 100%;
+  height: 500px;
+  background: #000;
+  object-fit: contain;
+  border-radius: 20px;
+}
+
+.tv-player-wrapper .tv-status {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 25px;
+  color: white;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+}
+
+.tv-player-wrapper .status-dot {
+  width: 8px;
+  height: 8px;
+  background: #ff4757;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.tv-player-wrapper .tv-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 500px;
+  color: #a0aec0;
+  text-align: center;
+  padding: 40px;
+}
+
+.tv-player-wrapper .tv-unavailable i {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.5;
+  color: #4a5568;
+}
+
+.tv-player-wrapper .tv-unavailable h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #e2e8f0;
+}
+
+.tv-player-wrapper .tv-unavailable p {
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 500px;
+  margin-bottom: 10px;
+  color: #cbd5e0;
+}
+
+.tv-player-wrapper .tv-unavailable small {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  color: #a0aec0;
+}
+
+/* Live Indicator Animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive Design for TV Section */
+@media (max-width: 768px) {
+  .tv-online-section {
+    padding: 30px 0;
+  }
+  
+  .tv-section-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .tv-section-title i {
+    font-size: 1.8rem;
+  }
+  
+  .tv-player-wrapper {
+    margin: 0 10px;
+  }
+  
+  .tv-player-wrapper video {
+    height: 300px;
+  }
+  
+  .tv-player-wrapper .tv-mode {
+    min-height: 300px;
+  }
+  
+  .tv-player-wrapper .tv-unavailable {
+    height: 300px;
+    padding: 20px;
+  }
+  
+  .tv-player-wrapper .tv-unavailable i {
+    font-size: 2.5rem;
+  }
+  
+  .tv-player-wrapper .tv-unavailable h3 {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tv-player-wrapper video {
+    height: 250px;
+  }
+  
+  .tv-player-wrapper .tv-mode {
+    min-height: 250px;
+  }
+  
+  .tv-player-wrapper .tv-unavailable {
+    height: 250px;
+  }
 }

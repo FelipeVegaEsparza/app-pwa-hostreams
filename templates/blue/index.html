@@ -26,7 +26,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="Radio Pulse">
   
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="/templates/blue/assets/css/style.css">
   <link rel="stylesheet" href="/assets/css/loading-styles.css">
   <link rel="stylesheet" href="/assets/css/pwa-installer.css">
   <link rel="stylesheet" href="/assets/css/promotion-popup.css">
@@ -122,6 +122,27 @@
       </div>
     </nav>
   </header>
+
+  <!-- TV Online Section (visible when TV streaming is available) -->
+  <section class="tv-online-section" id="tv-online-section" style="display: none;">
+    <div class="container">
+      <div class="tv-section-header">
+        <h2 class="tv-section-title">
+          <i class="fas fa-tv"></i>
+          <span>TV Online</span>
+          <div class="live-indicator">
+            <span class="live-dot"></span>
+            <span>EN VIVO</span>
+          </div>
+        </h2>
+      </div>
+      <div class="tv-player-wrapper glass-effect">
+        <div id="tv-player-container">
+          <!-- TV Player will be injected here -->
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- Fixed Audio Player -->
   <div class="fixed-player glass-effect" id="fixed-player">
@@ -899,7 +920,7 @@
   <script src="/assets/js/pwa-installer.js"></script>
   <script src="/assets/js/promotion-popup.js"></script>
     <script type="module" src="/assets/js/video-player.js"></script>
-  <script type="module" src="assets/js/main.js"></script>
+  <script type="module" src="/templates/blue/assets/js/main.js"></script>
   
   <!-- PWA Service Worker Registration -->
   <script>
