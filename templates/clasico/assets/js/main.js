@@ -1416,7 +1416,7 @@ class NewsHub {
       document.getElementById('news-modal-image').style.display = 'none';
     }
 
-    document.getElementById('news-modal-content').innerHTML = article.content || article.shortText || 'Sin contenido disponible';
+    document.getElementById('news-modal-content').innerHTML = article.longText || article.content || article.shortText || 'Sin contenido disponible';
 
     // Show modal
     modal.classList.add('active');

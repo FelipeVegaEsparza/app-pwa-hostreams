@@ -1441,7 +1441,7 @@ class RadioPulse {
         document.getElementById('news-modal-title').textContent = article.name;
         document.getElementById('news-modal-date').innerHTML = `<i class="fas fa-calendar"></i> ${new Date(article.createdAt).toLocaleDateString()}`;
         document.getElementById('news-modal-author').innerHTML = `<i class="fas fa-user"></i> ${article.author || 'Redacción'}`;
-        document.getElementById('news-modal-content').innerHTML = article.content || article.shortText || 'Contenido no disponible';
+        document.getElementById('news-modal-content').innerHTML = article.longText || article.content || article.shortText || 'Contenido no disponible';
         
         // Update image
         const imageContainer = document.getElementById('news-modal-image-container');

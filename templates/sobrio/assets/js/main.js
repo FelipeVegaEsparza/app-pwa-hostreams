@@ -1190,13 +1190,13 @@ class RadioLanding {
     
     // Set content
     const contentDiv = document.getElementById('news-modal-content');
-    if (article.content) {
-      // If there's full content, use it
-      contentDiv.innerHTML = article.content;
-    } else if (article.longText) {
-      // If there's long text, use it with paragraphs
+    if (article.longText) {
+      // If there's long text, use it with paragraphs (highest priority)
       const paragraphs = article.longText.split('\n').filter(p => p.trim());
       contentDiv.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
+    } else if (article.content) {
+      // If there's full content, use it
+      contentDiv.innerHTML = article.content;
     } else {
       // Fallback to short text
       contentDiv.innerHTML = `<p>${article.shortText || 'Contenido no disponible'}</p>`;

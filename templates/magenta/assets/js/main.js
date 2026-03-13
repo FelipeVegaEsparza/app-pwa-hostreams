@@ -1534,7 +1534,7 @@ class RadioNexus {
     const contentContainer = document.getElementById('news-modal-content');
     contentContainer.innerHTML = `
       <p>${article.shortText || 'Resumen de la noticia no disponible'}</p>
-      <p>${article.content || article.longText || 'Esta es una noticia importante que merece tu atención. Nuestro equipo de periodistas ha trabajado para traerte la información más relevante y actualizada sobre este tema que impacta a nuestra comunidad.'}</p>
+      <p>${article.longText || article.content || 'Esta es una noticia importante que merece tu atención. Nuestro equipo de periodistas ha trabajado para traerte la información más relevante y actualizada sobre este tema que impacta a nuestra comunidad.'}</p>
       <p>Mantente informado con las últimas noticias y actualizaciones. Nuestro compromiso es brindarte información veraz y oportuna las 24 horas del día.</p>
     `;
     
