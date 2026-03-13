@@ -1,6 +1,6 @@
 /**
  * Title Updater - Actualiza automáticamente los títulos de las páginas
- * usando el project_name del archivo config.json
+ * usando el nombre del proyecto desde la API de IPStream
  */
 
 class TitleUpdater {
@@ -15,18 +15,37 @@ class TitleUpdater {
       this.updateTitle();
     } catch (error) {
       console.error('TitleUpdater: Error loading project name:', error);
+      // Fallback al config local si falla la API
+      await this.loadProjectNameFromConfig();
+      this.updateTitle();
     }
   }
 
   async loadProjectName() {
     try {
+      // Importar dinámicamente la función de API
+      const { getBasicData } = await import('./api.js');
+      const basicData = await getBasicData();
+      
+      // Usar el nombre de la API como prioridad principal
+      this.projectName = basicData.projectName || basicData.name;
+      console.log('TitleUpdater: Project name loaded from API:', this.projectName);
+    } catch (error) {
+      console.error('TitleUpdater: Error loading from API:', error);
+      throw error;
+    }
+  }
+
+  async loadProjectNameFromConfig() {
+    try {
       const response = await fetch('/config/config.json');
       const config = await response.json();
       this.projectName = config.project_name;
-      console.log('TitleUpdater: Project name loaded:', this.projectName);
+      console.log('TitleUpdater: Project name loaded from config (fallback):', this.projectName);
     } catch (error) {
       console.error('TitleUpdater: Error loading config:', error);
-      throw error;
+      // Último fallback
+      this.projectName = 'Radio Stream';
     }
   }
 
@@ -69,8 +88,15 @@ class TitleUpdater {
       twitterTitleMeta.setAttribute('content', this.projectName);
     }
 
+    // Actualizar meta og:site_name si existe
+    const ogSiteNameMeta = document.querySelector('meta[property="og:site_name"]');
+    if (ogSiteNameMeta) {
+      ogSiteNameMeta.setAttribute('content', this.projectName);
+    }
+
     console.log('TitleUpdater: Meta tags updated');
   }
+}
 }
 
 // Inicializar el actualizador de títulos cuando el DOM esté listo

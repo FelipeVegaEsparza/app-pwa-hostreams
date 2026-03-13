@@ -324,6 +324,11 @@ class RadioStreamApp {
 
     document.getElementById('news-modal-content').innerHTML = article.longText || article.content || article.shortText || 'Sin contenido disponible';
 
+    // Update meta tags for sharing
+    if (window.metaUpdater) {
+      window.metaUpdater.updateNewsMetaTags(article);
+    }
+
     // Show modal
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -334,6 +339,11 @@ class RadioStreamApp {
     if (modal) {
       modal.classList.remove('active');
       document.body.style.overflow = '';
+      
+      // Restore original meta tags
+      if (window.metaUpdater) {
+        window.metaUpdater.restoreOriginalMetaTags();
+      }
     }
   }
 
