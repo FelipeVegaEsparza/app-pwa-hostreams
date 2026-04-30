@@ -316,7 +316,7 @@
   cursor: pointer;
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
   transition: all 0.3s ease;
-  z-index: 9998;
+  z-index: 10002;
   opacity: 0;
   visibility: hidden;
   transform: scale(0.8) translateY(20px);
@@ -428,15 +428,20 @@
   }
   
   .pwa-floating-button {
-    display: none !important;
+    min-width: auto;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    bottom: 80px;
+    right: 15px;
   }
   
   .pwa-floating-icon {
-    font-size: 14px;
+    font-size: 18px;
   }
   
   .pwa-floating-text {
-    font-size: 13px;
+    display: none;
   }
   
   .pwa-toast {

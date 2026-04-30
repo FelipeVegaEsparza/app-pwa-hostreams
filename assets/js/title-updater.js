@@ -97,7 +97,6 @@ class TitleUpdater {
     console.log('TitleUpdater: Meta tags updated');
   }
 }
-}
 
 // Inicializar el actualizador de títulos cuando el DOM esté listo
 if (document.readyState === 'loading') {

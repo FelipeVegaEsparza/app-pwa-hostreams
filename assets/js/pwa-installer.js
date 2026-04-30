@@ -16,11 +16,19 @@ class PWAInstaller {
   }
 
   init() {
-    this.detectDevice();
-    this.createModal();
-    this.createFloatingButton();
-    this.setupEventListeners();
-    this.checkInstallability();
+    try {
+      this.detectDevice();
+      this.createModal();
+      this.createFloatingButton();
+      this.setupEventListeners();
+      this.checkInstallability();
+      console.log('PWA Installer: Initialized successfully', {
+        isIOS: this.isIOS,
+        isStandalone: this.isStandalone
+      });
+    } catch (error) {
+      console.error('PWA Installer: Error during initialization:', error);
+    }
   }
 
   detectDevice() {
@@ -30,9 +38,30 @@ class PWAInstaller {
     // Detectar si ya está instalada como PWA
     this.isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                        window.navigator.standalone === true;
+    
+    console.log('PWA: Device detection:', {
+      userAgent: navigator.userAgent.substring(0, 50),
+      isIOS: this.isIOS,
+      isStandalone: this.isStandalone,
+      standalone: window.navigator.standalone,
+      displayMode: window.matchMedia('(display-mode: standalone)').matches
+    });
   }
 
   createModal() {
+    // Verificar que document.body exista
+    if (!document.body) {
+      console.warn('PWA: document.body not ready, retrying in 500ms');
+      setTimeout(() => this.createModal(), 500);
+      return;
+    }
+
+    // Verificar si el modal ya existe
+    if (document.getElementById('pwa-modal')) {
+      this.modal = document.getElementById('pwa-modal');
+      return;
+    }
+
     const modalHTML = `
       <div class="pwa-modal-overlay" id="pwa-modal">
         <div class="pwa-modal-content">
@@ -133,8 +162,13 @@ class PWAInstaller {
       </div>
     `;
 
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    this.modal = document.getElementById('pwa-modal');
+    try {
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      this.modal = document.getElementById('pwa-modal');
+      console.log('PWA: Modal created successfully');
+    } catch (error) {
+      console.error('PWA: Error creating modal:', error);
+    }
   }
 
   createFloatingButton() {
@@ -154,17 +188,17 @@ class PWAInstaller {
   }
 
   setupEventListeners() {
-    // Event listener para el prompt de instalación
+    // Event listener para el prompt de instalación (Chrome/Edge/Android)
     window.addEventListener('beforeinstallprompt', (e) => {
       console.log('PWA: beforeinstallprompt event fired');
       e.preventDefault();
       this.deferredPrompt = e;
       this.showFloatingButton();
       
-      // Mostrar modal automáticamente después de 10 segundos (dar tiempo a que cargue el sitio)
+      // Mostrar modal automáticamente después de 5 segundos
       setTimeout(() => {
         this.showModalAutomatically();
-      }, 10000);
+      }, 5000);
     });
 
     // Event listener para cuando la app se instala
@@ -217,62 +251,95 @@ class PWAInstaller {
   }
 
   checkInstallability() {
-    // Si ya está instalada, no mostrar el botón ni el modal
+    // Si ya está instalada, no mostrar nada
     if (this.isStandalone) {
       console.log('PWA: App already installed');
       return;
     }
 
-    // Si es iOS, mostrar el botón y modal después de un tiempo
+    // Mostrar botón flotante rápidamente (1 segundo)
+    setTimeout(() => {
+      this.showFloatingButton();
+    }, 1000);
+
+    // Para iOS: mostrar modal FORZOSAMENTE después de 3 segundos
+    // Safari no tiene beforeinstallprompt, así que siempre mostramos el modal manual
     if (this.isIOS) {
+      console.log('PWA: iOS detected, scheduling modal in 3 seconds');
+      
+      // Intento 1: a los 3 segundos
       setTimeout(() => {
-        this.showFloatingButton();
-        // Mostrar modal automáticamente después de 10 segundos adicionales
-        setTimeout(() => {
+        console.log('PWA: Attempting to show iOS modal (attempt 1)');
+        this.showModalAutomatically();
+      }, 3000);
+      
+      // Intento 2: a los 6 segundos (fallback si el primero falla)
+      setTimeout(() => {
+        if (!this.modal || !this.modal.classList.contains('active')) {
+          console.log('PWA: Attempting to show iOS modal (attempt 2 - fallback)');
           this.showModalAutomatically();
-        }, 10000);
-      }, 5000);
+        }
+      }, 6000);
+      
+      // Intento 3: a los 10 segundos (último recurso)
+      setTimeout(() => {
+        if (!this.modal || !this.modal.classList.contains('active')) {
+          console.log('PWA: Attempting to show iOS modal (attempt 3 - last resort)');
+          this.showModalAutomatically();
+        }
+      }, 10000);
+      
     } else {
-      // Para otros navegadores, mostrar modal automáticamente si no hay prompt nativo
+      // Para Chrome/Edge/Android: si no llega beforeinstallprompt en 5 segundos,
+      // mostrar modal de todas formas
       setTimeout(() => {
         if (!this.deferredPrompt) {
-          this.showFloatingButton();
-          // Mostrar modal automáticamente después de 10 segundos adicionales
-          setTimeout(() => {
-            this.showModalAutomatically();
-          }, 10000);
+          this.showModalAutomatically();
         }
       }, 5000);
     }
-
-    // Para otros navegadores, esperar al evento beforeinstallprompt
   }
 
   showModal() {
-    if (!this.modal) return;
-
-    // Configurar contenido según el dispositivo
-    const normalContent = document.getElementById('pwa-install-normal');
-    const iosContent = document.getElementById('pwa-install-ios');
-    const notificationsOption = document.getElementById('pwa-notifications-option');
-
-    if (this.isIOS) {
-      normalContent.style.display = 'none';
-      iosContent.style.display = 'block';
-      document.getElementById('pwa-modal-title').textContent = 'Añadir a Pantalla de Inicio';
-      document.getElementById('pwa-modal-subtitle').textContent = 'Sigue estos pasos para instalar la aplicación';
-    } else {
-      normalContent.style.display = 'block';
-      iosContent.style.display = 'none';
-      document.getElementById('pwa-modal-title').textContent = 'Instalar Aplicación';
-      document.getElementById('pwa-modal-subtitle').textContent = 'Accede más rápido y disfruta de una mejor experiencia';
-      
-      // Mostrar opción de notificaciones si OneSignal está disponible
-      this.checkNotificationAvailability(notificationsOption);
+    // Verificar que el modal exista
+    if (!this.modal) {
+      console.warn('PWA: Modal not found, attempting to recreate');
+      this.createModal();
+      if (!this.modal) {
+        console.error('PWA: Failed to create modal');
+        return;
+      }
     }
 
-    this.modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    try {
+      // Configurar contenido según el dispositivo
+      const normalContent = document.getElementById('pwa-install-normal');
+      const iosContent = document.getElementById('pwa-install-ios');
+      const notificationsOption = document.getElementById('pwa-notifications-option');
+      const modalTitle = document.getElementById('pwa-modal-title');
+      const modalSubtitle = document.getElementById('pwa-modal-subtitle');
+
+      if (this.isIOS) {
+        if (normalContent) normalContent.style.display = 'none';
+        if (iosContent) iosContent.style.display = 'block';
+        if (modalTitle) modalTitle.textContent = 'Añadir a Pantalla de Inicio';
+        if (modalSubtitle) modalSubtitle.textContent = 'Sigue estos pasos para instalar la aplicación';
+      } else {
+        if (normalContent) normalContent.style.display = 'block';
+        if (iosContent) iosContent.style.display = 'none';
+        if (modalTitle) modalTitle.textContent = 'Instalar Aplicación';
+        if (modalSubtitle) modalSubtitle.textContent = 'Accede más rápido y disfruta de una mejor experiencia';
+        
+        // Mostrar opción de notificaciones si OneSignal está disponible
+        this.checkNotificationAvailability(notificationsOption);
+      }
+
+      this.modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      console.log('PWA: Modal shown successfully');
+    } catch (error) {
+      console.error('PWA: Error showing modal:', error);
+    }
   }
 
   async checkNotificationAvailability(notificationsOption) {
@@ -322,9 +389,9 @@ class PWAInstaller {
   showFloatingButton() {
     if (!this.floatingButton || this.isStandalone) return;
     
-    setTimeout(() => {
-      this.floatingButton.classList.add('visible');
-    }, 2000);
+    // Mostrar inmediatamente sin delay adicional
+    this.floatingButton.classList.add('visible');
+    console.log('PWA: Floating button shown');
   }
 
   hideFloatingButton() {

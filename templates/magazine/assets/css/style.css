@@ -2951,19 +2951,7 @@ y Schedule Navigation */
     font-size: 1rem;
   }
   
-  .nav-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: rgba(44, 62, 80, 0.05);
-    backdrop-filter: blur(25px);
-    flex-direction: column;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-    z-index: 1001;
-    border-radius: 0 0 20px 20px;
-  }
+  undefined
   
   .nav-menu.active {
     display: flex;
@@ -3237,36 +3225,7 @@ y Schedule Navigation */
     font-size: 0.9rem;
   }
   
-  /* Mejorar navegación móvil */
-  .nav-menu {
-    animation: slideUp 0.3s ease-out forwards;
-  }
   
-  .nav-menu.active {
-    padding: 15px 0;
-    animation: slideDown 0.3s ease-out forwards;
-  }
-  
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes slideUp {
-    from {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateY(-30px);
-    }
   }
   
   .nav-menu.active .nav-link {

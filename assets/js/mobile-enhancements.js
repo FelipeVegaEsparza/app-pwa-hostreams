@@ -16,6 +16,7 @@ class MobileEnhancements {
     this.setupViewportHandler();
     this.setupAccessibilityEnhancements();
     this.setupPerformanceOptimizations();
+    this.setupMarqueeText();
   }
 
   setupMobileNavigation() {
@@ -240,6 +241,96 @@ class MobileEnhancements {
       `;
       document.head.appendChild(style);
     }
+  }
+
+  setupMarqueeText() {
+    // Solo activar marquee en desktop (>480px)
+    if (window.innerWidth <= 480) return;
+
+    // CSS del marquee
+    if (!document.getElementById('marquee-styles')) {
+      const style = document.createElement('style');
+      style.id = 'marquee-styles';
+      style.textContent = `
+        .marquee-active {
+          overflow: hidden !important;
+          white-space: nowrap !important;
+        }
+        .marquee-track {
+          display: inline-flex;
+          animation: marquee-scroll 12s linear infinite;
+        }
+        .marquee-track span {
+          white-space: nowrap;
+          padding-right: 3rem;
+        }
+        @keyframes marquee-scroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const selectors = [
+      '.track-title', '.track-artist', '.track-name',
+      '#player-song-title', '#player-song-artist',
+      '#track-title', '#track-artist',
+      '#player-title', '#player-artist',
+      '#main-song-title', '#main-song-artist',
+      '.cover-info h3'
+    ];
+
+    const isProcessing = new WeakSet();
+
+    const processElement = (el) => {
+      if (!el || isProcessing.has(el)) return;
+      if (el.querySelector && el.querySelector('img, .track-artwork, .default-artwork, .default-cover')) return;
+
+      const text = el.textContent.trim();
+      if (!text) return;
+
+      // Limpiar marquee anterior si existe
+      if (el.classList.contains('marquee-active')) {
+        el.classList.remove('marquee-active');
+        el.textContent = text;
+      }
+
+      isProcessing.add(el);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const containerWidth = el.clientWidth || el.getBoundingClientRect().width;
+          const measure = document.createElement('span');
+          measure.style.cssText = 'position:fixed;left:-9999px;white-space:nowrap;visibility:hidden;';
+          measure.textContent = text;
+          document.body.appendChild(measure);
+          const textWidth = measure.offsetWidth;
+          document.body.removeChild(measure);
+
+          if (textWidth > containerWidth && containerWidth > 0) {
+            el.innerHTML = '<div class="marquee-track"><span>' + text + '</span><span>' + text + '</span></div>';
+            el.classList.add('marquee-active');
+          }
+          isProcessing.delete(el);
+        });
+      });
+    };
+
+    selectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(processElement);
+    });
+
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (window.innerWidth <= 480) return;
+        selectors.forEach(sel => {
+          document.querySelectorAll(sel).forEach(processElement);
+        });
+      }, 300);
+    });
   }
 
   // Método público para otros scripts

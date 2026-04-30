@@ -2367,19 +2367,7 @@ ive Design */
     display: none !important;
   }
   
-  .nav-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    z-index: 1001;
-    border-radius: 0 0 20px 20px;
-  }
+  undefined
   
   .nav-menu.active {
     display: flex;
@@ -2590,6 +2578,35 @@ ive Design */
   .nav-menu.active {
     padding: 20px 0;
   }
+
+  .nav-menu .nav-link {
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+  
+  .nav-menu .nav-link:hover,
+  .nav-menu .nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateX(5px);
+  }
+  
+  .nav-menu .nav-link i {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+  }
+
   
   .nav-menu.active .nav-link {
     padding: 15px 25px;

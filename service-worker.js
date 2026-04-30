@@ -1,45 +1,93 @@
-const CACHE_NAME = 'ipstream-cache-v1';
+const CACHE_NAME = 'ipstream-cache-v8';
 const OFFLINE_URL = '/offline.html';
 
-// Assets to cache on install
+// Dominios permitidos para cachear
+const CACHEABLE_DOMAINS = [
+  self.location.origin,
+  'dashboard.ipstream.cl',
+  'stream.ipstream.cl',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com',
+  'cdnjs.cloudflare.com'
+];
+
+// Archivos esenciales para cachear
 const urlsToCache = [
   OFFLINE_URL,
   '/manifest.json',
   '/assets/js/config.js',
-  '/config/config.json'
+  '/config/config.json',
+  '/assets/css/loading-styles.css'
 ];
+
+// Tamaño máximo de archivo a cachear (5MB)
+const MAX_CACHE_SIZE = 5 * 1024 * 1024;
+
+// Helpers
+function isCacheableUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    return CACHEABLE_DOMAINS.some(domain => 
+      urlObj.hostname === domain || 
+      urlObj.hostname.endsWith('.' + domain)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isCacheableResponse(response) {
+  if (!response || !response.ok) return false;
+  
+  const contentLength = response.headers.get('content-length');
+  if (contentLength && parseInt(contentLength) > MAX_CACHE_SIZE) {
+    return false;
+  }
+  
+  const contentType = response.headers.get('content-type') || '';
+  
+  // NO cachear respuestas de API JSON (datos dinámicos)
+  if (contentType.includes('application/json')) {
+    return false;
+  }
+  
+  // NO cachear páginas HTML dinámicas (solo archivos estáticos)
+  if (contentType.includes('text/html') && !response.url.includes('/offline.html')) {
+    return false;
+  }
+  
+  return true;
+}
 
 // Install event - cache essential files
 self.addEventListener('install', event => {
-  console.log('Service Worker: Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Service Worker: Caching essential files');
         return cache.addAll(urlsToCache);
       })
       .then(() => {
-        console.log('Service Worker: Installation complete');
         return self.skipWaiting();
+      })
+      .catch(err => {
+        console.error('SW: Error caching essential files:', err);
       })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', event => {
-  console.log('Service Worker: Activating...');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Deleting old cache:', cacheName);
+            console.log('SW: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      console.log('Service Worker: Activation complete');
       return self.clients.claim();
     })
   );
@@ -47,57 +95,71 @@ self.addEventListener('activate', event => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', event => {
-  // Skip non-GET requests
+  // Solo interceptar GET requests
   if (event.request.method !== 'GET') return;
   
-  // Skip chrome-extension and other non-http requests
+  // Ignorar chrome-extension y otros non-http
   if (!event.request.url.startsWith('http')) return;
+  
+  const url = new URL(event.request.url);
+  
+  // NO interceptar requests a la API (dejar que pasen directo)
+  if (url.pathname.includes('/api/')) {
+    return;
+  }
+  
+  // No interceptar requests de terceros no permitidos
+  if (!isCacheableUrl(event.request.url)) return;
   
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // If request is successful, clone and cache it
-        if (response.status === 200) {
+        // Si es una respuesta válida y cacheable, clonar y cachear
+        if (isCacheableResponse(response)) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, responseClone);
+          }).catch(err => {
+            console.error('SW: Error caching response:', err);
           });
         }
         return response;
       })
       .catch(() => {
-        // If fetch fails, try to serve from cache
+        // Si fetch falla, intentar servir desde cache
         return caches.match(event.request)
           .then(response => {
             if (response) {
               return response;
             }
-            // If no cache match, serve offline page for navigation requests
+            // Si es una navegación, servir página offline
             if (event.request.mode === 'navigate') {
               return caches.match(OFFLINE_URL);
             }
-            // For other requests, return a basic response
-            return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+            // Para otros requests, retornar error 503
+            return new Response('Offline', { 
+              status: 503, 
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'text/plain' }
+            });
           });
       })
   );
 });
 
-// Background sync for when connection is restored
+// Background sync
 self.addEventListener('sync', event => {
-  console.log('Service Worker: Background sync triggered');
   if (event.tag === 'background-sync') {
     event.waitUntil(
-      // Perform background sync tasks here
-      console.log('Service Worker: Performing background sync')
+      Promise.resolve().then(() => {
+        console.log('SW: Background sync executed');
+      })
     );
   }
 });
 
 // Push notification handling
 self.addEventListener('push', event => {
-  console.log('Service Worker: Push notification received');
-  
   const options = {
     body: event.data ? event.data.text() : 'Nueva actualización disponible',
     icon: '/assets/icons/icon-192x192.png',
@@ -128,7 +190,6 @@ self.addEventListener('push', event => {
 
 // Notification click handling
 self.addEventListener('notificationclick', event => {
-  console.log('Service Worker: Notification clicked');
   event.notification.close();
   
   if (event.action === 'explore') {

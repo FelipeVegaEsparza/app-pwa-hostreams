@@ -190,3 +190,57 @@
     transform: translateY(0);
   }
 }
+
+/* ==========================================
+   LAZY LOADING STYLES
+   ========================================== */
+
+/* Imágenes que están esperando ser cargadas */
+img[data-src] {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Imagen cargándose */
+img.lazy-loading {
+  opacity: 0.5;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: lazyLoading 1.5s infinite;
+}
+
+@keyframes lazyLoading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Imagen cargada exitosamente */
+img.lazy-loaded {
+  opacity: 1;
+}
+
+/* Error al cargar imagen */
+img.lazy-error {
+  opacity: 1;
+}
+
+/* Placeholder para imágenes */
+.lazy-placeholder {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: lazyLoading 1.5s infinite;
+}
+
+/* ==========================================
+   ANIMACIONES GLOBALES
+   ========================================== */
+
+@keyframes slideUp {
+  0% { transform: translate(-50%, 100%); opacity: 0; }
+  100% { transform: translate(-50%, 0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  0% { transform: translate(-50%, 0); opacity: 1; }
+  100% { transform: translate(-50%, 100%); opacity: 0; }
+}

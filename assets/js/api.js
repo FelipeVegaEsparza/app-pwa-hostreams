@@ -1,132 +1,316 @@
 import { config } from './config.js';
+import { secureLog } from './utils.js';
 
-async function getApiBase() {
-  const configData = await config;
-  return `${configData.ipstream_base_url}/${configData.clientId}`;
+// ==========================================
+// CACHE EN MEMORIA
+// ==========================================
+const cache = new Map();
+const CACHE_TTL = {
+  basic: 5 * 60 * 1000,      // 5 minutos
+  programs: 15 * 60 * 1000,   // 15 minutos
+  news: 5 * 60 * 1000,        // 5 minutos
+  sponsors: 30 * 60 * 1000,   // 30 minutos
+  promotions: 30 * 60 * 1000, // 30 minutos
+  social: 60 * 60 * 1000,     // 1 hora
+  sonic: 30 * 1000,           // 30 segundos
+  default: 10 * 60 * 1000     // 10 minutos default
+};
+
+function getCached(key) {
+  const item = cache.get(key);
+  if (!item) return null;
+  
+  if (Date.now() > item.expiry) {
+    cache.delete(key);
+    return null;
+  }
+  
+  return item.data;
 }
 
-async function fetchJSON(url) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const errBody = await res.json().catch(()=>null);
-      throw new Error(errBody?.error || `HTTP ${res.status}`);
+function setCache(key, data, ttl = CACHE_TTL.default) {
+  cache.set(key, {
+    data,
+    expiry: Date.now() + ttl
+  });
+}
+
+function invalidateCache(pattern) {
+  for (const key of cache.keys()) {
+    if (key.includes(pattern)) {
+      cache.delete(key);
     }
-    return await res.json();
-  } catch (e) {
-    console.error('API error', e);
-    throw e;
   }
 }
 
-export async function getAllClientData() { 
-  const base = await getApiBase();
-  return await fetchJSON(`${base}`); 
+// ==========================================
+// CONTROL DE CONCURRENCIA (Rate Limiting)
+// ==========================================
+const MAX_CONCURRENT = 3;
+let activeRequests = 0;
+const requestQueue = [];
+
+async function acquireSlot() {
+  if (activeRequests < MAX_CONCURRENT) {
+    activeRequests++;
+    return;
+  }
+  
+  return new Promise(resolve => {
+    requestQueue.push(resolve);
+  });
 }
 
-export async function getBasicData() { 
+function releaseSlot() {
+  activeRequests--;
+  if (requestQueue.length > 0) {
+    const next = requestQueue.shift();
+    activeRequests++;
+    next();
+  }
+}
+
+// ==========================================
+// DEDUPLICACIÓN DE REQUESTS
+// ==========================================
+const inFlight = new Map();
+
+async function dedupedRequest(key, requestFn) {
+  if (inFlight.has(key)) {
+    return inFlight.get(key);
+  }
+  
+  const promise = requestFn().finally(() => {
+    inFlight.delete(key);
+  });
+  
+  inFlight.set(key, promise);
+  return promise;
+}
+
+// ==========================================
+// RETRY CON BACKOFF EXPONENCIAL
+// ==========================================
+const DEFAULT_RETRIES = 3;
+const DEFAULT_BACKOFF = 1000; // 1 segundo inicial
+
+async function fetchWithRetry(url, options = {}, retries = DEFAULT_RETRIES, backoff = DEFAULT_BACKOFF) {
+  await acquireSlot();
+  
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), options.timeout || 10000);
+    
+    // Remover opciones que no son válidas para fetch
+    const fetchOptions = { ...options };
+    delete fetchOptions.cacheTTL;
+    delete fetchOptions.cache;
+    
+    const response = await fetch(url, {
+      ...fetchOptions,
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeout);
+    
+    if (!response.ok) {
+      // No reintentar en errores 4xx (cliente)
+      if (response.status >= 400 && response.status < 500) {
+        const errBody = await response.json().catch(() => null);
+        throw new Error(errBody?.error || `HTTP ${response.status}`);
+      }
+      // Reintentar en errores 5xx (servidor)
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    return response;
+  } catch (error) {
+    if (retries <= 0 || error.name === 'AbortError') {
+      throw error;
+    }
+    
+    secureLog.warn(`Retry ${DEFAULT_RETRIES - retries + 1} for ${url}: ${error.message}`);
+    
+    // Esperar con backoff exponencial + jitter
+    const delay = backoff * (1 + Math.random() * 0.5);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    return fetchWithRetry(url, options, retries - 1, backoff * 2);
+  } finally {
+    releaseSlot();
+  }
+}
+
+// ==========================================
+// FUNCIONES BASE
+// ==========================================
+let apiBaseCache = null;
+
+async function getApiBase() {
+  if (apiBaseCache) return apiBaseCache;
+  
+  const configData = await config;
+  apiBaseCache = `${configData.ipstream_base_url}/${configData.clientId}`;
+  return apiBaseCache;
+}
+
+async function fetchJSON(url, options = {}) {
+  const cacheKey = url;
+  const cacheTTL = options.cacheTTL || CACHE_TTL.default;
+  const useCache = options.cache !== false;
+  
+  // Verificar cache
+  if (useCache) {
+    const cached = getCached(cacheKey);
+    if (cached) {
+      secureLog.log('Cache hit:', url);
+      return cached;
+    }
+  }
+  
+  try {
+    const response = await fetchWithRetry(url, options);
+    const data = await response.json();
+    
+    // Guardar en cache
+    if (useCache) {
+      setCache(cacheKey, data, cacheTTL);
+    }
+    
+    return data;
+  } catch (error) {
+    secureLog.error('API error:', error.message);
+    throw error;
+  }
+}
+
+// ==========================================
+// API CLIENT
+// ==========================================
+
+export async function getAllClientData() {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/basic-data`); 
+  return fetchJSON(`${base}`, { cacheTTL: CACHE_TTL.basic });
+}
+
+export async function getBasicData() {
+  const base = await getApiBase();
+  return fetchJSON(`${base}/basic-data`, { cacheTTL: CACHE_TTL.basic });
 }
 
 export async function getVideoStreamingUrl() {
   try {
+    const cacheKey = 'videoStreamingUrl';
+    const cached = getCached(cacheKey);
+    if (cached !== null) return cached;
+    
     const basicData = await getBasicData();
-    return basicData.videoStreamingUrl || null;
+    const url = basicData.videoStreamingUrl || null;
+    setCache(cacheKey, url, CACHE_TTL.basic);
+    return url;
   } catch (error) {
-    console.error('Error getting video streaming URL:', error);
+    secureLog.error('Error getting video streaming URL:', error);
     return null;
   }
 }
 
-export async function getPrograms() { 
+export async function getPrograms() {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/programs`); 
+  return fetchJSON(`${base}/programs`, { cacheTTL: CACHE_TTL.programs });
 }
 
-export async function getNews(page = 1, limit = 10) { 
+export async function getNews(page = 1, limit = 10) {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/news?page=${page}&limit=${limit}`); 
+  return fetchJSON(`${base}/news?page=${page}&limit=${limit}`, { cacheTTL: CACHE_TTL.news });
 }
 
-export async function getNewsBySlug(slug) { 
+export async function getNewsBySlug(slug) {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/news/${slug}`); 
+  return fetchJSON(`${base}/news/${slug}`, { cacheTTL: CACHE_TTL.news });
 }
 
-export async function getVideos() { 
+export async function getVideos() {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/videos`); 
+  return fetchJSON(`${base}/videos`, { cacheTTL: CACHE_TTL.default });
 }
 
-export async function getSponsors() { 
+export async function getSponsors() {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/sponsors`); 
+  return fetchJSON(`${base}/sponsors`, { cacheTTL: CACHE_TTL.sponsors });
 }
 
-export async function getPromotions() { 
+export async function getPromotions() {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/promotions`); 
+  return fetchJSON(`${base}/promotions`, { cacheTTL: CACHE_TTL.promotions });
 }
 
-export async function getPodcasts(page = 1, limit = 10) { 
+export async function getPodcasts(page = 1, limit = 10) {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/podcasts?page=${page}&limit=${limit}`); 
+  return fetchJSON(`${base}/podcasts?page=${page}&limit=${limit}`, { cacheTTL: CACHE_TTL.default });
 }
 
-export async function getPodcastById(id) { 
+export async function getPodcastById(id) {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/podcasts/${id}`); 
+  return fetchJSON(`${base}/podcasts/${id}`, { cacheTTL: CACHE_TTL.default });
 }
 
-export async function getVideocasts(page = 1, limit = 10) { 
+export async function getVideocasts(page = 1, limit = 10) {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/videocasts?page=${page}&limit=${limit}`); 
+  return fetchJSON(`${base}/videocasts?page=${page}&limit=${limit}`, { cacheTTL: CACHE_TTL.default });
 }
 
-export async function getVideocastById(id) { 
+export async function getVideocastById(id) {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/videocasts/${id}`); 
+  return fetchJSON(`${base}/videocasts/${id}`, { cacheTTL: CACHE_TTL.default });
 }
 
-export async function getSocialNetworks() { 
+export async function getSocialNetworks() {
   const base = await getApiBase();
-  return await fetchJSON(`${base}/social-networks`); 
+  return fetchJSON(`${base}/social-networks`, { cacheTTL: CACHE_TTL.social });
 }
 
 export async function buildImageUrl(path) {
+  if (!path) return null;
+  
+  const cacheKey = `img:${path}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+  
   const configData = await config;
-  // Extraer el dominio base de la URL de la API
   const baseUrl = configData.ipstream_base_url.replace('/api/public', '');
-  return `${baseUrl}${path}`;
+  const fullUrl = `${baseUrl}${path}`;
+  
+  setCache(cacheKey, fullUrl, CACHE_TTL.social);
+  return fullUrl;
 }
 
-// SonicPanel API Functions
+// ==========================================
+// SONICPANEL API
+// ==========================================
+
 export async function getSonicPanelInfo() {
-  const configData = await config;
+  const cacheKey = 'sonicpanel';
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
   
-  // Usar puerto directo si existe, sino extraer del stream URL
+  const configData = await config;
   let port = configData.sonicpanel_port;
   
   if (!port) {
-    // Extraer el puerto del stream URL como fallback
     const streamUrl = configData.sonicpanel_stream_url;
     const portMatch = streamUrl.match(/:(\d+)/);
     port = portMatch ? portMatch[1] : '8018';
   }
   
-  // Construir la URL de la API de SonicPanel
   const apiUrl = configData.sonicpanel_api_url || `https://stream.ipstream.cl/cp/get_info.php?p=${port}`;
   
   try {
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const response = await fetchWithRetry(apiUrl, { cache: 'no-store', retries: 2 });
     const data = await response.json();
+    setCache(cacheKey, data, CACHE_TTL.sonic);
     return data;
   } catch (error) {
-    console.error('Error fetching SonicPanel info:', error);
+    secureLog.error('Error fetching SonicPanel info:', error);
     throw error;
   }
 }
@@ -137,7 +321,6 @@ export async function getCurrentSong() {
     const projectName = configData.project_name || 'Radio';
     const data = await getSonicPanelInfo();
     
-    // Separar título en artista y canción si viene en formato "Artista - Canción"
     let artist = 'En Vivo';
     let songTitle = projectName;
     
@@ -151,7 +334,6 @@ export async function getCurrentSong() {
       }
     }
     
-    // Si hay DJ, usar su nombre como artista
     if (data.djusername && data.djusername !== 'No DJ' && data.djusername !== 'AutoDJ') {
       artist = data.djusername;
     }
@@ -171,7 +353,7 @@ export async function getCurrentSong() {
   } catch (error) {
     const configData = await config;
     const projectName = configData.project_name || 'Radio';
-    console.error('Error getting current song:', error);
+    secureLog.error('Error getting current song:', error);
     return {
       title: projectName,
       artist: 'En Vivo',
@@ -185,4 +367,33 @@ export async function getCurrentSong() {
       history: []
     };
   }
+}
+
+// ==========================================
+// UTILIDADES DE CACHE
+// ==========================================
+
+export function clearAPICache() {
+  cache.clear();
+  apiBaseCache = null;
+  secureLog.log('API cache cleared');
+}
+
+export function invalidateAPICache(pattern) {
+  invalidateCache(pattern);
+}
+
+export function getCacheStats() {
+  return {
+    size: cache.size,
+    keys: Array.from(cache.keys())
+  };
+}
+
+// Exponer para debugging en desarrollo
+if (typeof window !== 'undefined') {
+  window.radioAPICache = {
+    clear: clearAPICache,
+    stats: getCacheStats
+  };
 }

@@ -21,19 +21,28 @@ class TemplateChecker {
   }
 
   startChecking() {
-    this.checkInterval = setInterval(async () => {
+    const check = async () => {
+      // Reducir frecuencia cuando la pestaña está oculta
+      if (document.hidden) {
+        this.nextCheckTimeout = setTimeout(check, 120000); // 2 minutos
+        return;
+      }
+      
       try {
         const response = await fetch('/api/current-template');
         const data = await response.json();
         
         if (data.template !== this.currentTemplate) {
-          console.log(`🔄 Template changed from ${this.currentTemplate} to ${data.template}`);
           this.handleTemplateChange(data.template);
         }
       } catch (error) {
-        console.error('TemplateChecker: Error checking template:', error);
+        // Silenciar errores de red
       }
-    }, 30000); // Check every 30 seconds
+      
+      this.nextCheckTimeout = setTimeout(check, 30000); // 30 segundos
+    };
+    
+    check();
   }
 
   handleTemplateChange(newTemplate) {
