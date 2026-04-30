@@ -265,8 +265,42 @@ export async function getVideocastById(id) {
 }
 
 export async function getSocialNetworks() {
-  const base = await getApiBase();
-  return fetchJSON(`${base}/social-networks`, { cacheTTL: CACHE_TTL.social });
+  try {
+    // Intentar obtener desde el endpoint dedicado primero (silenciosamente)
+    const base = await getApiBase();
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(`${base}/social-networks`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeout);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Object.keys(data).length > 0) {
+          return data;
+        }
+      }
+      // Si no es ok (404, etc.), continuar al fallback sin loguear error
+    } catch (error) {
+      // Silenciar cualquier error del endpoint dedicado
+    }
+    
+    // Fallback: obtener desde el endpoint principal
+    const mainData = await getAllClientData();
+    if (mainData && mainData.socialNetworks) {
+      return mainData.socialNetworks;
+    }
+    
+    // Si no hay redes sociales, retornar objeto vacío sin error
+    return {};
+  } catch (error) {
+    // Silenciar errores completamente
+    return {};
+  }
 }
 
 export async function buildImageUrl(path) {

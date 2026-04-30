@@ -1,2019 +1,809 @@
-import { 
-  getBasicData, 
-  buildImageUrl, 
-  getPrograms, 
-  getNews, 
-  getNewsBySlug,
-  getPodcasts, 
-  getPodcastById,
-  getVideocasts, 
-  getVideocastById,
-  getSponsors, 
-  getSocialNetworks,
-  getCurrentSong,
-  getVideoStreamingUrl
-} from '/assets/js/api.js';
+/**
+ * Template Blue - Refactorizado usando TemplateBase
+ * Este template solo se encarga del renderizado visual
+ * Toda la lógica de datos y audio está en TemplateBase
+ */
+import TemplateBase from '/assets/js/template-base.js';
+import { getDataManager } from '/assets/js/data-manager.js';
 
-class RadioPulse {
+class BlueTemplate extends TemplateBase {
   constructor() {
+    super({
+      audioElementId: 'news-audio',
+      playButtonId: 'main-play-btn',
+      volumeSliderId: 'volume-slider',
+      defaultVolume: 50,
+      socialContainerIds: ['header-social-main', 'footer-social'],
+      customDomIds: {
+        radioLogo: 'news-logo',
+        footerRadioName: 'footer-title',
+        trackTitle: 'player-song-title',
+        trackArtist: 'player-song-artist',
+        listenersCount: 'player-listeners',
+        bitrate: 'player-bitrate',
+        trackArtwork: 'track-artwork',
+        defaultArtwork: 'default-artwork',
+        audioQuality: 'sidebar-quality',
+        currentDate: 'current-date',
+        heroCarousel: 'hero-carousel',
+        breakingNews: 'breaking-news',
+        featuredNews: 'featured-news',
+        allNews: 'all-news',
+        programsTimeline: 'programs-timeline',
+        sponsorsCarousel: 'sponsors-carousel',
+        podcastsTab: 'podcasts-tab',
+        videocastsTab: 'videocasts-tab',
+        quickNews: 'quick-news',
+        recentTracks: 'recent-tracks'
+      }
+    });
+    
     this.currentSection = 'home';
-    this.audioPlayer = null;
-    this.isPlaying = false;
-    this.currentVolume = 50;
-    this.sonicPanelInterval = null;
-    this.currentSongData = null;
-    this.currentPage = {
-      news: 1,
-      podcasts: 1,
-      videocasts: 1
-    };
+    this.currentPage = { news: 1, podcasts: 1, videocasts: 1 };
     this.currentFilter = 'all';
     this.currentTab = 'podcasts';
     this.currentScheduleDay = 'today';
-    
-    // TV Player properties
-    this.tvPlayer = null;
-    this.videoStreamUrl = null;
-    
-    // Swiper instances
     this.heroSwiper = null;
     this.sponsorsSwiper = null;
-    
-    this.init();
+
+    this.dayMapping = {
+      'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
+      'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'
+    };
+  }
+
+  getSpanishDay(englishDay) {
+    if (!englishDay) return null;
+    return this.dayMapping[englishDay.toLowerCase()] || englishDay;
   }
 
   async init() {
-    console.log('RadioPulse: Initializing dynamic radio experience...');
-    console.log('RadioPulse: DOM ready, starting initialization');
-    // Loading is now managed by loading-manager.js
+    // Llamar a la inicialización base
+    await super.init();
     
+    // Inicializar funcionalidades específicas del template blue
     try {
-      this.setCurrentDate();
-      await this.loadBasicData();
-      await this.checkTVAvailability();
-      await this.loadAllContent();
-      this.setupNavigation();
-      this.setupAudioPlayer();
       this.setupCarousels();
-      this.setupFilters();
-      this.setupTabs();
-      this.setupModals();
-      this.setupAnimations();
-      this.setupRippleEffects();
-      await this.loadSonicPanelData();
-      this.startSonicPanelUpdates();
+      await this.loadAllContent();
       
-      console.log('RadioPulse: Dynamic radio experience is live! 🚀');
+      console.log('BlueTemplate: Template fully initialized! 🚀');
     } catch (error) {
-      console.error('RadioPulse: Error initializing:', error);
-    }
-    
-    // Fallback de emergencia: ocultar loading después de 8 segundos si aún está visible
-    setTimeout(() => {
-      const overlay = document.getElementById('loading-overlay');
-      if (overlay && !overlay.classList.contains('hidden')) {
-        console.log('RadioPulse: Fallback - Ocultando loading');
-        if (window.loadingManager) {
-          window.loadingManager.hide();
-        } else {
-          overlay.style.display = 'none';
-        }
-      }
-    }, 8000);
-  }
-
-  setCurrentDate() {
-    const now = new Date();
-    const options = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    };
-    const dateString = now.toLocaleDateString('es-ES', options);
-    document.getElementById('current-date').textContent = dateString;
-  }
-
-  showLoading() {
-    console.log('RadioPulse: Showing loading overlay');
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) {
-      overlay.classList.remove('hidden');
-    } else {
-      console.warn('RadioPulse: Loading overlay not found');
+      console.error('BlueTemplate: Error in template-specific init:', error);
     }
   }
 
-  hideLoading() {
-    console.log('RadioPulse: Hiding loading overlay');
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) {
-      overlay.classList.add('hidden');
-    } else {
-      console.warn('RadioPulse: Loading overlay not found');
-    }
-  }
-
+  // Sobrescribir: Cargar datos básicos con funcionalidad adicional
   async loadBasicData() {
+    await super.loadBasicData();
+    // El template base ya carga los datos básicos, aquí solo agregamos lo específico
+  }
+
+  // Sobrescribir: Cuando se cargan datos básicos
+  onBasicDataLoaded(data) {
+    // Actualizar elementos específicos del template blue
+    this.updateHeader(data);
+    this.updateFooter(data);
+  }
+
+  // Sobrescribir: Cuando se carga la canción actual
+  onCurrentSongLoaded(songData) {
+    console.log('BlueTemplate: onCurrentSongLoaded called', songData);
+    
+    // Let base template handle the player display update
+    // It will extract artist from fullTitle properly
+    
+    this.updateRecentTracks(songData);
+    this.updateSidebarStats(songData);
+    
+    // Setup news click handlers
+    this.setupNewsClickHandlers();
+    this.setupModalHandlers();
+  }
+
+  // Setup click handlers for news items
+  setupNewsClickHandlers() {
+    document.addEventListener('click', async (e) => {
+      const newsLink = e.target.closest('[data-slug]');
+      if (newsLink) {
+        e.preventDefault();
+        const slug = newsLink.getAttribute('data-slug');
+        await this.openNewsModal(slug);
+      }
+    });
+  }
+
+  // Open news modal
+  async openNewsModal(slug) {
     try {
-      const data = await getBasicData();
-      const logoUrl = await buildImageUrl(data.logoUrl);
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNewsBySlug(slug);
       
-      // Update branding
-      const elements = {
-        'news-logo': logoUrl,
-        'footer-logo': logoUrl,
-        'footer-title': data.projectName,
-        'footer-description': data.projectDescription,
-        'footer-radio-name': data.projectName
-      };
-      
-      Object.entries(elements).forEach(([id, value]) => {
-        const element = document.getElementById(id);
-        if (element) {
-          if (id.includes('logo')) {
-            element.src = value;
-            element.style.display = 'block';
-          } else {
-            element.textContent = value;
-          }
+      if (news) {
+        const titleEl = document.getElementById('news-modal-title');
+        const dateEl = document.getElementById('news-modal-date');
+        const contentEl = document.getElementById('news-modal-content');
+        const imageEl = document.getElementById('news-modal-image');
+        
+        if (titleEl) titleEl.textContent = news.name || '';
+        if (dateEl) dateEl.innerHTML = `<i class="fas fa-calendar"></i> ${new Date(news.createdAt).toLocaleDateString('es-ES')}`;
+        if (contentEl) contentEl.innerHTML = news.description || news.shortText || '';
+        
+        if (imageEl && news.imageUrl) {
+          const fullImageUrl = await dataManager.getImageUrl(news.imageUrl);
+          imageEl.src = fullImageUrl;
+          imageEl.parentElement.style.display = 'block';
+        } else if (imageEl) {
+          imageEl.parentElement.style.display = 'none';
+        }
+        
+        const modal = document.getElementById('news-modal');
+        if (modal) modal.classList.add('active');
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading news details:', error);
+    }
+  }
+
+  // Setup modal close handlers
+  setupModalHandlers() {
+    document.querySelectorAll('.modal-close').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('.modal-overlay').classList.remove('active');
+      });
+    });
+
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+          modal.classList.remove('active');
+        });
+      }
+    });
+
+    document.querySelectorAll('.share-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (navigator.share) {
+          navigator.share({ url: window.location.href });
+        } else {
+          navigator.clipboard.writeText(window.location.href);
+          alert('Enlace copiado');
         }
       });
-      
-      // Store streaming URL
-      this.streamUrl = data.radioStreamingUrl;
-      
-      // Load social networks
-      await this.loadSocialNetworks();
-      await this.checkTVAvailability();
-      
-    } catch (error) {
-      console.error('RadioPulse: Error loading basic data:', error);
-    }
+    });
   }
 
-  async loadAllContent() {
-    console.log('RadioPulse: Loading all content...');
+  // Actualizar estadísticas de la sidebar
+  updateSidebarStats(songData) {
+    const listenersEl = document.getElementById('sidebar-listeners');
+    const songsEl = document.getElementById('sidebar-songs');
     
-    try {
-      console.log('RadioPulse: Starting content loading...');
-      await Promise.all([
-        this.loadHeroCarousel(),
-        this.loadBreakingNews(),
-        this.loadFeaturedNews(),
-        this.loadProgramsTimeline(),
-        this.loadRecentTracks(),
-        this.loadQuickNews(),
-        this.loadSponsorsCarousel(),
-        this.loadAllNews(),
-        this.loadProgramsByDay(),
-        this.loadPodcasts(),
-        this.loadVideocasts(),
-        this.loadAllSponsors()
-      ]);
-      console.log('RadioPulse: All content loaded successfully');
-    } catch (error) {
-      console.error('RadioPulse: Error loading content:', error);
-      console.error('RadioPulse: Error details:', error.stack);
+    if (listenersEl) {
+      listenersEl.textContent = songData.listeners || '0';
+    }
+    
+    if (songsEl && songData.history) {
+      songsEl.textContent = songData.history.length || '0';
     }
   }
 
+  // Métodos específicos del template blue
+  updateHeader(data) {
+    // Actualizar elementos del header si es necesario
+  }
+
+  updateFooter(data) {
+    const footerDesc = document.getElementById('footer-description');
+    if (footerDesc && data.projectDescription) {
+      footerDesc.textContent = data.projectDescription;
+    }
+  }
+
+  updateRecentTracks(songData) {
+    // Actualizar tracks recientes
+    const recentTracksEl = document.getElementById('recent-tracks');
+    if (recentTracksEl && songData.history) {
+      // Renderizar historial de canciones
+    }
+  }
+
+  // Cargar todo el contenido
+  async loadAllContent() {
+    try {
+      const dataManager = getDataManager();
+      
+      await this.loadHeroCarousel();
+      await this.loadBreakingNews();
+      await this.loadFeaturedNews();
+      await this.loadProgramsTimeline();
+      await this.loadRecentTracks();
+      await this.loadQuickNews();
+      await this.loadSponsorsCarousel();
+      await this.loadAllNews();
+      await this.loadProgramsByDay();
+      
+    } catch (error) {
+      console.error('BlueTemplate: Error loading content:', error);
+    }
+  }
+
+  // Cargar hero carousel
   async loadHeroCarousel() {
     try {
-      console.log('RadioPulse: Loading hero carousel...');
-      const news = await getNews(1, 5);
-      console.log('RadioPulse: Hero carousel news data:', news);
-      const container = document.getElementById('hero-carousel');
-      
-      if (!container) {
-        console.warn('RadioPulse: Hero carousel container not found');
-        return;
-      }
+      console.log('BlueTemplate: Loading hero carousel...');
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNews(1, 5);
+      console.log('BlueTemplate: News loaded:', news);
       
       if (news && news.data && news.data.length > 0) {
-        const html = news.data.map(article => `
-          <div class="swiper-slide">
-            <div class="hero-slide">
-              ${article.imageUrl ? `<img src="https://dashboard.ipstream.cl${article.imageUrl}" alt="${article.name}">` : ''}
-              <div class="hero-content">
-                <div class="hero-category">Destacado</div>
-                <h2 class="hero-title">${article.name}</h2>
-                <p class="hero-excerpt">${article.shortText || 'Noticia destacada del día'}</p>
-                <div class="hero-meta">
-                  <span><i class="fas fa-calendar"></i> ${new Date(article.createdAt).toLocaleDateString()}</span>
-                  <span><i class="fas fa-eye"></i> ${Math.floor(Math.random() * 1000) + 100} vistas</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        `).join('');
-        
-        container.innerHTML = html;
-        
-        // Reinitialize Swiper
-        if (this.heroSwiper) {
-          this.heroSwiper.destroy();
+        console.log('BlueTemplate: Has', news.data.length, 'news items');
+        // Construir URLs de imágenes
+        for (const item of news.data) {
+          if (item.imageUrl) {
+            item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+          }
         }
-        this.initHeroSwiper();
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading hero carousel:', error);
-    }
-  }
-
-  async loadBreakingNews() {
-    try {
-      const news = await getNews(1, 10);
-      const container = document.getElementById('breaking-ticker');
-      
-      if (!container) return;
-      
-      if (news && news.data && news.data.length > 0) {
-        const tickerItems = news.data.map(article => 
-          `<span class="ticker-item">${article.name}</span>`
-        ).join(' • ');
-        
-        container.innerHTML = tickerItems;
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading breaking news:', error);
-    }
-  }
-
-  async loadFeaturedNews() {
-    try {
-      console.log('RadioPulse: Loading featured news...');
-      const news = await getNews(1, 6);
-      console.log('RadioPulse: Featured news data:', news);
-      const container = document.getElementById('featured-news-grid');
-      
-      if (!container) {
-        console.warn('RadioPulse: Featured news container not found');
-        return;
-      }
-      
-      if (news && news.data && news.data.length > 0) {
-        const html = news.data.map((article, index) => `
-          <article class="news-card ${index === 0 ? 'featured' : ''}" data-aos="fade-up" data-aos-delay="${index * 100}">
-            <div class="news-image">
-              ${article.imageUrl ? `<img src="https://dashboard.ipstream.cl${article.imageUrl}" alt="${article.name}">` : ''}
-              <div class="news-category">Noticias</div>
-            </div>
-            <div class="news-content">
-              <h3 class="news-title">${article.name}</h3>
-              <p class="news-excerpt">${article.shortText || 'Resumen de la noticia no disponible'}</p>
-              <div class="news-meta">
-                <span class="news-date">
-                  <i class="fas fa-calendar"></i>
-                  ${new Date(article.createdAt).toLocaleDateString()}
-                </span>
-                <button class="read-more" onclick="radioPulse.openNewsModal('${article.slug}')">
-                  <i class="fas fa-book-open"></i>
-                  Leer más
-                </button>
-              </div>
-            </div>
-          </article>
-        `).join('');
-        
-        container.innerHTML = html;
+        this.renderHeroCarousel(news.data);
       } else {
-        container.innerHTML = '<p>No hay noticias disponibles</p>';
+        console.warn('BlueTemplate: No news data returned');
       }
     } catch (error) {
-      console.error('RadioPulse: Error loading featured news:', error);
+      console.error('BlueTemplate: Error loading hero carousel:', error);
     }
   }
 
-  async loadProgramsTimeline() {
-    try {
-      const programs = await getPrograms();
-      const container = document.getElementById('programs-timeline');
-      
-      if (!container) return;
-      
-      if (programs && programs.length > 0) {
-        const now = new Date();
-        const currentHour = now.getHours();
-        
-        const html = programs.slice(0, 8).map(program => {
-          const programHour = parseInt(program.startTime.split(':')[0]);
-          let status = 'upcoming';
-          
-          if (programHour === currentHour) {
-            status = 'live';
-          } else if (programHour === currentHour + 1) {
-            status = 'next';
-          }
-          
-          return `
-            <div class="timeline-item" data-aos="fade-right">
-              <div class="timeline-time">${program.startTime}</div>
-              <div class="timeline-content">
-                <h4 class="timeline-title">${program.name}</h4>
-                <p class="timeline-description">${program.description || 'Programa de radio'}</p>
-                ${program.host ? `<div class="timeline-host"><i class="fas fa-microphone"></i> ${program.host}</div>` : ''}
-              </div>
-              <div class="timeline-status ${status}">
-                ${status === 'live' ? 'EN VIVO' : status === 'next' ? 'PRÓXIMO' : 'PROGRAMADO'}
-              </div>
-            </div>
-          `;
-        }).join('');
-        
-        container.innerHTML = html;
-      } else {
-        container.innerHTML = '<p>No hay programas disponibles</p>';
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading programs timeline:', error);
+  // Renderizar hero carousel
+  renderHeroCarousel(news) {
+    console.log('BlueTemplate: renderHeroCarousel called with', news?.length, 'items');
+    const container = document.getElementById('hero-carousel');
+    if (!container) {
+      console.error('BlueTemplate: hero-carousel container not found!');
+      return;
     }
-  }
 
-  async loadRecentTracks() {
-    try {
-      const songData = await getCurrentSong();
-      const container = document.getElementById('recent-tracks');
-      
-      if (!container) return;
-      
-      // Usar el historial de SonicPanel si está disponible
-      let recentTracks = [];
-      
-      if (songData && songData.history && songData.history.length > 0) {
-        recentTracks = songData.history.slice(0, 5).map((trackString, index) => {
-          const parts = trackString.split(' - ');
-          let title, artist;
-          
-          if (parts.length >= 2) {
-            artist = parts[0].trim();
-            title = parts.slice(1).join(' - ').trim();
-          } else {
-            title = trackString.trim();
-            artist = 'Artista desconocido';
-          }
-          
-          const minutesAgo = (index + 1) * 3;
-          const timeAgo = new Date(Date.now() - minutesAgo * 60000);
-          
-          return {
-            title: title || 'Sin título',
-            artist: artist || 'Artista desconocido',
-            time: this.formatTime(timeAgo)
-          };
-        });
-      } else {
-        recentTracks = [
-          { title: 'Canción Actual', artist: 'Artista 1', time: this.formatTime(new Date()) },
-          { title: 'Canción Anterior', artist: 'Artista 2', time: this.formatTime(new Date(Date.now() - 3 * 60000)) },
-          { title: 'Hace 5 minutos', artist: 'Artista 3', time: this.formatTime(new Date(Date.now() - 5 * 60000)) },
-          { title: 'Hace 8 minutos', artist: 'Artista 4', time: this.formatTime(new Date(Date.now() - 8 * 60000)) },
-          { title: 'Hace 12 minutos', artist: 'Artista 5', time: this.formatTime(new Date(Date.now() - 12 * 60000)) }
-        ];
-      }
-      
-      if (recentTracks.length > 0) {
-        const html = recentTracks.map((track, index) => `
-          <div class="track-item" data-aos="fade-left" data-aos-delay="${index * 50}">
-            <div class="track-number">${index + 1}</div>
-            <div class="track-details">
-              <div class="track-name">${track.title}</div>
-              <div class="track-artist">${track.artist}</div>
-            </div>
-            <div class="track-time">${track.time}</div>
-          </div>
-        `).join('');
-        
-        container.innerHTML = html;
-      } else {
-        container.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.6); padding: 2rem;">No hay historial disponible</p>';
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading recent tracks:', error);
-      const container = document.getElementById('recent-tracks');
-      if (container) {
-        container.innerHTML = '<p style="text-align: center; color: #e74c3c; padding: 2rem;">Error cargando historial</p>';
-      }
-    }
-  }
-
-  formatTime(date) {
-    return date.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  }
-
-  async loadQuickNews() {
-    try {
-      const news = await getNews(1, 5);
-      const container = document.getElementById('quick-news');
-      
-      if (!container) return;
-      
-      if (news && news.data && news.data.length > 0) {
-        const html = news.data.map((article, index) => `
-          <div class="quick-news-item" data-aos="fade-left" data-aos-delay="${index * 50}">
-            <div class="quick-news-title">${article.name}</div>
-            <div class="quick-news-time">${new Date(article.createdAt).toLocaleDateString()}</div>
-          </div>
-        `).join('');
-        
-        container.innerHTML = html;
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading quick news:', error);
-    }
-  }
-
-  async loadSponsorsCarousel() {
-    try {
-      const sponsors = await getSponsors();
-      const container = document.getElementById('sponsors-carousel');
-      
-      if (!container) return;
-      
-      if (sponsors && sponsors.length > 0) {
-        const html = sponsors.map(sponsor => `
-          <div class="swiper-slide">
-            <div class="sponsor-item">
-              <div class="sponsor-logo">
-                ${sponsor.logoUrl ? `<img src="https://dashboard.ipstream.cl${sponsor.logoUrl}" alt="${sponsor.name}">` : ''}
-              </div>
-              <div class="sponsor-name">${sponsor.name}</div>
-            </div>
-          </div>
-        `).join('');
-        
-        container.innerHTML = html;
-        
-        if (this.sponsorsSwiper) {
-          this.sponsorsSwiper.destroy();
-        }
-        this.initSponsorsSwiper();
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading sponsors carousel:', error);
-    }
-  }
-
-  async loadAllNews() {
-    try {
-      const news = await getNews(this.currentPage.news, 12);
-      const container = document.getElementById('all-news-grid');
-      
-      if (!container) return;
-      
-      if (news && news.data && news.data.length > 0) {
-        const html = news.data.map((article, index) => `
-          <article class="news-card" data-aos="fade-up" data-aos-delay="${index * 50}">
-            <div class="news-image">
-              ${article.imageUrl ? `<img src="https://dashboard.ipstream.cl${article.imageUrl}" alt="${article.name}">` : ''}
-              <div class="news-category">Noticias</div>
-            </div>
-            <div class="news-content">
-              <h3 class="news-title">${article.name}</h3>
-              <p class="news-excerpt">${article.shortText || 'Resumen no disponible'}</p>
-              <div class="news-meta">
-                <span class="news-date">
-                  <i class="fas fa-calendar"></i>
-                  ${new Date(article.createdAt).toLocaleDateString()}
-                </span>
-                <button class="read-more" onclick="radioPulse.openNewsModal('${article.slug}')">
-                  <i class="fas fa-book-open"></i>
-                  Leer más
-                </button>
-              </div>
-            </div>
-          </article>
-        `).join('');
-        
-        container.innerHTML = html;
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading all news:', error);
-    }
-  }
-
-  async loadProgramsByDay() {
-    try {
-      const programs = await getPrograms();
-      
-      if (!programs || programs.length === 0) {
-        this.showEmptyDayMessage();
-        return;
-      }
-      
-      const programsByDay = this.organizeProgramsByDay(programs);
-      const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-      
-      days.forEach(day => {
-        this.loadDayPrograms(day, programsByDay[day] || []);
-      });
-      
-      this.setCurrentDayAsActive();
-      
-    } catch (error) {
-      console.error('RadioPulse: Error loading programs by day:', error);
-    }
-  }
-
-  organizeProgramsByDay(programs) {
-    const programsByDay = {
-      lunes: [],
-      martes: [],
-      miercoles: [],
-      jueves: [],
-      viernes: [],
-      sabado: [],
-      domingo: []
-    };
-    
-    programs.forEach(program => {
-      if (program.weekDays && Array.isArray(program.weekDays)) {
-        program.weekDays.forEach(day => {
-          const dayKey = this.normalizeDayName(day);
-          if (programsByDay[dayKey]) {
-            programsByDay[dayKey].push(program);
-          }
-        });
-      } else if (program.days && Array.isArray(program.days)) {
-        program.days.forEach(day => {
-          const dayKey = this.normalizeDayName(day);
-          if (programsByDay[dayKey]) {
-            programsByDay[dayKey].push(program);
-          }
-        });
-      }
-    });
-    
-    Object.keys(programsByDay).forEach(day => {
-      programsByDay[day].sort((a, b) => {
-        const timeA = this.parseTime(a.startTime);
-        const timeB = this.parseTime(b.startTime);
-        return timeA - timeB;
-      });
-    });
-    
-    return programsByDay;
-  }
-
-  normalizeDayName(day) {
-    const dayMap = {
-      'monday': 'lunes',
-      'tuesday': 'martes', 
-      'wednesday': 'miercoles',
-      'thursday': 'jueves',
-      'friday': 'viernes',
-      'saturday': 'sabado',
-      'sunday': 'domingo',
-      'lunes': 'lunes',
-      'martes': 'martes',
-      'miércoles': 'miercoles',
-      'miercoles': 'miercoles',
-      'jueves': 'jueves',
-      'viernes': 'viernes',
-      'sábado': 'sabado',
-      'sabado': 'sabado',
-      'domingo': 'domingo'
-    };
-    
-    return dayMap[day.toLowerCase()] || 'lunes';
-  }
-
-  parseTime(timeString) {
-    if (!timeString) return 0;
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours * 60 + (minutes || 0);
-  }
-
-  loadDayPrograms(day, programs) {
-    const container = document.getElementById(`${day}-grid`);
-    
-    if (!container) return;
-    
-    if (programs.length === 0) {
+    // Fallback: si no hay noticias, mostrar contenido de ejemplo
+    if (!news || news.length === 0) {
+      console.warn('BlueTemplate: No news, showing placeholder');
       container.innerHTML = `
-        <div class="empty-day">
-          <i class="fas fa-calendar-times"></i>
-          <h3>Sin programación</h3>
-          <p>No hay programas programados para este día</p>
+        <div class="swiper-slide">
+          <div class="hero-slide" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+              <span class="hero-category">Bienvenido</span>
+              <h2 class="hero-title">Radio Pulse</h2>
+              <p class="hero-description">Tu radio online las 24 horas</p>
+            </div>
+          </div>
         </div>
       `;
       return;
     }
-    
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentDay = this.getCurrentDayName();
-    
-    const html = programs.map((program, index) => {
-      const programHour = parseInt(program.startTime.split(':')[0]);
-      let status = 'upcoming';
-      let statusText = 'PROGRAMADO';
+
+    const slidesHtml = news.map((item, index) => `
+      <div class="swiper-slide" data-index="${index}">
+        <div class="hero-slide" style="background-image: url('${item.imageUrl || ''}')">
+          <div class="hero-overlay"></div>
+          <div class="hero-content">
+            <span class="hero-category">Noticia</span>
+            <h2 class="hero-title">${item.name}</h2>
+            <p class="hero-description">${item.shortText || ''}</p>
+            <a href="#" class="hero-link" data-slug="${item.slug}">Leer más <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    container.innerHTML = slidesHtml;
+  }
+
+// Cargar breaking news
+  async loadBreakingNews() {
+    try {
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNews(1, 3);
       
-      if (day === currentDay) {
-        if (programHour === currentHour) {
-          status = 'live';
-          statusText = 'EN VIVO';
-        } else if (programHour === currentHour + 1) {
-          status = 'next';
-          statusText = 'PRÓXIMO';
-        } else if (programHour < currentHour) {
-          status = 'finished';
-          statusText = 'FINALIZADO';
-        }
+      if (news && news.data && news.data.length > 0) {
+        this.renderBreakingNews(news.data);
       }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading breaking news:', error);
+    }
+  }
+
+  // Renderizar breaking news
+  renderBreakingNews(news) {
+    const container = document.getElementById('breaking-ticker');
+    if (!container) return;
+
+    if (!news || news.length === 0) {
+      container.innerHTML = '<p style="padding:15px;color:#ccc;">No hay noticias disponibles</p>';
+      return;
+    }
+
+    container.innerHTML = news.map(item => `
+      <div style="display:flex;align-items:center;gap:15px;padding:10px;">
+        <span style="background:#e74c3c;padding:5px 10px;border-radius:3px;font-size:11px;font-weight:bold;">ÚLTIMA HORA</span>
+        <span style="color:#fff;">${item.name}</span>
+      </div>
+    `).join('');
+  }
+
+// Cargar featured news
+  async loadFeaturedNews() {
+    try {
+      console.log('BlueTemplate: Loading featured news...');
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNews(1, 6);
+      console.log('BlueTemplate: Featured news data:', news);
+      
+      if (news && news.data && news.data.length > 0) {
+        // Construir URLs de imágenes
+        for (const item of news.data) {
+          if (item.imageUrl) {
+            item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+          }
+        }
+        this.renderFeaturedNews(news.data);
+      } else {
+        console.warn('BlueTemplate: No featured news data');
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading featured news:', error);
+    }
+  }
+
+  // Renderizar featured news
+  renderFeaturedNews(news) {
+    console.log('BlueTemplate: renderFeaturedNews called with', news?.length, 'items');
+    const container = document.getElementById('featured-news-grid');
+    console.log('BlueTemplate: featured-news-grid container:', !!container);
+    if (!container) {
+      console.error('BlueTemplate: container not found!');
+      return;
+    }
+
+    if (!news || news.length === 0) {
+      container.innerHTML = '<p style="padding:20px;text-align:center;color:#ccc;">No hay noticias destacadas</p>';
+      return;
+    }
+
+    const newsHtml = news.map(item => `
+      <article class="news-card" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;overflow:hidden;margin-bottom:20px;">
+        <div class="news-image" style="height:200px;overflow:hidden;">
+          <img src="${item.imageUrl || '/assets/images/default-news.jpg'}" alt="${item.name}" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
+        </div>
+        <div class="news-content" style="padding:15px;">
+          <h3 class="news-title" style="color:#fff;margin:0 0 10px 0;"><a href="#" data-slug="${item.slug}" style="color:#fff;text-decoration:none;">${item.name}</a></h3>
+          <p class="news-excerpt" style="color:#ccc;font-size:14px;">${item.shortText || ''}</p>
+          <span class="news-date" style="color:#888;font-size:12px;">${new Date(item.createdAt).toLocaleDateString('es-ES')}</span>
+        </div>
+      </article>
+    `).join('');
+
+    container.innerHTML = newsHtml;
+  }
+
+  // Cargar timeline de programas
+  async loadProgramsTimeline() {
+    try {
+      const dataManager = getDataManager();
+      const programs = await dataManager.loadPrograms();
+      
+      if (programs && programs.length > 0) {
+        this.renderProgramsTimeline(programs);
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading programs timeline:', error);
+    }
+  }
+
+  // Renderizar timeline de programas
+  renderProgramsTimeline(programs) {
+    const container = document.getElementById('programs-timeline');
+    if (!container) return;
+
+    const todaySpanish = new Date().toLocaleDateString('es-ES', { weekday: 'long' });
+    const todayPrograms = programs.filter(p => {
+      const programDay = this.getSpanishDay(p.day);
+      return programDay && programDay.toLowerCase() === todaySpanish.toLowerCase();
+    });
+
+    if (todayPrograms.length === 0) {
+      container.innerHTML = `
+        <div class="no-programs-today">
+          <i class="fas fa-calendar-day"></i>
+          <p>No hay programas para hoy (${todaySpanish})</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Ordenar por hora de inicio
+    todayPrograms.sort((a, b) => {
+      if (a.startTime && b.startTime) {
+        return a.startTime.localeCompare(b.startTime);
+      }
+      return 0;
+    });
+
+    const timelineHtml = todayPrograms.map(program => `
+      <div class="timeline-item">
+        <div class="timeline-time">
+          <span>${program.startTime || '00:00'}</span>
+        </div>
+        <div class="timeline-content">
+          <h4>${program.name}</h4>
+          <p>${program.description || ''}</p>
+        </div>
+      </div>
+    `).join('');
+
+    container.innerHTML = timelineHtml;
+  }
+
+  // Organizar programas por día
+  organizeProgramsByDay(programs) {
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const organized = {};
+    
+    days.forEach(day => {
+      organized[day] = programs.filter(p => p.day === day);
+    });
+    
+    return organized;
+  }
+
+  // Cargar sponsors
+  async loadSponsorsCarousel() {
+    try {
+      const dataManager = getDataManager();
+      const sponsors = await dataManager.loadSponsors();
+      
+      if (sponsors && sponsors.length > 0) {
+        // Construir URLs de logos
+        for (const sponsor of sponsors) {
+          if (sponsor.logoUrl) {
+            sponsor.logoUrl = await dataManager.getImageUrl(sponsor.logoUrl);
+          }
+        }
+        this.renderSponsorsCarousel(sponsors);
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading sponsors:', error);
+    }
+  }
+
+  // Renderizar sponsors
+  renderSponsorsCarousel(sponsors) {
+    const container = document.getElementById('sponsors-carousel');
+    if (!container) return;
+
+    const sponsorsHtml = sponsors.map(sponsor => `
+      <div class="swiper-slide">
+        <div class="sponsor-card">
+          <img src="${sponsor.logoUrl || ''}" alt="${sponsor.name}" loading="lazy">
+          <h4>${sponsor.name}</h4>
+        </div>
+      </div>
+    `).join('');
+
+    container.innerHTML = sponsorsHtml;
+  }
+
+  // Cargar todas las noticias
+  async loadAllNews() {
+    try {
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNews(this.currentPage.news, 10);
+      
+      if (news.data) {
+        // Construir URLs de imágenes
+        for (const item of news.data) {
+          if (item.imageUrl) {
+            item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+          }
+        }
+        this.renderAllNews(news.data);
+        this.setupPagination('news', news.pagination);
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading all news:', error);
+    }
+  }
+
+  // Renderizar todas las noticias
+  renderAllNews(news) {
+    const container = document.getElementById('all-news-grid');
+    if (!container) return;
+
+    const newsHtml = news.map(item => `
+      <article class="news-grid-item">
+        <div class="news-grid-image">
+          <img src="${item.imageUrl || '/assets/images/default-news.jpg'}" alt="${item.name}" loading="lazy">
+        </div>
+        <div class="news-grid-content">
+          <h3>${item.name}</h3>
+          <p>${item.shortText || ''}</p>
+          <span class="news-date">${new Date(item.createdAt).toLocaleDateString('es-ES')}</span>
+        </div>
+      </article>
+    `).join('');
+
+    container.innerHTML = newsHtml;
+  }
+
+  // Cargar programas por día
+  async loadProgramsByDay() {
+    try {
+      const dataManager = getDataManager();
+      const programs = await dataManager.loadPrograms();
+      
+      if (programs) {
+        this.renderProgramsByDay(programs);
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading programs by day:', error);
+    }
+  }
+
+  // Renderizar programas por día
+  renderProgramsByDay(programs) {
+    const days = [
+      { id: 'lunes', name: 'Lunes' },
+      { id: 'martes', name: 'Martes' },
+      { id: 'miercoles', name: 'Miércoles' },
+      { id: 'jueves', name: 'Jueves' },
+      { id: 'viernes', name: 'Viernes' },
+      { id: 'sabado', name: 'Sábado' },
+      { id: 'domingo', name: 'Domingo' }
+    ];
+
+    days.forEach(day => {
+      const container = document.getElementById(`${day.id}-grid`);
+      if (!container) return;
+
+      const dayPrograms = programs.filter(p => {
+        const programDay = this.getSpanishDay(p.day);
+        return programDay && programDay.toLowerCase() === day.name.toLowerCase();
+      });
+
+      if (dayPrograms.length === 0) {
+        container.innerHTML = `
+          <div class="no-programs">
+            <i class="fas fa-calendar-times"></i>
+            <p>No hay programas para ${day.name}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const programsHtml = dayPrograms.map(program => `
+        <div class="program-card">
+          <div class="program-time">
+            <span class="time-start">${program.startTime || '00:00'}</span>
+            <span class="time-separator">-</span>
+            <span class="time-end">${program.endTime || '00:00'}</span>
+          </div>
+          <div class="program-info">
+            <h4>${program.name}</h4>
+            <p>${program.description || ''}</p>
+          </div>
+          <div class="program-host">
+            <span>${program.host || ''}</span>
+          </div>
+        </div>
+      `).join('');
+
+      container.innerHTML = programsHtml;
+    });
+  }
+
+  // Cargar tracks recientes
+  async loadRecentTracks() {
+    const container = document.getElementById('recent-tracks');
+    if (!container || !this.currentSongData || !this.currentSongData.history) {
+      container.innerHTML = `
+        <div class="no-tracks">
+          <i class="fas fa-music"></i>
+          <p>No hay canciones recientes</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Only show last 5 tracks
+    const history = this.currentSongData.history.slice(-5);
+    const tracksHtml = history.map((track, index) => {
+      const cleanTrack = track.replace(/^\d+\.\s*/, '');
       
       return `
-        <div class="program-card-day ${status}" data-aos="fade-up" data-aos-delay="${index * 100}">
-          <div class="program-image">
-            ${program.imageUrl ? `
-              <img src="https://dashboard.ipstream.cl${program.imageUrl}" alt="${program.name}" loading="lazy">
-            ` : `
-              <div class="program-image-placeholder">
-                <i class="fas fa-microphone"></i>
-              </div>
-            `}
-            <div class="program-status-overlay ${status}">
-              ${status === 'live' ? '<i class="fas fa-circle"></i> EN VIVO' : ''}
-            </div>
-          </div>
-          
-          <div class="program-header">
-            <div class="program-time">
-              <i class="fas fa-clock"></i>
-              ${program.startTime}${program.endTime ? ` - ${program.endTime}` : ''}
-            </div>
-            <div class="program-name">${program.name}</div>
-            ${program.host ? `
-              <div class="program-host">
-                <i class="fas fa-microphone"></i>
-                ${program.host}
-              </div>
-            ` : ''}
-          </div>
-          
-          <div class="program-content">
-            <p class="program-description">${program.description || 'Programa de radio con el mejor contenido y entretenimiento.'}</p>
-            
-            ${program.tags ? `
-              <div class="program-tags">
-                ${program.tags.map(tag => `<span class="program-tag">${tag}</span>`).join('')}
-              </div>
-            ` : ''}
-            
-            <div class="program-actions">
-              <div class="program-status ${status}">${statusText}</div>
-              <button class="program-listen-btn ${status !== 'live' ? 'disabled' : ''}" 
-                      ${status === 'live' ? `onclick="radioPulse.playLiveProgram('${program.id}')"` : ''}>
-                <i class="fas fa-${status === 'live' ? 'play' : 'clock'}"></i>
-                ${status === 'live' ? 'Escuchar' : 'Programado'}
-                <div class="btn-ripple"></div>
-              </button>
-            </div>
-          </div>
+        <div class="track-item">
+          <span class="track-number">${index + 1}</span>
+          <span class="track-name">${cleanTrack}</span>
         </div>
       `;
     }).join('');
-    
-    container.innerHTML = html;
+
+    container.innerHTML = tracksHtml;
   }
 
-  getCurrentDayName() {
-    const days = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-    const today = new Date().getDay();
-    return days[today];
-  }
-
-  setCurrentDayAsActive() {
-    const currentDay = this.getCurrentDayName();
-    console.log('RadioPulse: Setting current day as active:', currentDay);
-    
-    document.querySelectorAll('.day-btn').forEach(btn => {
-      btn.classList.remove('active');
-      if (btn.dataset.day === currentDay) {
-        btn.classList.add('active');
-      }
-    });
-    
-    this.showDayPrograms(currentDay);
-  }
-
-  showEmptyDayMessage() {
-    const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-    
-    days.forEach(day => {
-      const container = document.getElementById(`${day}-grid`);
-      if (container) {
-        container.innerHTML = `
-          <div class="empty-day">
-            <i class="fas fa-calendar-times"></i>
-            <h3>Sin programación</h3>
-            <p>No hay programas disponibles en este momento</p>
-          </div>
-        `;
-      }
-    });
-  }
-
-  showDayPrograms(day) {
-    console.log('RadioPulse: Showing programs for:', day);
-    
-    document.querySelectorAll('.day-programs').forEach(dayProgram => {
-      dayProgram.classList.remove('active');
-    });
-    
-    const targetDay = document.getElementById(`${day}-programs`);
-    if (targetDay) {
-      targetDay.classList.add('active');
-    }
-    
-    if (typeof AOS !== 'undefined') {
-      AOS.refresh();
-    }
-  }
-
-  async loadPodcasts() {
+  // Cargar quick news
+  async loadQuickNews() {
     try {
-      const podcasts = await getPodcasts(this.currentPage.podcasts, 12);
-      const container = document.getElementById('podcasts-grid');
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNews(1, 4);
       
-      if (!container) return;
-      
-      if (podcasts && podcasts.data && podcasts.data.length > 0) {
-        const html = podcasts.data.map((podcast, index) => `
-          <div class="media-card simple-card" data-aos="fade-up" data-aos-delay="${index * 50}">
-            <div class="media-thumbnail">
-              ${podcast.imageUrl ? `<img src="https://dashboard.ipstream.cl${podcast.imageUrl}" alt="${podcast.title}">` : `
-                <div class="media-placeholder">
-                  <i class="fas fa-podcast"></i>
-                </div>
-              `}
-              <div class="media-overlay">
-                <button class="play-btn" onclick="radioPulse.openPodcastModal('${podcast.id}')">
-                  <i class="fas fa-play"></i>
-                </button>
-              </div>
-            </div>
-            <div class="media-info simple-info">
-              <h4 class="media-title">${podcast.title}</h4>
-            </div>
-          </div>
-        `).join('');
-        
-        container.innerHTML = html;
-        container.classList.add('simple-grid');
-      } else {
-        container.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.6); padding: 2rem;">No hay podcasts disponibles</p>';
+      if (news.data) {
+        this.renderQuickNews(news.data);
       }
     } catch (error) {
-      console.error('RadioPulse: Error loading podcasts:', error);
+      console.error('BlueTemplate: Error loading quick news:', error);
     }
   }
 
-  async loadVideocasts() {
-    try {
-      const videocasts = await getVideocasts(this.currentPage.videocasts, 12);
-      const container = document.getElementById('videocasts-grid');
-      
-      if (!container) return;
-      
-      if (videocasts && videocasts.data && videocasts.data.length > 0) {
-        const html = videocasts.data.map((videocast, index) => `
-          <div class="media-card simple-card" data-aos="fade-up" data-aos-delay="${index * 50}">
-            <div class="media-thumbnail">
-              ${videocast.imageUrl ? `<img src="https://dashboard.ipstream.cl${videocast.imageUrl}" alt="${videocast.title}">` : `
-                <div class="media-placeholder">
-                  <i class="fas fa-video"></i>
-                </div>
-              `}
-              <div class="media-overlay">
-                <button class="play-btn" onclick="radioPulse.openVideocastModal('${videocast.id}')">
-                  <i class="fas fa-play"></i>
-                </button>
-              </div>
-            </div>
-            <div class="media-info simple-info">
-              <h4 class="media-title">${videocast.title}</h4>
-            </div>
-          </div>
-        `).join('');
-        
-        container.innerHTML = html;
-        container.classList.add('simple-grid');
-      } else {
-        container.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.6); padding: 2rem;">No hay videocasts disponibles</p>';
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading videocasts:', error);
-    }
-  }
-
-  async loadAllSponsors() {
-    try {
-      const sponsors = await getSponsors();
-      const container = document.getElementById('all-sponsors-grid');
-      
-      if (!container) return;
-      
-      if (sponsors && sponsors.length > 0) {
-        const html = sponsors.map((sponsor, index) => `
-          <div class="sponsor-card" data-aos="fade-up" data-aos-delay="${index * 100}">
-            <div class="sponsor-logo">
-              ${sponsor.logoUrl ? `<img src="https://dashboard.ipstream.cl${sponsor.logoUrl}" alt="${sponsor.name}" loading="lazy">` : `
-                <div class="sponsor-logo-placeholder">
-                  <i class="fas fa-handshake"></i>
-                </div>
-              `}
-            </div>
-            <div class="sponsor-info">
-              <div class="sponsor-name">${sponsor.name}</div>
-              <p class="sponsor-description">${sponsor.description || 'Patrocinador oficial que confía en nosotros'}</p>
-              
-              ${sponsor.address ? `
-                <div class="sponsor-contact">
-                  <div class="contact-item"><i class="fas fa-map-marker-alt"></i> ${sponsor.address}</div>
-                </div>
-              ` : ''}
-              
-              <div class="sponsor-actions">
-                ${sponsor.website ? `<a href="${sponsor.website}" target="_blank" class="sponsor-link primary"><i class="fas fa-external-link-alt"></i> Visitar sitio</a>` : ''}
-                
-                <div class="sponsor-social">
-                  ${sponsor.facebook ? `<a href="${sponsor.facebook}" target="_blank" class="social-btn facebook" title="Facebook"><i class="fab fa-facebook-f"></i></a>` : ''}
-                  ${sponsor.instagram ? `<a href="${sponsor.instagram}" target="_blank" class="social-btn instagram" title="Instagram"><i class="fab fa-instagram"></i></a>` : ''}
-                  ${sponsor.youtube ? `<a href="${sponsor.youtube}" target="_blank" class="social-btn youtube" title="YouTube"><i class="fab fa-youtube"></i></a>` : ''}
-                  ${sponsor.tiktok ? `<a href="${sponsor.tiktok}" target="_blank" class="social-btn tiktok" title="TikTok"><i class="fab fa-tiktok"></i></a>` : ''}
-                  ${sponsor.x ? `<a href="${sponsor.x}" target="_blank" class="social-btn twitter" title="X (Twitter)"><i class="fab fa-x-twitter"></i></a>` : ''}
-                  ${sponsor.whatsapp ? `<a href="https://wa.me/${sponsor.whatsapp.replace(/[^0-9]/g, '')}" target="_blank" class="social-btn whatsapp" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>` : ''}
-                </div>
-              </div>
-            </div>
-          </div>
-        `).join('');
-        
-        container.innerHTML = html;
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading all sponsors:', error);
-    }
-  }
-
-  async loadSocialNetworks() {
-    try {
-      const socialData = await getSocialNetworks();
-      
-      if (socialData && typeof socialData === 'object') {
-        const socialNetworks = [];
-        
-        if (socialData.facebook) {
-          socialNetworks.push({ name: 'facebook', url: socialData.facebook });
-        }
-        if (socialData.instagram) {
-          socialNetworks.push({ name: 'instagram', url: socialData.instagram });
-        }
-        if (socialData.x) {
-          socialNetworks.push({ name: 'twitter', url: socialData.x });
-        }
-        if (socialData.youtube) {
-          socialNetworks.push({ name: 'youtube', url: socialData.youtube });
-        }
-        if (socialData.tiktok) {
-          socialNetworks.push({ name: 'tiktok', url: socialData.tiktok });
-        }
-        if (socialData.whatsapp) {
-          const whatsappUrl = socialData.whatsapp.startsWith('http') 
-            ? socialData.whatsapp 
-            : `https://wa.me/${socialData.whatsapp.replace(/[^0-9]/g, '')}`;
-          socialNetworks.push({ name: 'whatsapp', url: whatsappUrl });
-        }
-        
-        if (socialNetworks.length > 0) {
-          const socialHtml = socialNetworks.map(social => `
-            <a href="${social.url}" target="_blank" title="${social.name}">
-              <i class="${this.getSocialIcon(social.name)}"></i>
-            </a>
-          `).join('');
-          
-          const socialLinksHtml = `<div class="social-links">${socialHtml}</div>`;
-          
-          document.getElementById('footer-social').innerHTML = socialLinksHtml;
-          
-          const headerMainHtml = `<div class="social-links">${socialHtml}</div>`;
-          const headerMainElement = document.getElementById('header-social-main');
-          if (headerMainElement) {
-            headerMainElement.innerHTML = headerMainHtml;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading social networks:', error);
-    }
-  }
-
-  getSocialIcon(socialName) {
-    const icons = {
-      'facebook': 'fab fa-facebook-f',
-      'twitter': 'fab fa-twitter',
-      'instagram': 'fab fa-instagram',
-      'youtube': 'fab fa-youtube',
-      'tiktok': 'fab fa-tiktok',
-      'whatsapp': 'fab fa-whatsapp',
-      'telegram': 'fab fa-telegram',
-      'linkedin': 'fab fa-linkedin-in'
-    };
-    
-    return icons[socialName.toLowerCase()] || 'fas fa-link';
-  }
-
-  async loadSonicPanelData() {
-    try {
-      const songData = await getCurrentSong();
-      
-      if (songData) {
-        this.currentSongData = songData;
-        this.updateCurrentSongDisplay(songData);
-        this.updateStats(songData);
-        if (songData.history && songData.history.length > 0) {
-          this.updateRecentTracksFromSonicPanel(songData.history);
-        }
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading SonicPanel data:', error);
-    }
-  }
-
-  updateCurrentSongDisplay(songData) {
-    document.getElementById('player-song-title').textContent = songData.title || 'Radio Pulse';
-    document.getElementById('player-song-artist').textContent = songData.artist || 'En Vivo';
-    document.getElementById('player-listeners').textContent = songData.listeners || '0';
-    document.getElementById('player-bitrate').textContent = songData.bitrate || 'N/A';
-    
-    document.getElementById('footer-listeners').textContent = songData.listeners || '0';
-    
-    if (songData.art) {
-      const playerArtwork = document.getElementById('player-artwork');
-      if (playerArtwork) {
-        playerArtwork.src = songData.art;
-        playerArtwork.style.display = 'block';
-      }
-    }
-  }
-
-  updateStats(songData) {
-    document.getElementById('sidebar-listeners').textContent = songData.listeners || '0';
-    document.getElementById('sidebar-songs').textContent = Math.floor(Math.random() * 50) + 20;
-    document.getElementById('sidebar-quality').textContent = songData.bitrate ? `${songData.bitrate}k` : 'HD';
-  }
-
-  startSonicPanelUpdates() {
-    this.sonicPanelInterval = setInterval(() => {
-      this.loadSonicPanelData();
-      this.loadRecentTracks();
-    }, 30000);
-  }
-
-  updateRecentTracksFromSonicPanel(history) {
-    const container = document.getElementById('recent-tracks');
+  // Renderizar quick news
+  renderQuickNews(news) {
+    const container = document.getElementById('quick-news');
     if (!container) return;
-    
-    const recentTracks = history.slice(0, 5).map((trackString, index) => {
-      const parts = trackString.split(' - ');
-      let title, artist;
-      
-      if (parts.length >= 2) {
-        artist = parts[0].trim();
-        title = parts.slice(1).join(' - ').trim();
-      } else {
-        title = trackString.trim();
-        artist = 'Artista desconocido';
-      }
-      
-      const minutesAgo = (index + 1) * 3;
-      const timeAgo = new Date(Date.now() - minutesAgo * 60000);
-      
-      return {
-        title: title || 'Sin título',
-        artist: artist || 'Artista desconocido',
-        time: this.formatTime(timeAgo)
-      };
-    });
-    
-    if (recentTracks.length > 0) {
-      const html = recentTracks.map((track, index) => `
-        <div class="track-item">
-          <div class="track-number">${index + 1}</div>
-          <div class="track-details">
-            <div class="track-name">${track.title}</div>
-            <div class="track-artist">${track.artist}</div>
-          </div>
-          <div class="track-time">${track.time}</div>
+
+    if (!news || news.length === 0) {
+      container.innerHTML = `
+        <div class="no-news">
+          <i class="fas fa-newspaper"></i>
+          <p>No hay noticias</p>
         </div>
-      `).join('');
-      
-      container.innerHTML = html;
+      `;
+      return;
     }
+
+    const newsHtml = news.map(item => `
+      <div class="quick-news-item">
+        <span class="quick-news-date">${new Date(item.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+        <a href="#" class="quick-news-link" data-slug="${item.slug}">${item.name}</a>
+      </div>
+    `).join('');
+
+    container.innerHTML = newsHtml;
   }
 
+  // Setup de navegación
   setupNavigation() {
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const section = link.dataset.section;
-        this.showSection(section);
-        
-        // Close mobile menu after selection with animation
-        if (window.innerWidth <= 768) {
-          const navMenu = document.querySelector('.nav-menu');
-          const menuToggle = document.querySelector('.mobile-menu-toggle');
-          if (navMenu && navMenu.classList.contains('active')) {
-            navMenu.classList.remove('active');
-            menuToggle.classList.remove('active');
-            setTimeout(() => {
-              navMenu.style.cssText = '';
-            }, 300);
-          }
-        }
-      });
-    });
-    
-    const menuToggle = document.querySelector('.mobile-menu-toggle');
-    const navMenu = document.querySelector('.nav-menu');
+    const menuToggle = document.getElementById('menu-toggle');
+    const navMenu = document.getElementById('nav-menu');
     
     if (menuToggle && navMenu) {
-      const closeMenu = () => {
-        navMenu.classList.remove('active');
-        menuToggle.classList.remove('active');
-        // Wait for animation to complete before removing styles
-        setTimeout(() => {
-          navMenu.style.cssText = '';
-        }, 300);
-      };
-      
-      menuToggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const isOpen = navMenu.classList.contains('active');
-        
-        if (isOpen) {
-          closeMenu();
-        } else {
-          navMenu.classList.add('active');
-          menuToggle.classList.add('active');
-          
-          // Get the header height dynamically
-          const header = document.querySelector('.dynamic-header');
-          const headerHeight = header ? header.offsetHeight : 80;
-          
-          // Force styles with fixed position and more transparency
-          navMenu.style.cssText = `
-            position: fixed !important;
-            top: ${headerHeight}px !important;
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
-            background: rgba(0, 0, 0, 0.75) !important;
-            backdrop-filter: blur(25px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            height: auto !important;
-            opacity: 1 !important;
-            z-index: 999 !important;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-            overflow-y: auto !important;
-            max-height: calc(100vh - ${headerHeight}px) !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            visibility: visible !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-          `;
-        }
+      menuToggle.addEventListener('click', () => {
+        navMenu.classList.toggle('active');
       });
       
-      // Close menu when clicking outside with animation
-      setTimeout(() => {
-        document.addEventListener('click', (e) => {
-          if (navMenu.classList.contains('active') && 
-              !navMenu.contains(e.target) && 
-              !menuToggle.contains(e.target)) {
-            closeMenu();
-          }
-        });
-      }, 100);
-      
-      // Close menu on window resize if screen becomes large
-      window.addEventListener('resize', () => {
-        if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
-          closeMenu();
+      // Cerrar menú al hacer click fuera
+      document.addEventListener('click', (e) => {
+        if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+          navMenu.classList.remove('active');
         }
       });
     }
   }
 
-  setupAudioPlayer() {
-    console.log('RadioPulse: Setting up audio player...');
-    
-    // Wait for DOM to be fully ready
-    setTimeout(() => {
-      this.audioPlayer = document.getElementById('news-audio');
-      
-      const playBtn = document.getElementById('main-play-btn');
-      const volumeSlider = document.querySelector('.glass-slider');
-      const playerToggle = document.getElementById('player-toggle');
-      const fixedPlayer = document.getElementById('fixed-player');
-      const playerContent = document.querySelector('.player-content');
-      const nowPlaying = document.querySelector('.now-playing');
-      const playerControls = document.querySelector('.player-controls');
-      
-      console.log('RadioPulse: Audio elements found:', {
-        audioPlayer: !!this.audioPlayer,
-        playBtn: !!playBtn,
-        volumeSlider: !!volumeSlider,
-        playerToggle: !!playerToggle,
-        fixedPlayer: !!fixedPlayer,
-        playerContent: !!playerContent,
-        nowPlaying: !!nowPlaying,
-        playerControls: !!playerControls
-      });
-      
-      // Force visibility of all player elements
-      if (fixedPlayer) {
-        fixedPlayer.style.display = 'block';
-        fixedPlayer.style.visibility = 'visible';
-        fixedPlayer.style.opacity = '1';
-        fixedPlayer.style.transform = 'translateX(-50%) translateY(0)';
-        fixedPlayer.style.pointerEvents = 'auto';
-        fixedPlayer.classList.remove('collapsed');
-        console.log('RadioPulse: Fixed player visibility forced');
-      }
-      
-      if (playerContent) {
-        playerContent.style.display = 'flex';
-        playerContent.style.visibility = 'visible';
-        playerContent.style.opacity = '1';
-        playerContent.style.pointerEvents = 'auto';
-      }
-      
-      if (nowPlaying) {
-        nowPlaying.style.display = 'flex';
-        nowPlaying.style.visibility = 'visible';
-      }
-      
-      if (playerControls) {
-        playerControls.style.display = 'flex';
-        playerControls.style.visibility = 'visible';
-        playerControls.style.pointerEvents = 'auto';
-      }
-      
-      if (playBtn) {
-        playBtn.style.display = 'flex';
-        playBtn.style.visibility = 'visible';
-        playBtn.style.pointerEvents = 'auto';
-        playBtn.style.cursor = 'pointer';
-        
-        // Remove any existing listeners
-        playBtn.replaceWith(playBtn.cloneNode(true));
-        const newPlayBtn = document.getElementById('main-play-btn');
-        
-        newPlayBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('RadioPulse: Play button clicked!');
-          this.toggleAudio();
-        });
-        
-        // Also add touch events for mobile
-        newPlayBtn.addEventListener('touchend', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('RadioPulse: Play button touched!');
-          this.toggleAudio();
-        });
-        
-        console.log('RadioPulse: Play button event listeners added');
-      }
-      
-      if (volumeSlider) {
-        volumeSlider.addEventListener('input', (e) => {
-          this.setVolume(e.target.value);
-        });
-      }
-      
-      if (playerToggle) {
-        playerToggle.style.display = 'flex';
-        playerToggle.style.visibility = 'visible';
-        playerToggle.style.pointerEvents = 'auto';
-        playerToggle.style.cursor = 'pointer';
-        
-        // Remove any existing listeners
-        playerToggle.replaceWith(playerToggle.cloneNode(true));
-        const newPlayerToggle = document.getElementById('player-toggle');
-        
-        newPlayerToggle.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('RadioPulse: Player toggle clicked!');
-          this.togglePlayer();
-        });
-        
-        console.log('RadioPulse: Player toggle event listeners added');
-      }
-      
-      if (this.audioPlayer) {
-        this.audioPlayer.addEventListener('loadstart', () => {
-          console.log('RadioPulse: Audio loading started');
-        });
-        
-        this.audioPlayer.addEventListener('canplay', () => {
-          console.log('RadioPulse: Audio can play');
-        });
-        
-        this.audioPlayer.addEventListener('error', (e) => {
-          console.error('RadioPulse: Audio error:', e);
-          this.handleAudioError();
-        });
-      }
-      
-      console.log('RadioPulse: Audio player setup completed');
-    }, 500);
-  }
-
+// Setup de carouseles
   setupCarousels() {
-    this.initHeroSwiper();
-    this.initSponsorsSwiper();
-  }
-
-  initHeroSwiper() {
-    this.heroSwiper = new Swiper('.hero-swiper', {
-      slidesPerView: 1,
-      spaceBetween: 0,
-      loop: true,
-      autoplay: {
-        delay: 5000,
-        disableOnInteraction: false,
-      },
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-      },
-      navigation: {
-        nextEl: '.swiper-button-next',
-        prevEl: '.swiper-button-prev',
-      },
-    });
-  }
-
-  initSponsorsSwiper() {
-    this.sponsorsSwiper = new Swiper('.sponsors-swiper', {
-      slidesPerView: 1,
-      spaceBetween: 10,
-      loop: true,
-      autoplay: {
-        delay: 3000,
-        disableOnInteraction: false,
-      },
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-      },
-    });
-  }
-
-  setupFilters() {
-    document.querySelectorAll('.day-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const day = btn.dataset.day;
-        this.showDayPrograms(day);
-        
-        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-  }
-
-  setupTabs() {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab;
-        this.showTab(tab);
-      });
-    });
-  }
-
-  setupModals() {
-    // Close modals when clicking outside
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('modal-overlay')) {
-        const modalId = e.target.id;
-        this.closeModal(modalId);
-      }
-    });
+    // Verificar que Swiper esté disponible
+    if (typeof Swiper === 'undefined') {
+      console.warn('BlueTemplate: Swiper not available');
+      return;
+    }
     
-    // Close modals with Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const activeModal = document.querySelector('.modal-overlay.active');
-        if (activeModal) {
-          this.closeModal(activeModal.id);
+    // Usar setTimeout para asegurar que el DOM esté listo
+    setTimeout(() => {
+      // Inicializar Swiper para hero solo si hay slides
+      const heroSlides = document.querySelectorAll('#hero-carousel .swiper-slide');
+      const heroSwiperEl = document.querySelector('.hero-swiper');
+      if (heroSwiperEl && heroSlides.length > 0 && !this.heroSwiper) {
+        try {
+          this.heroSwiper = new Swiper('.hero-swiper', {
+            loop: true,
+            autoplay: {
+              delay: 5000,
+              disableOnInteraction: false
+            },
+            pagination: {
+              el: '.swiper-pagination',
+              clickable: true
+            },
+            navigation: {
+              nextEl: '.swiper-button-next',
+              prevEl: '.swiper-button-prev'
+            }
+          });
+        } catch (error) {
+          console.warn('BlueTemplate: Error initializing hero carousel:', error.message);
         }
       }
-    });
+
+      // Inicializar Swiper para sponsors solo si hay slides
+      const sponsorSlides = document.querySelectorAll('#sponsors-carousel .swiper-slide');
+      const sponsorsSwiperEl = document.querySelector('.sponsors-swiper');
+      if (sponsorsSwiperEl && sponsorSlides.length > 0 && !this.sponsorsSwiper) {
+        try {
+          this.sponsorsSwiper = new Swiper('.sponsors-swiper', {
+            loop: true,
+            autoplay: {
+              delay: 3000,
+              disableOnInteraction: false
+            },
+            slidesPerView: 'auto',
+            spaceBetween: 30,
+            pagination: {
+              el: '.swiper-pagination',
+              clickable: true
+            }
+          });
+        } catch (error) {
+          console.warn('BlueTemplate: Error initializing sponsors carousel:', error.message);
+        }
+      }
+    }, 1000);
+  }
+
+  // Setup de paginación
+  setupPagination(type, pagination) {
+    if (!pagination || !pagination.hasMore) return;
     
-    // Newsletter modal functionality
-    const newsletterForm = document.querySelector('.newsletter-form-modal');
-    if (newsletterForm) {
-      newsletterForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = e.target.querySelector('input[type="email"]').value;
-        console.log('Newsletter subscription:', email);
-        alert('¡Gracias por suscribirte a nuestro newsletter!');
-        this.closeModal('newsletter-modal');
+    const loadMoreBtn = document.getElementById('load-more-news');
+    if (loadMoreBtn) {
+      loadMoreBtn.style.display = 'block';
+      loadMoreBtn.addEventListener('click', () => {
+        this.currentPage.news++;
+        this.loadAllNews();
       });
     }
   }
 
-  setupAnimations() {
-    if (typeof AOS !== 'undefined') {
-      AOS.init({
-        duration: 800,
-        easing: 'ease-in-out',
-        once: true,
-        offset: 100,
-        disable: 'mobile'
-      });
-    }
-  }
-
-  setupRippleEffects() {
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('.glass-btn')) {
-        const btn = e.target.closest('.glass-btn');
-        const ripple = btn.querySelector('.btn-ripple');
-        
-        if (ripple) {
-          ripple.style.width = '0';
-          ripple.style.height = '0';
-          
-          setTimeout(() => {
-            ripple.style.width = '300px';
-            ripple.style.height = '300px';
-          }, 10);
-          
-          setTimeout(() => {
-            ripple.style.width = '0';
-            ripple.style.height = '0';
-          }, 600);
-        }
-      }
-    });
-  }
-
+  // Mostrar sección
   showSection(sectionName) {
-    document.querySelectorAll('.dynamic-section').forEach(section => {
-      section.classList.remove('active');
-    });
-    
-    const targetSection = document.getElementById(`${sectionName}-section`);
-    if (targetSection) {
-      targetSection.classList.add('active');
-    }
-    
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.classList.remove('active');
-    });
-    
-    const activeLink = document.querySelector(`[data-section="${sectionName}"]`);
-    if (activeLink) {
-      activeLink.classList.add('active');
-    }
-    
     this.currentSection = sectionName;
     
-    if (typeof AOS !== 'undefined') {
-      AOS.refresh();
+    // Ocultar todas las secciones
+    const sections = document.querySelectorAll('.section');
+    sections.forEach(s => s.classList.remove('active'));
+    
+    // Mostrar sección seleccionada
+    const activeSection = document.getElementById(`${sectionName}-section`);
+    if (activeSection) {
+      activeSection.classList.add('active');
     }
-  }
-
-  showTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
-      tab.classList.remove('active');
+    
+    // Actualizar navegación
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+      link.classList.toggle('active', link.dataset.section === sectionName);
     });
-    
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    
-    const targetTab = document.getElementById(`${tabName}-tab`);
-    const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
-    
-    if (targetTab) targetTab.classList.add('active');
-    if (targetBtn) targetBtn.classList.add('active');
-    
-    this.currentTab = tabName;
-    
-    if (typeof AOS !== 'undefined') {
-      AOS.refresh();
-    }
-  }
-
-  toggleAudio() {
-    if (!this.audioPlayer || !this.streamUrl) {
-      console.error('RadioPulse: Audio player or stream URL not available');
-      return;
-    }
-    
-    if (this.isPlaying) {
-      this.pauseAudio();
-    } else {
-      this.playAudio();
-    }
-  }
-
-  playAudio() {
-    if (!this.audioPlayer || !this.streamUrl) return;
-    
-    this.audioPlayer.src = this.streamUrl;
-    this.audioPlayer.volume = this.currentVolume / 100;
-    
-    this.audioPlayer.play().then(() => {
-      this.isPlaying = true;
-      this.updatePlayButton(true);
-      console.log('RadioPulse: Audio playing');
-    }).catch(error => {
-      console.error('RadioPulse: Error playing audio:', error);
-      this.handleAudioError();
-    });
-  }
-
-  pauseAudio() {
-    if (!this.audioPlayer) return;
-    
-    this.audioPlayer.pause();
-    this.isPlaying = false;
-    this.updatePlayButton(false);
-    console.log('RadioPulse: Audio paused');
-  }
-
-  setVolume(volume) {
-    this.currentVolume = volume;
-    if (this.audioPlayer) {
-      this.audioPlayer.volume = volume / 100;
-    }
-  }
-
-  updatePlayButton(isPlaying) {
-    const playBtn = document.getElementById('main-play-btn');
-    const icon = playBtn.querySelector('i');
-    
-    if (isPlaying) {
-      icon.className = 'fas fa-pause';
-    } else {
-      icon.className = 'fas fa-play';
-    }
-  }
-
-  togglePlayer() {
-    const player = document.getElementById('fixed-player');
-    const toggle = document.getElementById('player-toggle');
-    const icon = toggle.querySelector('i');
-    
-    player.classList.toggle('collapsed');
-    
-    if (player.classList.contains('collapsed')) {
-      icon.className = 'fas fa-chevron-down';
-    } else {
-      icon.className = 'fas fa-chevron-up';
-    }
-  }
-
-  handleAudioError() {
-    this.isPlaying = false;
-    this.updatePlayButton(false);
-    console.error('RadioPulse: Audio playback error');
-  }
-
-  // Modal Management
-  openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-  }
-
-  closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
-      
-      // Stop any playing media
-      if (modalId === 'podcast-modal') {
-        const audio = document.getElementById('podcast-audio');
-        if (audio) {
-          audio.pause();
-          audio.currentTime = 0;
-        }
-      } else if (modalId === 'videocast-modal') {
-        // Clear video container to stop playback
-        const videoContainer = document.querySelector('.media-modal-player.video-player');
-        if (videoContainer) {
-          videoContainer.innerHTML = `
-            <video id="videocast-video" controls preload="none" poster="">
-              <source src="" type="video/mp4">
-              Tu navegador no soporta el elemento de video.
-            </video>
-          `;
-        }
-      }
-    }
-  }
-
-  // News Modal
-  async openNewsModal(slug) {
-    try {
-      console.log('RadioPulse: Opening news modal for:', slug);
-      const article = await getNewsBySlug(slug);
-      
-      if (article) {
-        // Update modal content
-        document.getElementById('news-modal-title').textContent = article.name;
-        document.getElementById('news-modal-date').innerHTML = `<i class="fas fa-calendar"></i> ${new Date(article.createdAt).toLocaleDateString()}`;
-        document.getElementById('news-modal-author').innerHTML = `<i class="fas fa-user"></i> ${article.author || 'Redacción'}`;
-        document.getElementById('news-modal-content').innerHTML = article.longText || article.content || article.shortText || 'Contenido no disponible';
-        
-        // Update image
-        const imageContainer = document.getElementById('news-modal-image-container');
-        const image = document.getElementById('news-modal-image');
-        if (article.imageUrl) {
-          image.src = `https://dashboard.ipstream.cl${article.imageUrl}`;
-          image.alt = article.name;
-          imageContainer.style.display = 'block';
-        } else {
-          imageContainer.style.display = 'none';
-        }
-        
-        this.currentNewsData = article;
-        this.openModal('news-modal');
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading news details:', error);
-    }
-  }
-
-  // Podcast Modal
-  async openPodcastModal(podcastId) {
-    try {
-      console.log('RadioPulse: Opening podcast modal for:', podcastId);
-      const podcast = await getPodcastById(podcastId);
-      
-      if (podcast) {
-        // Update modal content
-        document.getElementById('podcast-modal-title').textContent = podcast.title;
-        document.getElementById('podcast-modal-date').innerHTML = `<i class="fas fa-calendar"></i> ${new Date(podcast.createdAt).toLocaleDateString()}`;
-        document.getElementById('podcast-modal-duration').innerHTML = `<i class="fas fa-clock"></i> ${podcast.duration || '45:00'}`;
-        document.getElementById('podcast-modal-description').innerHTML = podcast.description || 'Descripción no disponible';
-        
-        // Update image
-        const image = document.getElementById('podcast-modal-image');
-        if (podcast.imageUrl) {
-          image.src = `https://dashboard.ipstream.cl${podcast.imageUrl}`;
-          image.alt = podcast.title;
-        }
-        
-        // Setup audio
-        const audio = document.getElementById('podcast-audio');
-        if (podcast.audioUrl) {
-          audio.src = `https://dashboard.ipstream.cl${podcast.audioUrl}`;
-        }
-        
-        this.currentPodcastData = podcast;
-        this.setupPodcastPlayer();
-        this.openModal('podcast-modal');
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading podcast details:', error);
-    }
-  }
-
-  // Videocast Modal
-  async openVideocastModal(videocastId) {
-    try {
-      console.log('RadioPulse: Opening videocast modal for:', videocastId);
-      const videocast = await getVideocastById(videocastId);
-      
-      if (videocast) {
-        // Update modal content
-        document.getElementById('videocast-modal-title').textContent = videocast.title;
-        document.getElementById('videocast-modal-date').innerHTML = `<i class="fas fa-calendar"></i> ${new Date(videocast.createdAt).toLocaleDateString()}`;
-        document.getElementById('videocast-modal-duration').innerHTML = `<i class="fas fa-clock"></i> ${videocast.duration || '30:00'}`;
-        document.getElementById('videocast-modal-description').innerHTML = videocast.description || 'Descripción no disponible';
-        
-        // Setup video player
-        const videoContainer = document.querySelector('.media-modal-player.video-player');
-        if (videocast.videoUrl) {
-          const embedUrl = this.getEmbedUrl(videocast.videoUrl);
-          
-          if (embedUrl) {
-            // Use iframe for YouTube/Vimeo
-            videoContainer.innerHTML = `
-              <iframe 
-                src="${embedUrl}" 
-                title="${videocast.title}"
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen
-                style="width: 100%; height: 100%; border-radius: 12px;">
-              </iframe>
-            `;
-          } else {
-            // Fallback message
-            videoContainer.innerHTML = `
-              <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: rgba(0,0,0,0.5); color: white; border-radius: 12px;">
-                <div style="text-align: center; padding: 2rem;">
-                  <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                  <p>No se puede reproducir este video</p>
-                  <a href="${videocast.videoUrl}" target="_blank" style="color: #667eea; text-decoration: none; margin-top: 1rem; display: inline-block;">
-                    Ver en sitio original
-                  </a>
-                </div>
-              </div>
-            `;
-          }
-        } else {
-          videoContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: white;">No hay video disponible</p>';
-        }
-        
-        this.currentVideocastData = videocast;
-        this.openModal('videocast-modal');
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error loading videocast details:', error);
-    }
-  }
-
-  // Podcast Player Setup
-  setupPodcastPlayer() {
-    const audio = document.getElementById('podcast-audio');
-    const playBtn = document.getElementById('podcast-play-btn');
-    const progressBar = document.getElementById('podcast-progress');
-    const currentTimeSpan = document.getElementById('podcast-current-time');
-    const totalTimeSpan = document.getElementById('podcast-total-time');
-    
-    let isPlaying = false;
-    
-    playBtn.addEventListener('click', () => {
-      if (isPlaying) {
-        audio.pause();
-        playBtn.innerHTML = '<i class="fas fa-play"></i>';
-        isPlaying = false;
-      } else {
-        audio.play();
-        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        isPlaying = true;
-      }
-    });
-    
-    audio.addEventListener('loadedmetadata', () => {
-      totalTimeSpan.textContent = this.formatTime(audio.duration);
-    });
-    
-    audio.addEventListener('timeupdate', () => {
-      const progress = (audio.currentTime / audio.duration) * 100;
-      progressBar.style.width = `${progress}%`;
-      currentTimeSpan.textContent = this.formatTime(audio.currentTime);
-    });
-    
-    audio.addEventListener('ended', () => {
-      playBtn.innerHTML = '<i class="fas fa-play"></i>';
-      isPlaying = false;
-      progressBar.style.width = '0%';
-      currentTimeSpan.textContent = '0:00';
-    });
-    
-    // Progress bar click
-    const progressContainer = progressBar.parentElement;
-    progressContainer.addEventListener('click', (e) => {
-      const rect = progressContainer.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const width = rect.width;
-      const clickTime = (clickX / width) * audio.duration;
-      audio.currentTime = clickTime;
-    });
-  }
-
-  formatTime(seconds) {
-    if (isNaN(seconds)) return '0:00';
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }
-
-  getEmbedUrl(videoUrl) {
-    if (!videoUrl) return null;
-    
-    // YouTube URL patterns
-    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const youtubeMatch = videoUrl.match(youtubeRegex);
-    
-    if (youtubeMatch) {
-      return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&rel=0`;
-    }
-    
-    // Vimeo URL patterns
-    const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/;
-    const vimeoMatch = videoUrl.match(vimeoRegex);
-    
-    if (vimeoMatch) {
-      return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
-    }
-    
-    // If it's already an embed URL, return as is
-    if (videoUrl.includes('embed') || videoUrl.includes('player')) {
-      return videoUrl;
-    }
-    
-    // Return null if we can't create an embed URL
-    return null;
-  }
-
-  // Share Functions
-  shareNews() {
-    if (this.currentNewsData) {
-      const url = window.location.href;
-      const text = `${this.currentNewsData.name} - ${this.currentNewsData.shortText || ''}`;
-      
-      if (navigator.share) {
-        navigator.share({
-          title: this.currentNewsData.name,
-          text: text,
-          url: url
-        });
-      } else {
-        // Fallback to copy to clipboard
-        navigator.clipboard.writeText(`${text} ${url}`).then(() => {
-          alert('Enlace copiado al portapapeles');
-        });
-      }
-    }
-  }
-
-  sharePodcast() {
-    if (this.currentPodcastData) {
-      const url = window.location.href;
-      const text = `Escucha este podcast: ${this.currentPodcastData.title}`;
-      
-      if (navigator.share) {
-        navigator.share({
-          title: this.currentPodcastData.title,
-          text: text,
-          url: url
-        });
-      } else {
-        navigator.clipboard.writeText(`${text} ${url}`).then(() => {
-          alert('Enlace copiado al portapapeles');
-        });
-      }
-    }
-  }
-
-  shareVideocast() {
-    if (this.currentVideocastData) {
-      const url = window.location.href;
-      const text = `Mira este videocast: ${this.currentVideocastData.title}`;
-      
-      if (navigator.share) {
-        navigator.share({
-          title: this.currentVideocastData.title,
-          text: text,
-          url: url
-        });
-      } else {
-        navigator.clipboard.writeText(`${text} ${url}`).then(() => {
-          alert('Enlace copiado al portapapeles');
-        });
-      }
-    }
-  }
-
-  // Download Functions
-  downloadPodcast() {
-    if (this.currentPodcastData && this.currentPodcastData.audioUrl) {
-      const link = document.createElement('a');
-      link.href = `https://dashboard.ipstream.cl${this.currentPodcastData.audioUrl}`;
-      link.download = `${this.currentPodcastData.title}.mp3`;
-      link.click();
-    }
-  }
-
-  downloadVideocast() {
-    if (this.currentVideocastData && this.currentVideocastData.videoUrl) {
-      const link = document.createElement('a');
-      link.href = `https://dashboard.ipstream.cl${this.currentVideocastData.videoUrl}`;
-      link.download = `${this.currentVideocastData.title}.mp4`;
-      link.click();
-    }
-  }
-
-  // Legacy methods for compatibility
-  viewNews(slug) {
-    this.openNewsModal(slug);
-  }
-
-  playPodcast(audioUrl) {
-    console.log('RadioPulse: Playing podcast:', audioUrl);
-  }
-
-  playVideocast(videoUrl) {
-    console.log('RadioPulse: Playing videocast:', videoUrl);
-  }
-
-  playLiveProgram(programId) {
-    console.log('RadioPulse: Playing live program:', programId);
-    if (this.streamUrl) {
-      this.playAudio();
-    } else {
-      console.warn('RadioPulse: No stream URL available for live program');
-    }
-  }
-
-  // TV Player Methods
-  async checkTVAvailability() {
-    try {
-      this.videoStreamUrl = await getVideoStreamingUrl();
-      
-      if (this.videoStreamUrl && this.videoStreamUrl.trim() !== '') {
-        const tvSection = document.getElementById('tv-online-section');
-        if (tvSection) {
-          tvSection.style.display = 'block';
-          // Initialize TV player immediately
-          this.initializeTVPlayer();
-        }
-      }
-    } catch (error) {
-      console.error('RadioPulse: Error checking TV availability:', error);
-    }
-  }
-
-  async initializeTVPlayer() {
-    const container = document.getElementById('tv-player-container');
-    if (!container) return;
-
-    // Si no hay URL de video, mostrar mensaje
-    if (!this.videoStreamUrl || this.videoStreamUrl.trim() === '') {
-      container.innerHTML = `
-        <div class="tv-mode">
-          <div class="tv-unavailable">
-            <i class="fas fa-tv"></i>
-            <h3>TV Online no configurada</h3>
-            <p>Esta radio no tiene señal de televisión configurada en el panel de IPStream.</p>
-            <p><small>Para habilitar TV Online, agrega una URL en el campo "videoStreamingUrl" en tu panel de IPStream.</small></p>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    try {
-      // Crear un reproductor de video funcional
-      container.innerHTML = `
-        <div class="tv-mode">
-          <div style="position: relative; width: 100%; height: 500px; background: #000;">
-            <video 
-              id="tv-video-blue" 
-              controls 
-              muted
-              style="width: 100%; height: 100%; background: #000; object-fit: contain;"
-            >
-              <source src="${this.videoStreamUrl}" type="application/x-mpegURL">
-              <source src="${this.videoStreamUrl}" type="video/mp4">
-              Tu navegador no soporta la reproducción de video.
-            </video>
-            <div class="tv-status">
-              <div class="status-dot"></div>
-              <span>Señal en vivo disponible</span>
-            </div>
-          </div>
-        </div>
-      `;
-
-      // Configurar el reproductor
-      setTimeout(async () => {
-        const video = document.getElementById('tv-video-blue');
-        
-        if (video && this.videoStreamUrl) {
-          // Si es un stream HLS (.m3u8), intentar usar HLS.js
-          if (this.videoStreamUrl.includes('.m3u8')) {
-            try {
-              // Cargar HLS.js si no está cargado
-              if (!window.Hls) {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
-                document.head.appendChild(script);
-                
-                await new Promise((resolve, reject) => {
-                  script.onload = resolve;
-                  script.onerror = reject;
-                });
-              }
-
-              if (window.Hls && window.Hls.isSupported()) {
-                const hls = new window.Hls({
-                  enableWorker: true,
-                  lowLatencyMode: true,
-                  backBufferLength: 90
-                });
-                
-                hls.loadSource(this.videoStreamUrl);
-                hls.attachMedia(video);
-                
-                hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
-                  video.play().catch(e => console.log('Autoplay prevented:', e));
-                });
-                
-                this.tvPlayer = { hls, video };
-              } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Soporte nativo HLS (Safari)
-                video.src = this.videoStreamUrl;
-                video.play().catch(e => console.log('Autoplay prevented:', e));
-                this.tvPlayer = { video };
-              }
-            } catch (error) {
-              // Fallback simple
-              video.src = this.videoStreamUrl;
-              this.tvPlayer = { video };
-            }
-          } else {
-            // Para otros tipos de video
-            video.src = this.videoStreamUrl;
-            video.play().catch(e => console.log('Autoplay prevented:', e));
-            this.tvPlayer = { video };
-          }
-        }
-      }, 500);
-
-    } catch (error) {
-      console.error('RadioPulse: Error inicializando TV player:', error);
-      container.innerHTML = `
-        <div class="tv-mode">
-          <div class="tv-unavailable">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Error al inicializar reproductor</h3>
-            <p>Hubo un problema técnico al inicializar el reproductor de video.</p>
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  pauseTVPlayer() {
-    if (this.tvPlayer) {
-      if (this.tvPlayer.video) {
-        this.tvPlayer.video.pause();
-      }
-      if (this.tvPlayer.hls) {
-        this.tvPlayer.hls.destroy();
-      }
-    }
-  }
-
-  destroy() {
-    if (this.sonicPanelInterval) {
-      clearInterval(this.sonicPanelInterval);
-    }
-    
-    if (this.heroSwiper) this.heroSwiper.destroy();
-    if (this.sponsorsSwiper) this.sponsorsSwiper.destroy();
-    
-    if (this.audioPlayer) {
-      this.audioPlayer.pause();
-      this.audioPlayer.src = '';
-    }
-
-    if (this.tvPlayer) {
-      this.pauseTVPlayer();
-    }
   }
 }
 
-// Initialize the radio pulse when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('RadioPulse: DOM loaded, creating instance...');
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('BlueTemplate: DOMContentLoaded fired');
   try {
-    window.radioPulse = new RadioPulse();
-    console.log('RadioPulse: Instance created successfully');
+    window.blueTemplate = new BlueTemplate();
+    await window.blueTemplate.init();
+    console.log('BlueTemplate: init completed');
   } catch (error) {
-    console.error('RadioPulse: Error creating instance:', error);
-    console.error('RadioPulse: Error stack:', error.stack);
+    console.error('BlueTemplate: Error:', error);
   }
 });
 
-// Handle page unload
+// Limpiar al cerrar la página
 window.addEventListener('beforeunload', () => {
-  if (window.radioPulse) {
-    window.radioPulse.destroy();
+  if (window.blueTemplate) {
+    window.blueTemplate.destroy();
   }
 });
+
+export default BlueTemplate;

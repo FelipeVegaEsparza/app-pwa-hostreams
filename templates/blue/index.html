@@ -174,8 +174,8 @@
     <div class="player-content">
       <div class="now-playing">
         <div class="track-artwork">
-          <img id="player-artwork" src="" alt="Now Playing" style="display: none;">
-          <div class="default-artwork">
+          <img id="track-artwork" src="" alt="Now Playing" style="display: none;">
+          <div class="default-artwork" id="default-artwork">
             <div class="artwork-animation"></div>
             <i class="fas fa-music"></i>
           </div>
@@ -193,7 +193,7 @@
         </button>
         <div class="volume-control">
           <i class="fas fa-volume-up"></i>
-          <input type="range" class="volume-slider glass-slider" min="0" max="100" value="50">
+          <input type="range" id="volume-slider" class="volume-slider glass-slider" min="0" max="100" value="50">
         </div>
         <div class="player-stats">
           <span><i class="fas fa-users"></i> <span id="player-listeners">0</span></span>
@@ -243,7 +243,7 @@
             <div class="main-content">
               
               <!-- Breaking News Ticker -->
-              <div class="breaking-news glass-effect" data-aos="fade-up">
+              <div class="breaking-news glass-effect">
                 <div class="breaking-label">
                   <i class="fas fa-bolt"></i>
                   <span>ÚLTIMAS NOTICIAS</span>
@@ -256,7 +256,7 @@
               </div>
               
               <!-- Featured News Grid -->
-              <div class="featured-news" data-aos="fade-up" data-aos-delay="100">
+              <div class="featured-news">
                 <h2 class="section-title">
                   <span class="title-text">Noticias Destacadas</span>
                   <div class="title-line"></div>
@@ -272,7 +272,7 @@
               </div>
               
               <!-- Programs Today -->
-              <div class="programs-today" data-aos="fade-up" data-aos-delay="200">
+              <div class="programs-today">
                 <h2 class="section-title">
                   <span class="title-text">Programación de Hoy</span>
                   <div class="title-line"></div>
@@ -288,7 +288,7 @@
             <aside class="sidebar">
               
               <!-- Live Stats Widget -->
-              <div class="widget glass-effect stats-widget" data-aos="fade-left">
+              <div class="widget glass-effect stats-widget">
                 <div class="widget-header">
                   <h3>En Vivo Ahora</h3>
                   <div class="live-pulse"></div>
@@ -328,7 +328,7 @@
               </div>
               
               <!-- Recent Tracks Widget -->
-              <div class="widget glass-effect tracks-widget" data-aos="fade-left" data-aos-delay="100">
+              <div class="widget glass-effect tracks-widget">
                 <div class="widget-header">
                   <h3>Últimas Canciones</h3>
                 </div>
@@ -338,7 +338,7 @@
               </div>
               
               <!-- Quick News Widget -->
-              <div class="widget glass-effect quick-news-widget" data-aos="fade-left" data-aos-delay="200">
+              <div class="widget glass-effect quick-news-widget">
                 <div class="widget-header">
                   <h3>Noticias Rápidas</h3>
                 </div>

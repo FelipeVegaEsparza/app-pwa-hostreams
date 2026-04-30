@@ -858,7 +858,7 @@ a:hover {
 .breaking-news {
   margin-bottom: 40px;
   border-radius: 20px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: center;
 }

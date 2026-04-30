@@ -75,11 +75,13 @@ const cspDirectives = {
     "'self'",
     "https://dashboard.ipstream.cl",
     "https://stream.ipstream.cl",
+    "https://stream2.ipstream.cl",
     "https://video.ipstream.cl",
     "https://video.ipstream.cl:3710",
     "https://cdn.onesignal.com",
     "https://cdnjs.cloudflare.com",
     "https://fonts.googleapis.com",
+    "https://fonts.gstatic.com",
     "https://cdn.jsdelivr.net",
     "https://unpkg.com"
   ],
@@ -92,6 +94,7 @@ const cspDirectives = {
   mediaSrc: [
     "'self'",
     "https://stream.ipstream.cl",
+    "https://stream2.ipstream.cl",
     "https://dashboard.ipstream.cl",
     "https://video.ipstream.cl",
     "https://video.ipstream.cl:3710",
