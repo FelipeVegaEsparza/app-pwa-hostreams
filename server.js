@@ -6,6 +6,10 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+
+// Trust proxy para funcionar detrás de reverse proxy (Nginx/Cloudflare)
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
@@ -13,10 +17,14 @@ const IS_PRODUCTION = NODE_ENV === 'production';
 // Rate Limiting - Protección contra DoS y scraping
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: IS_PRODUCTION ? 100 : 1000, // 100 requests por IP en producción, 1000 en dev
+  max: IS_PRODUCTION ? 500 : 1000, // 500 requests por IP en producción, 1000 en dev
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests, please try again later.' }
+  message: { error: 'Too many requests, please try again later.' },
+  skip: (req) => {
+    // Excluir archivos estáticos del rate limiting
+    return req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|mp3|mp4|webm|ogg)$/);
+  }
 });
 app.use(limiter);
 
@@ -32,7 +40,9 @@ const corsOptions = {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // Loguear en vez de bloquear - evita problemas con reverse proxy
+      console.warn(`CORS: Origin no permitido pero permitido: ${origin}`);
+      callback(null, true);
     }
   },
   methods: ['GET', 'HEAD'],
