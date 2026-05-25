@@ -4,6 +4,7 @@
  * Toda la lógica de datos y audio está en TemplateBase
  */
 import TemplateBase from '/assets/js/template-base.js';
+import { getDataManager } from '/assets/js/data-manager.js';
 
 class MinimalistaTemplate extends TemplateBase {
   constructor() {
@@ -14,13 +15,33 @@ class MinimalistaTemplate extends TemplateBase {
       defaultVolume: 50,
       socialContainerIds: ['social-links']
     });
+    
+    this.videoStreamUrl = null;
   }
 
   async init() {
-    // Llamar a la inicialización base
     await super.init();
     
-    console.log('MinimalistaTemplate: Template fully initialized! 🚀');
+    try {
+      await this.checkTVAvailability();
+      console.log('MinimalistaTemplate: Template fully initialized! 🚀');
+    } catch (error) {
+      console.error('MinimalistaTemplate: Error in template-specific init:', error);
+    }
+  }
+
+  async checkTVAvailability() {
+    try {
+      const dataManager = getDataManager();
+      this.videoStreamUrl = await dataManager.loadVideoStreamUrl();
+      
+      const tvBtn = document.getElementById('tv-online-btn');
+      if (tvBtn) {
+        tvBtn.style.display = this.videoStreamUrl ? 'flex' : 'none';
+      }
+    } catch (error) {
+      console.error('MinimalistaTemplate: Error checking TV availability:', error);
+    }
   }
 
   // Sobrescribir: Actualizar display de canción actual con estilo minimalista

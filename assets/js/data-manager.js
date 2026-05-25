@@ -12,6 +12,7 @@ import {
   getPodcastById,
   getVideocasts,
   getVideocastById,
+  getVideos,
   getSponsors,
   getPromotions,
   getSocialNetworks,
@@ -148,6 +149,43 @@ class DataManager {
     } catch (error) {
       console.error('DataManager: Error loading videocasts:', error);
       return { data: [], pagination: {} };
+    }
+  }
+
+  // Obtener podcast por ID
+  async loadPodcastById(id) {
+    try {
+      const data = await getPodcastById(id);
+      this.emit('podcastLoaded', data);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error loading podcast by id:', error);
+      return null;
+    }
+  }
+
+  // Obtener videocast por ID
+  async loadVideocastById(id) {
+    try {
+      const data = await getVideocastById(id);
+      this.emit('videocastLoaded', data);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error loading videocast by id:', error);
+      return null;
+    }
+  }
+
+  // Obtener videos (ranking musical)
+  async loadVideos() {
+    try {
+      const data = await getVideos();
+      this.data.videos = data;
+      this.emit('videosLoaded', data);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error loading videos:', error);
+      return { data: [] };
     }
   }
 

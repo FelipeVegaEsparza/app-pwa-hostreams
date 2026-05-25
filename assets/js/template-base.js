@@ -96,8 +96,8 @@ class TemplateBase {
       
       // Actualizar descripción en footer
       const descElement = document.getElementById('footer-description');
-      if (descElement && data.description) {
-        descElement.textContent = data.description;
+      if (descElement && data.projectDescription) {
+        descElement.textContent = data.projectDescription;
       }
       
       // Configurar URL del stream

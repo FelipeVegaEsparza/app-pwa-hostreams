@@ -429,19 +429,22 @@
   
   .pwa-floating-button {
     min-width: auto;
-    width: 50px;
-    height: 50px;
-    padding: 0;
+    width: auto;
+    height: 42px;
+    padding: 0 14px;
     bottom: 80px;
     right: 15px;
+    border-radius: 21px;
+    gap: 6px;
   }
   
   .pwa-floating-icon {
-    font-size: 18px;
+    font-size: 15px;
   }
   
   .pwa-floating-text {
-    display: none;
+    display: inline;
+    font-size: 13px;
   }
   
   .pwa-toast {

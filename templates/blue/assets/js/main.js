@@ -33,7 +33,6 @@ class BlueTemplate extends TemplateBase {
         sponsorsCarousel: 'sponsors-carousel',
         podcastsTab: 'podcasts-tab',
         videocastsTab: 'videocasts-tab',
-        quickNews: 'quick-news',
         recentTracks: 'recent-tracks'
       }
     });
@@ -50,6 +49,8 @@ class BlueTemplate extends TemplateBase {
       'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
       'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'
     };
+    
+    this.videoStreamUrl = null;
   }
 
   getSpanishDay(englishDay) {
@@ -58,17 +59,30 @@ class BlueTemplate extends TemplateBase {
   }
 
   async init() {
-    // Llamar a la inicialización base
     await super.init();
     
-    // Inicializar funcionalidades específicas del template blue
     try {
+      await this.checkTVAvailability();
       this.setupCarousels();
       await this.loadAllContent();
       
       console.log('BlueTemplate: Template fully initialized! 🚀');
     } catch (error) {
       console.error('BlueTemplate: Error in template-specific init:', error);
+    }
+  }
+
+  async checkTVAvailability() {
+    try {
+      const dataManager = getDataManager();
+      this.videoStreamUrl = await dataManager.loadVideoStreamUrl();
+      
+      const tvSection = document.getElementById('tv-online-section');
+      if (tvSection) {
+        tvSection.style.display = this.videoStreamUrl ? 'block' : 'none';
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error checking TV availability:', error);
     }
   }
 
@@ -223,8 +237,8 @@ class BlueTemplate extends TemplateBase {
       await this.loadFeaturedNews();
       await this.loadProgramsTimeline();
       await this.loadRecentTracks();
-      await this.loadQuickNews();
       await this.loadSponsorsCarousel();
+      await this.loadAllSponsors();
       await this.loadAllNews();
       await this.loadProgramsByDay();
       
@@ -327,10 +341,10 @@ class BlueTemplate extends TemplateBase {
     }
 
     container.innerHTML = news.map(item => `
-      <div style="display:flex;align-items:center;gap:15px;padding:10px;">
-        <span style="background:#e74c3c;padding:5px 10px;border-radius:3px;font-size:11px;font-weight:bold;">ÚLTIMA HORA</span>
-        <span style="color:#fff;">${item.name}</span>
-      </div>
+      <span class="ticker-item">
+        <span class="ticker-badge">ÚLTIMA HORA</span>
+        <span class="ticker-text">${item.name}</span>
+      </span>
     `).join('');
   }
 
@@ -396,6 +410,11 @@ class BlueTemplate extends TemplateBase {
       const programs = await dataManager.loadPrograms();
       
       if (programs && programs.length > 0) {
+        for (const program of programs) {
+          if (program.imageUrl) {
+            program.imageUrl = await dataManager.getImageUrl(program.imageUrl);
+          }
+        }
         this.renderProgramsTimeline(programs);
       }
     } catch (error) {
@@ -409,10 +428,10 @@ class BlueTemplate extends TemplateBase {
     if (!container) return;
 
     const todaySpanish = new Date().toLocaleDateString('es-ES', { weekday: 'long' });
-    const todayPrograms = programs.filter(p => {
-      const programDay = this.getSpanishDay(p.day);
+    const todayPrograms = programs.filter(p => p.weekDays && p.weekDays.some(d => {
+      const programDay = this.getSpanishDay(d);
       return programDay && programDay.toLowerCase() === todaySpanish.toLowerCase();
-    });
+    }));
 
     if (todayPrograms.length === 0) {
       container.innerHTML = `
@@ -433,13 +452,16 @@ class BlueTemplate extends TemplateBase {
     });
 
     const timelineHtml = todayPrograms.map(program => `
-      <div class="timeline-item">
-        <div class="timeline-time">
-          <span>${program.startTime || '00:00'}</span>
-        </div>
-        <div class="timeline-content">
-          <h4>${program.name}</h4>
-          <p>${program.description || ''}</p>
+      <div class="timeline-item" style="display:flex;gap:15px;align-items:flex-start;">
+        ${program.imageUrl ? `<div style="flex-shrink:0;width:60px;height:60px;border-radius:8px;overflow:hidden;"><img src="${program.imageUrl}" alt="${program.name}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+        <div style="flex:1;">
+          <div class="timeline-time" style="margin-bottom:4px;">
+            <span style="color:#e74c3c;font-weight:bold;">${program.startTime || '00:00'} ${program.endTime ? '- ' + program.endTime : ''}</span>
+          </div>
+          <div class="timeline-content">
+            <h4 style="margin:0 0 6px 0;">${program.name}</h4>
+            <p style="margin:0;color:#aaa;">${program.description || ''}</p>
+          </div>
         </div>
       </div>
     `).join('');
@@ -484,14 +506,71 @@ class BlueTemplate extends TemplateBase {
     const container = document.getElementById('sponsors-carousel');
     if (!container) return;
 
-    const sponsorsHtml = sponsors.map(sponsor => `
+    const socialIcons = { facebook: 'fab fa-facebook-f', youtube: 'fab fa-youtube', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok', whatsapp: 'fab fa-whatsapp', x: 'fab fa-x-twitter' };
+
+    const sponsorsHtml = sponsors.map(sponsor => {
+      const socialLinks = Object.entries(socialIcons)
+        .filter(([key]) => sponsor[key])
+        .map(([key, icon]) => `<a href="${sponsor[key]}" target="_blank" rel="noopener" class="sponsor-social-link"><i class="${icon}"></i></a>`)
+        .join('');
+
+      return `
       <div class="swiper-slide">
         <div class="sponsor-card">
-          <img src="${sponsor.logoUrl || ''}" alt="${sponsor.name}" loading="lazy">
-          <h4>${sponsor.name}</h4>
+          <div class="sponsor-card-header">
+            <img src="${sponsor.logoUrl || '/assets/icons/icon-96x96.png'}" alt="${sponsor.name}">
+            <h3>${sponsor.name}</h3>
+          </div>
+          ${sponsor.description ? `<p class="sponsor-description">${sponsor.description}</p>` : ''}
+          ${sponsor.address ? `<p class="sponsor-address"><i class="fas fa-map-marker-alt"></i> ${sponsor.address}</p>` : ''}
+          ${sponsor.website ? `<a href="${sponsor.website}" target="_blank" rel="noopener" class="sponsor-website"><i class="fas fa-globe"></i> ${sponsor.website}</a>` : ''}
+          ${socialLinks ? `<div class="sponsor-social-links">${socialLinks}</div>` : ''}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
+
+    container.innerHTML = sponsorsHtml;
+  }
+
+  async loadAllSponsors() {
+    try {
+      const dataManager = getDataManager();
+      const sponsors = await dataManager.loadSponsors();
+      if (sponsors && sponsors.length > 0) {
+        for (const item of sponsors) {
+          if (item.logoUrl) item.logoUrl = await dataManager.getImageUrl(item.logoUrl);
+        }
+        this.renderAllSponsors(sponsors);
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading all sponsors:', error);
+    }
+  }
+
+  renderAllSponsors(sponsors) {
+    const container = document.getElementById('all-sponsors-grid');
+    if (!container) return;
+
+    const socialIcons = { facebook: 'fab fa-facebook-f', youtube: 'fab fa-youtube', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok', whatsapp: 'fab fa-whatsapp', x: 'fab fa-x-twitter' };
+
+    const sponsorsHtml = sponsors.map(sponsor => {
+      const socialLinks = Object.entries(socialIcons)
+        .filter(([key]) => sponsor[key])
+        .map(([key, icon]) => `<a href="${sponsor[key]}" target="_blank" rel="noopener" class="sponsor-social-link"><i class="${icon}"></i></a>`)
+        .join('');
+
+      return `
+      <div class="sponsor-card">
+        <div class="sponsor-card-header">
+          <img src="${sponsor.logoUrl || '/assets/icons/icon-96x96.png'}" alt="${sponsor.name}">
+          <h3>${sponsor.name}</h3>
+        </div>
+        ${sponsor.description ? `<p class="sponsor-description">${sponsor.description}</p>` : ''}
+        ${sponsor.address ? `<p class="sponsor-address"><i class="fas fa-map-marker-alt"></i> ${sponsor.address}</p>` : ''}
+        ${sponsor.website ? `<a href="${sponsor.website}" target="_blank" rel="noopener" class="sponsor-website"><i class="fas fa-globe"></i> ${sponsor.website}</a>` : ''}
+        ${socialLinks ? `<div class="sponsor-social-links">${socialLinks}</div>` : ''}
+      </div>`;
+    }).join('');
 
     container.innerHTML = sponsorsHtml;
   }
@@ -545,6 +624,11 @@ class BlueTemplate extends TemplateBase {
       const programs = await dataManager.loadPrograms();
       
       if (programs) {
+        for (const program of programs) {
+          if (program.imageUrl) {
+            program.imageUrl = await dataManager.getImageUrl(program.imageUrl);
+          }
+        }
         this.renderProgramsByDay(programs);
       }
     } catch (error) {
@@ -568,10 +652,10 @@ class BlueTemplate extends TemplateBase {
       const container = document.getElementById(`${day.id}-grid`);
       if (!container) return;
 
-      const dayPrograms = programs.filter(p => {
-        const programDay = this.getSpanishDay(p.day);
+      const dayPrograms = programs.filter(p => p.weekDays && p.weekDays.some(d => {
+        const programDay = this.getSpanishDay(d);
         return programDay && programDay.toLowerCase() === day.name.toLowerCase();
-      });
+      }));
 
       if (dayPrograms.length === 0) {
         container.innerHTML = `
@@ -584,18 +668,18 @@ class BlueTemplate extends TemplateBase {
       }
 
       const programsHtml = dayPrograms.map(program => `
-        <div class="program-card">
-          <div class="program-time">
-            <span class="time-start">${program.startTime || '00:00'}</span>
-            <span class="time-separator">-</span>
-            <span class="time-end">${program.endTime || '00:00'}</span>
-          </div>
-          <div class="program-info">
-            <h4>${program.name}</h4>
-            <p>${program.description || ''}</p>
-          </div>
-          <div class="program-host">
-            <span>${program.host || ''}</span>
+        <div class="program-card" style="display:flex;gap:15px;align-items:flex-start;padding:15px;margin:10px 0;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
+          ${program.imageUrl ? `<div style="flex-shrink:0;width:80px;height:80px;border-radius:8px;overflow:hidden;"><img src="${program.imageUrl}" alt="${program.name}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+          <div style="flex:1;">
+            <div class="program-time" style="color:#e74c3c;font-weight:bold;font-size:0.9rem;margin-bottom:4px;">
+              <span>${program.startTime || '00:00'}</span>
+              <span> - </span>
+              <span>${program.endTime || '00:00'}</span>
+            </div>
+            <div class="program-info">
+              <h4 style="margin:0 0 6px 0;color:#fff;">${program.name}</h4>
+              <p style="margin:0;color:#aaa;">${program.description || ''}</p>
+            </div>
           </div>
         </div>
       `).join('');
@@ -633,59 +717,30 @@ class BlueTemplate extends TemplateBase {
     container.innerHTML = tracksHtml;
   }
 
-  // Cargar quick news
-  async loadQuickNews() {
-    try {
-      const dataManager = getDataManager();
-      const news = await dataManager.loadNews(1, 4);
-      
-      if (news.data) {
-        this.renderQuickNews(news.data);
-      }
-    } catch (error) {
-      console.error('BlueTemplate: Error loading quick news:', error);
-    }
-  }
-
-  // Renderizar quick news
-  renderQuickNews(news) {
-    const container = document.getElementById('quick-news');
-    if (!container) return;
-
-    if (!news || news.length === 0) {
-      container.innerHTML = `
-        <div class="no-news">
-          <i class="fas fa-newspaper"></i>
-          <p>No hay noticias</p>
-        </div>
-      `;
-      return;
-    }
-
-    const newsHtml = news.map(item => `
-      <div class="quick-news-item">
-        <span class="quick-news-date">${new Date(item.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-        <a href="#" class="quick-news-link" data-slug="${item.slug}">${item.name}</a>
-      </div>
-    `).join('');
-
-    container.innerHTML = newsHtml;
-  }
-
   // Setup de navegación
   setupNavigation() {
-    const menuToggle = document.getElementById('menu-toggle');
-    const navMenu = document.getElementById('nav-menu');
+    const menuToggle = document.querySelector('.mobile-menu-toggle');
+    const navMenu = document.querySelector('.nav-menu');
     
     if (menuToggle && navMenu) {
       menuToggle.addEventListener('click', () => {
         navMenu.classList.toggle('active');
+        menuToggle.classList.toggle('active');
+      });
+      
+      // Cerrar menú al hacer click en un link
+      navMenu.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+          navMenu.classList.remove('active');
+          menuToggle.classList.remove('active');
+        });
       });
       
       // Cerrar menú al hacer click fuera
       document.addEventListener('click', (e) => {
         if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
           navMenu.classList.remove('active');
+          menuToggle.classList.remove('active');
         }
       });
     }
@@ -770,7 +825,7 @@ class BlueTemplate extends TemplateBase {
     this.currentSection = sectionName;
     
     // Ocultar todas las secciones
-    const sections = document.querySelectorAll('.section');
+    const sections = document.querySelectorAll('.dynamic-section');
     sections.forEach(s => s.classList.remove('active'));
     
     // Mostrar sección seleccionada
@@ -784,6 +839,12 @@ class BlueTemplate extends TemplateBase {
     navLinks.forEach(link => {
       link.classList.toggle('active', link.dataset.section === sectionName);
     });
+    
+    // Cerrar menú móvil
+    const navMenu = document.querySelector('.nav-menu');
+    const menuToggle = document.querySelector('.mobile-menu-toggle');
+    if (navMenu) navMenu.classList.remove('active');
+    if (menuToggle) menuToggle.classList.remove('active');
   }
 }
 

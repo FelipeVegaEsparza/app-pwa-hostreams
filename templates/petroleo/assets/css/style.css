@@ -9,6 +9,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -883,14 +884,38 @@ a:hover {
 
 .ticker-content {
   display: inline-block;
-  animation: ticker 30s linear infinite;
+  animation: ticker 60s linear infinite;
   white-space: nowrap;
-  padding-left: 20px;
+  padding-left: 100%;
   font-family: 'JetBrains Mono', monospace;
 }
 
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 50px;
+  white-space: nowrap;
+}
+
+.ticker-badge {
+  background: #e74c3c;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ticker-text {
+  color: #fff;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
 @keyframes ticker {
-  0% { transform: translateX(100%); }
+  0% { transform: translateX(0); }
   100% { transform: translateX(-100%); }
 }
 
@@ -2143,6 +2168,94 @@ y Schedule Navigation */
   color: white;
 }
 
+.sponsor-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 30px 0;
+  gap: 15px;
+}
+
+.sponsor-card-header img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.sponsor-card-header h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+.sponsor-description {
+  padding: 0 30px;
+  margin-top: 20px;
+}
+
+.sponsor-address {
+  padding: 0 30px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sponsor-address i {
+  flex-shrink: 0;
+}
+
+.sponsor-website {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 15px 30px 0;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.3s;
+}
+
+.sponsor-website:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.sponsor-social-links {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 20px 30px;
+  flex-wrap: wrap;
+}
+
+.sponsor-social-link {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.3s;
+  font-size: 1rem;
+}
+
+.sponsor-social-link:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  transform: scale(1.1);
+}
+
 .sponsor-social {
   display: flex;
   gap: 12px;
@@ -3192,7 +3305,6 @@ y Schedule Navigation */
   .breaking-ticker {
     padding: 10px 0;
   }
-  
   .section-title {
     flex-direction: column;
     gap: 15px;
@@ -3490,6 +3602,9 @@ y Schedule Navigation */
   
   .fixed-player {
     margin: 10px;
+  }
+  .ticker-item {
+    margin-right: 30px;
   }
 }
 

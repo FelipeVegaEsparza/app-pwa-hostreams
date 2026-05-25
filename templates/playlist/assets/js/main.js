@@ -14,7 +14,7 @@ class PlaylistTemplate extends TemplateBase {
       defaultVolume: 50,
       socialContainerIds: ['sidebar-social'],
       customDomIds: {
-        sidebarLogo: 'sidebar-logo',
+        radioLogo: 'sidebar-logo',
         trackTitle: 'player-title',
         trackArtist: 'player-artist',
         trackArtwork: 'player-artwork',
@@ -29,6 +29,7 @@ class PlaylistTemplate extends TemplateBase {
     
     this.currentView = 'now-playing';
     this.navigationSetup = false;
+    this.videoStreamUrl = null;
   }
 
   async init() {
@@ -38,12 +39,37 @@ class PlaylistTemplate extends TemplateBase {
     await super.init();
     
     try {
+      await this.checkTVAvailability();
       await this.loadAllContent();
       this.setupModalEventListeners();
       
       console.log('PlaylistTemplate: Template fully initialized! 🚀');
     } catch (error) {
       console.error('PlaylistTemplate: Error in template-specific init:', error);
+    }
+  }
+
+  async checkTVAvailability() {
+    try {
+      const dataManager = getDataManager();
+      this.videoStreamUrl = await dataManager.loadVideoStreamUrl();
+      
+      const tvMenuItem = document.querySelector('.menu-item[data-section="tv-online"]');
+      const tvView = document.getElementById('tv-online-view');
+      
+      if (this.videoStreamUrl) {
+        if (tvMenuItem) {
+          tvMenuItem.closest('li').style.display = '';
+          tvMenuItem.closest('li').removeAttribute('data-hidden');
+        }
+        if (tvView) tvView.style.display = '';
+      } else {
+        if (tvMenuItem) tvMenuItem.closest('li').style.display = 'none';
+        if (tvMenuItem) tvMenuItem.closest('li').setAttribute('data-hidden', 'true');
+        if (tvView) tvView.style.display = 'none';
+      }
+    } catch (error) {
+      console.error('PlaylistTemplate: Error checking TV availability:', error);
     }
   }
 
@@ -232,6 +258,9 @@ class PlaylistTemplate extends TemplateBase {
       const news = await dataManager.loadNews(1, 10);
       
       if (news.data) {
+        for (const item of news.data) {
+          if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+        }
         this.renderNews(news.data);
       }
     } catch (error) {
@@ -244,7 +273,7 @@ class PlaylistTemplate extends TemplateBase {
     if (!container) return;
 
     const newsHtml = news.map(item => `
-      <article class="news-item">
+      <article class="news-item" data-slug="${item.slug}" style="cursor:pointer;">
         <img src="${item.imageUrl || '/assets/images/default-news.jpg'}" alt="${item.name}" loading="lazy">
         <div class="news-content">
           <h4>${item.name}</h4>
@@ -263,6 +292,9 @@ class PlaylistTemplate extends TemplateBase {
       const podcasts = await dataManager.loadPodcasts(1, 10);
       
       if (podcasts.data) {
+        for (const item of podcasts.data) {
+          if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+        }
         this.renderPodcasts(podcasts.data);
       }
     } catch (error) {
@@ -275,7 +307,7 @@ class PlaylistTemplate extends TemplateBase {
     if (!container) return;
 
     const podcastsHtml = podcasts.map(podcast => `
-      <div class="podcast-item">
+      <div class="podcast-item" data-podcast-id="${podcast.id}" style="cursor:pointer;">
         <img src="${podcast.imageUrl || '/assets/images/default-podcast.jpg'}" alt="${podcast.title}" loading="lazy">
         <div class="podcast-info">
           <h4>${podcast.title}</h4>
@@ -294,6 +326,9 @@ class PlaylistTemplate extends TemplateBase {
       const videocasts = await dataManager.loadVideocasts(1, 10);
       
       if (videocasts.data) {
+        for (const item of videocasts.data) {
+          if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+        }
         this.renderVideocasts(videocasts.data);
       }
     } catch (error) {
@@ -306,10 +341,11 @@ class PlaylistTemplate extends TemplateBase {
     if (!container) return;
 
     const videocastsHtml = videocasts.map(videocast => `
-      <div class="videocast-item">
+      <div class="videocast-item" data-videocast-id="${videocast.id}" style="cursor:pointer;">
         <img src="${videocast.imageUrl || '/assets/images/default-video.jpg'}" alt="${videocast.title}" loading="lazy">
         <div class="videocast-info">
           <h4>${videocast.title}</h4>
+          ${videocast.description ? `<p style="margin:0.25rem 0;font-size:0.8rem;color:#888;line-height:1.4;">${videocast.description.substring(0, 80)}${videocast.description.length > 80 ? '…' : ''}</p>` : ''}
           <span class="videocast-duration">${videocast.duration || ''}</span>
         </div>
       </div>
@@ -325,6 +361,9 @@ class PlaylistTemplate extends TemplateBase {
       const sponsors = await dataManager.loadSponsors();
       
       if (sponsors && sponsors.length > 0) {
+        for (const item of sponsors) {
+          if (item.logoUrl) item.logoUrl = await dataManager.getImageUrl(item.logoUrl);
+        }
         this.renderSponsors(sponsors);
       }
     } catch (error) {
@@ -410,6 +449,8 @@ class PlaylistTemplate extends TemplateBase {
         const section = item.dataset.section;
         console.log('PlaylistTemplate: Menu item clicked:', section);
         
+        if (section === 'tv-online' && !this.videoStreamUrl) return;
+        
         // Show the section
         this.showSection(section).then(() => {
           console.log('PlaylistTemplate: Section loaded:', section);
@@ -429,6 +470,12 @@ class PlaylistTemplate extends TemplateBase {
   // Mostrar sección
   async showSection(sectionName) {
     this.currentView = sectionName;
+    
+    // Cerrar modales al cambiar de sección
+    this.closePodcastModal();
+    this.closeVideocastModal();
+    this.closeVideoModal();
+    this.closeNewsModal();
     
     // Hide all content views first
     document.querySelectorAll('.content-view').forEach(view => {
@@ -495,8 +542,11 @@ class PlaylistTemplate extends TemplateBase {
       case 'social':
         await this.loadSocialNetworks();
         break;
+      case 'videos':
+        await this.loadAllVideos();
+        break;
       case 'tv-online':
-        console.log('TV Online section - to be implemented');
+        console.log('TV Online section');
         break;
       default:
         console.log('No content to load for:', sectionName);
@@ -516,6 +566,13 @@ class PlaylistTemplate extends TemplateBase {
         return;
       }
       
+      // Resolver URLs de imágenes
+      for (const program of programs) {
+        if (program.imageUrl) {
+          program.imageUrl = await dataManager.getImageUrl(program.imageUrl);
+        }
+      }
+      
       const dayMapping = {
         'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
         'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'
@@ -526,11 +583,19 @@ class PlaylistTemplate extends TemplateBase {
         return dayMapping[englishDay.toLowerCase()] || englishDay;
       };
       
-      const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      const days = [
+        { id: 'monday', name: 'Lunes' },
+        { id: 'tuesday', name: 'Martes' },
+        { id: 'wednesday', name: 'Miércoles' },
+        { id: 'thursday', name: 'Jueves' },
+        { id: 'friday', name: 'Viernes' },
+        { id: 'saturday', name: 'Sábado' },
+        { id: 'sunday', name: 'Domingo' }
+      ];
       
       days.forEach(day => {
-        const dayPrograms = programs.filter(p => getSpanishDay(p.day) === day);
-        const dayContainer = document.getElementById(`${day.toLowerCase()}-programs`);
+        const dayPrograms = programs.filter(p => p.weekDays && p.weekDays.some(d => getSpanishDay(d) === day.name));
+        const dayContainer = document.getElementById(`${day.id}-programs`);
         
         if (dayContainer) {
           const timeline = dayContainer.querySelector('.programs-timeline');
@@ -539,19 +604,40 @@ class PlaylistTemplate extends TemplateBase {
               timeline.innerHTML = '<div class="empty-day">No hay programas para este día</div>';
             } else {
               timeline.innerHTML = dayPrograms.map(program => `
-                <div class="program-item">
-                  <span class="program-time">${program.startTime}</span>
-                  <span class="program-name">${program.name}</span>
+                <div class="program-card">
+                  ${program.imageUrl ? `<img src="${program.imageUrl}" alt="${program.name}" loading="lazy">` : ''}
+                  <div class="program-info">
+                    <h3>${program.name}</h3>
+                    ${program.description ? `<p>${program.description}</p>` : ''}
+                    <div class="program-schedule">
+                      <i class="fas fa-clock"></i>
+                      <span>${program.startTime} - ${program.endTime || ''}</span>
+                    </div>
+                  </div>
                 </div>
               `).join('');
             }
           }
         }
       });
+      
+      // Activar primer día por defecto
+      const firstTab = document.querySelector('.programs-tab-btn');
+      if (firstTab) this.showProgramsDay(firstTab.dataset.day);
+      
     } catch (error) {
       console.error('PlaylistTemplate: Error loading programs:', error);
       container.innerHTML = '<div class="error-message">Error al cargar la programación</div>';
     }
+  }
+  
+  showProgramsDay(dayId) {
+    document.querySelectorAll('.programs-day-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.programs-tab-btn').forEach(el => el.classList.remove('active'));
+    const dayContent = document.getElementById(`${dayId}-programs`);
+    if (dayContent) dayContent.classList.add('active');
+    const tabBtn = document.querySelector(`.programs-tab-btn[data-day="${dayId}"]`);
+    if (tabBtn) tabBtn.classList.add('active');
   }
   
   async loadAllNews() {
@@ -567,8 +653,12 @@ class PlaylistTemplate extends TemplateBase {
         return;
       }
       
+      for (const item of news.data) {
+        if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+      }
+      
       const newsHtml = news.data.map(item => `
-        <article class="news-item">
+        <article class="news-item" data-slug="${item.slug}" style="cursor:pointer;">
           <img src="${item.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${item.name}" loading="lazy">
           <div class="news-content">
             <h3>${item.name}</h3>
@@ -598,8 +688,12 @@ class PlaylistTemplate extends TemplateBase {
         return;
       }
       
+      for (const item of podcasts.data) {
+        if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+      }
+      
       const podcastsHtml = podcasts.data.map(podcast => `
-        <div class="podcast-card">
+        <div class="podcast-card" data-podcast-id="${podcast.id}" style="cursor:pointer;">
           <img src="${podcast.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${podcast.title}" loading="lazy">
           <div class="podcast-info">
             <h3>${podcast.title}</h3>
@@ -628,11 +722,16 @@ class PlaylistTemplate extends TemplateBase {
         return;
       }
       
+      for (const item of videocasts.data) {
+        if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+      }
+      
       const videocastsHtml = videocasts.data.map(videocast => `
-        <div class="videocast-card">
+        <div class="videocast-card" data-videocast-id="${videocast.id}" style="cursor:pointer;">
           <img src="${videocast.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${videocast.title}" loading="lazy">
           <div class="videocast-info">
             <h3>${videocast.title}</h3>
+            ${videocast.description ? `<p style="margin:0.25rem 0 0.5rem;color:#b3b3b3;font-size:0.85rem;line-height:1.5;">${videocast.description}</p>` : ''}
             <span class="videocast-duration">${videocast.duration || ''}</span>
           </div>
         </div>
@@ -658,12 +757,30 @@ class PlaylistTemplate extends TemplateBase {
         return;
       }
       
-      const sponsorsHtml = sponsors.map(sponsor => `
+      for (const item of sponsors) {
+        if (item.logoUrl) item.logoUrl = await dataManager.getImageUrl(item.logoUrl);
+      }
+      
+      const socialIcons = { facebook: 'fab fa-facebook-f', youtube: 'fab fa-youtube', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok', whatsapp: 'fab fa-whatsapp', x: 'fab fa-x-twitter' };
+
+      const sponsorsHtml = sponsors.map(sponsor => {
+        const socialLinks = Object.entries(socialIcons)
+          .filter(([key]) => sponsor[key])
+          .map(([key, icon]) => `<a href="${sponsor[key]}" target="_blank" rel="noopener" class="sponsor-social-link"><i class="${icon}"></i></a>`)
+          .join('');
+
+        return `
         <div class="sponsor-card">
-          <img src="${sponsor.logoUrl || '/assets/icons/icon-96x96.png'}" alt="${sponsor.name}">
-          <span>${sponsor.name}</span>
-        </div>
-      `).join('');
+          <div class="sponsor-card-header">
+            <img src="${sponsor.logoUrl || '/assets/icons/icon-96x96.png'}" alt="${sponsor.name}">
+            <h3>${sponsor.name}</h3>
+          </div>
+          ${sponsor.description ? `<p class="sponsor-description">${sponsor.description}</p>` : ''}
+          ${sponsor.address ? `<p class="sponsor-address"><i class="fas fa-map-marker-alt"></i> ${sponsor.address}</p>` : ''}
+          ${sponsor.website ? `<a href="${sponsor.website}" target="_blank" rel="noopener" class="sponsor-website"><i class="fas fa-globe"></i> ${sponsor.website}</a>` : ''}
+          ${socialLinks ? `<div class="sponsor-social-links">${socialLinks}</div>` : ''}
+        </div>`;
+      }).join('');
       
       container.innerHTML = sponsorsHtml;
     } catch (error) {
@@ -685,6 +802,10 @@ class PlaylistTemplate extends TemplateBase {
         return;
       }
       
+      for (const item of promotions) {
+        if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+      }
+      
       const promotionsHtml = promotions.map(promo => `
         <div class="promotion-card">
           <img src="${promo.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${promo.title}">
@@ -702,33 +823,239 @@ class PlaylistTemplate extends TemplateBase {
     }
   }
   
+  async loadAllVideos() {
+    const container = document.getElementById('video-ranking');
+    if (!container) return;
+
+    try {
+      const dataManager = getDataManager();
+      const videos = await dataManager.loadVideos();
+
+      const items = videos.data || videos;
+      if (!items || items.length === 0) {
+        container.innerHTML = '<div class="empty-message">No hay videos disponibles</div>';
+        return;
+      }
+
+      const youtubeThumb = (url) => {
+        const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+        return match ? `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg` : '/assets/icons/icon-96x96.png';
+      };
+
+      const videosHtml = items.map((video, i) => `
+        <a href="${video.videoUrl}" target="_blank" rel="noopener" class="video-ranking-card" style="display:flex;gap:1rem;padding:1rem;background:#282828;border-radius:12px;align-items:center;cursor:pointer;text-decoration:none;color:inherit;margin-bottom:0.75rem;">
+          <span style="font-size:1.2rem;font-weight:700;color:#1db954;min-width:30px;">#${video.order || i + 1}</span>
+          <img src="${youtubeThumb(video.videoUrl)}" alt="${video.name}" style="width:100px;height:75px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+          <div style="flex:1;">
+            <h4 style="margin:0 0 0.25rem;">${video.name}</h4>
+            <p style="margin:0;color:#b3b3b3;font-size:0.85rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${video.description || ''}</p>
+          </div>
+          <i class="fas fa-play-circle" style="font-size:2rem;color:#1db954;flex-shrink:0;"></i>
+        </a>
+      `).join('');
+
+      container.innerHTML = videosHtml;
+    } catch (error) {
+      console.error('PlaylistTemplate: Error loading videos:', error);
+      container.innerHTML = '<div class="error-message">Error al cargar el ranking</div>';
+    }
+  }
+
+  async openVideoModal(video) {
+    const modal = document.getElementById('video-modal');
+    const titleEl = document.getElementById('video-modal-title');
+    const rankEl = document.getElementById('video-modal-rank');
+    const descEl = document.getElementById('video-modal-description');
+    const container = document.getElementById('video-container');
+
+    if (titleEl) titleEl.textContent = video.name || '';
+    if (rankEl) rankEl.textContent = `#${video.order || ''}`;
+    if (descEl) descEl.textContent = video.description || '';
+    if (container) {
+      const videoId = (video.videoUrl || '').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+      container.innerHTML = videoId
+        ? `<iframe src="https://www.youtube.com/embed/${videoId[1]}" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;"></iframe>`
+        : '<p style="color:#b3b3b3;">Video no disponible</p>';
+    }
+    if (modal) modal.classList.add('active');
+  }
+
   async loadSocialNetworks() {
-    const container = document.getElementById('social-view .view-content');
+    const container = document.getElementById('social-hub');
     if (!container) return;
     
     try {
       const dataManager = getDataManager();
-      const social = await dataManager.loadSocialNetworks();
+      const socialData = await dataManager.loadSocialNetworks();
       
-      if (!social || social.length === 0) {
+      if (!socialData || Object.keys(socialData).length === 0) {
         container.innerHTML = '<div class="empty-message">No hay redes sociales configuradas</div>';
         return;
       }
       
-      const socialHtml = social.map(item => `
-        <a href="${item.url}" target="_blank" class="social-link-item">
-          <i class="fab fa-${item.name}"></i>
-          <span>${item.title || item.name}</span>
+      const iconMap = {
+        facebook: 'fab fa-facebook-f',
+        x: 'fab fa-x-twitter',
+        twitter: 'fab fa-twitter',
+        instagram: 'fab fa-instagram',
+        youtube: 'fab fa-youtube',
+        tiktok: 'fab fa-tiktok',
+        whatsapp: 'fab fa-whatsapp',
+        telegram: 'fab fa-telegram',
+        linkedin: 'fab fa-linkedin-in'
+      };
+      
+      const entries = [
+        { name: 'facebook', url: socialData.facebook },
+        { name: 'instagram', url: socialData.instagram },
+        { name: 'twitter', url: socialData.x || socialData.twitter },
+        { name: 'youtube', url: socialData.youtube },
+        { name: 'tiktok', url: socialData.tiktok },
+        { name: 'whatsapp', url: socialData.whatsapp?.startsWith('http') ? socialData.whatsapp : `https://wa.me/${(socialData.whatsapp || '').replace(/[^0-9]/g, '')}` },
+        { name: 'telegram', url: socialData.telegram },
+        { name: 'linkedin', url: socialData.linkedin }
+      ].filter(e => e.url);
+      
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="empty-message">No hay redes sociales configuradas</div>';
+        return;
+      }
+      
+      const socialHtml = entries.map(item => `
+        <a href="${item.url}" target="_blank" rel="noopener" class="social-link-item">
+          <i class="${iconMap[item.name] || 'fas fa-link'}"></i>
+          <span>${item.name.charAt(0).toUpperCase() + item.name.slice(1)}</span>
         </a>
       `).join('');
       
-      container.innerHTML = `<div class="social-links-grid">${socialHtml}</div>`;
+      container.innerHTML = socialHtml;
     } catch (error) {
       console.error('PlaylistTemplate: Error loading social networks:', error);
       container.innerHTML = '<div class="error-message">Error al cargar las redes sociales</div>';
     }
   }
   
+  async openNewsModal(slug) {
+    try {
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNewsBySlug(slug);
+      if (!news) return;
+
+      const modal = document.getElementById('news-modal');
+      const titleEl = document.getElementById('news-modal-title');
+      const dateEl = document.getElementById('news-modal-date');
+      const contentEl = document.getElementById('news-modal-content');
+      const imageEl = document.getElementById('news-modal-image');
+
+      if (titleEl) titleEl.textContent = news.name || '';
+      if (dateEl) {
+        const span = dateEl.querySelector('span');
+        if (span) span.textContent = news.createdAt ? new Date(news.createdAt).toLocaleDateString('es-ES') : '';
+      }
+      const body = news.longText || news.shortText || '';
+      if (contentEl) contentEl.innerHTML = body.split('\n').filter(Boolean).map(p => `<p>${p}</p>`).join('');
+      if (imageEl && news.imageUrl) {
+        const fullUrl = await dataManager.getImageUrl(news.imageUrl);
+        imageEl.src = fullUrl;
+        imageEl.style.display = 'block';
+      } else if (imageEl) {
+        imageEl.style.display = 'none';
+      }
+      if (modal) modal.classList.add('active');
+    } catch (error) {
+      console.error('PlaylistTemplate: Error opening news modal:', error);
+    }
+  }
+
+  closeNewsModal() {
+    const modal = document.getElementById('news-modal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  async openPodcastModal(id) {
+    try {
+      const dataManager = getDataManager();
+      const data = await dataManager.loadPodcastById(id);
+      if (!data) return;
+
+      console.log('PlaylistTemplate: Podcast data:', data);
+
+      const modal = document.getElementById('podcast-modal');
+      const imgEl = document.getElementById('podcast-modal-image');
+      const titleEl = document.getElementById('podcast-modal-title');
+      const descEl = document.getElementById('podcast-modal-description');
+      const audioEl = document.getElementById('podcast-audio');
+      const durationEl = document.getElementById('podcast-modal-duration');
+
+      if (imgEl && data.imageUrl) {
+        const resolved = await dataManager.getImageUrl(data.imageUrl);
+        imgEl.src = resolved;
+        imgEl.parentElement.style.display = 'flex';
+      } else if (imgEl) {
+        imgEl.parentElement.style.display = 'none';
+      }
+      if (titleEl) titleEl.textContent = data.title || '';
+      if (descEl) descEl.textContent = data.description || data.shortText || '';
+      const audioUrl = data.audioUrl || data.fileUrl || data.url || data.audio || '';
+      console.log('PlaylistTemplate: Podcast audioUrl:', audioUrl);
+      if (audioEl && audioUrl) {
+        const resolvedAudio = audioUrl.startsWith('http') ? audioUrl : await dataManager.getImageUrl(audioUrl);
+        audioEl.src = resolvedAudio;
+        audioEl.load();
+      }
+      if (durationEl) {
+        const span = durationEl.querySelector('span');
+        if (span) span.textContent = data.duration || 'Duración';
+      }
+      if (modal) modal.classList.add('active');
+    } catch (error) {
+      console.error('PlaylistTemplate: Error opening podcast modal:', error);
+    }
+  }
+
+  closePodcastModal() {
+    const modal = document.getElementById('podcast-modal');
+    if (modal) modal.classList.remove('active');
+    const audio = document.getElementById('podcast-audio');
+    if (audio) {
+      audio.pause();
+      audio.src = '';
+      audio.load();
+    }
+  }
+
+  async openVideocastModal(id) {
+    try {
+      const dataManager = getDataManager();
+      const data = await dataManager.loadVideocastById(id);
+      if (!data || !data.videoUrl) return;
+      window.open(data.videoUrl, '_blank', 'noopener');
+    } catch (error) {
+      console.error('PlaylistTemplate: Error opening videocast:', error);
+    }
+  }
+
+  closeVideocastModal() {
+    const modal = document.getElementById('videocast-modal');
+    if (modal) modal.classList.remove('active');
+    const container = document.getElementById('videocast-container');
+    if (container) {
+      container.innerHTML = '';
+    }
+  }
+
+  closeVideoModal() {
+    const modal = document.getElementById('video-modal');
+    if (modal) modal.classList.remove('active');
+    const container = document.getElementById('video-container');
+    if (container) container.innerHTML = '';
+  }
+
+  closeAnuncioModal() {
+    const modal = document.getElementById('anuncio-modal');
+    if (modal) modal.classList.remove('active');
+  }
+
   getSectionTitle(section) {
     const titles = {
       'now-playing': 'Ahora Suena',
@@ -747,19 +1074,60 @@ class PlaylistTemplate extends TemplateBase {
 
   // Setup de modales
   setupModalEventListeners() {
-    const modals = document.querySelectorAll('.modal');
+    const modalIds = {
+      'news-modal': 'closeNewsModal',
+      'podcast-modal': 'closePodcastModal',
+      'videocast-modal': 'closeVideocastModal',
+      'video-modal': 'closeVideoModal'
+    };
     
-    modals.forEach(modal => {
+    Object.entries(modalIds).forEach(([id, method]) => {
+      const modal = document.getElementById(id);
+      if (!modal) return;
       modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          modal.classList.remove('active');
-        }
+        if (e.target === modal) this[method]();
       });
     });
     
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        modals.forEach(modal => modal.classList.remove('active'));
+        Object.keys(modalIds).forEach(id => {
+          const modal = document.getElementById(id);
+          if (modal && modal.classList.contains('active')) {
+            this[modalIds[id]]();
+          }
+        });
+      }
+    });
+    
+    document.addEventListener('click', (e) => {
+      const newsLink = e.target.closest('[data-slug]');
+      if (newsLink) {
+        e.preventDefault();
+        const slug = newsLink.getAttribute('data-slug');
+        this.openNewsModal(slug);
+        return;
+      }
+      const podcastLink = e.target.closest('[data-podcast-id]');
+      if (podcastLink) {
+        e.preventDefault();
+        const id = podcastLink.getAttribute('data-podcast-id');
+        this.openPodcastModal(id);
+        return;
+      }
+      const videocastLink = e.target.closest('[data-videocast-id]');
+      if (videocastLink) {
+        e.preventDefault();
+        const id = videocastLink.getAttribute('data-videocast-id');
+        this.openVideocastModal(id);
+        return;
+      }
+    });
+    
+    document.querySelector('.programs-tabs')?.addEventListener('click', (e) => {
+      const tabBtn = e.target.closest('.programs-tab-btn');
+      if (tabBtn) {
+        this.showProgramsDay(tabBtn.dataset.day);
       }
     });
   }
@@ -768,8 +1136,10 @@ class PlaylistTemplate extends TemplateBase {
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    window.playlistTemplate = new PlaylistTemplate();
-    await window.playlistTemplate.init();
+    const app = new PlaylistTemplate();
+    window.playlistTemplate = app;
+    window.streamApp = app;
+    await app.init();
   } catch (error) {
     console.error('PlaylistTemplate: Error creating instance:', error);
   }

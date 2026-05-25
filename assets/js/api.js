@@ -306,6 +306,8 @@ export async function getSocialNetworks() {
 export async function buildImageUrl(path) {
   if (!path) return null;
   
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  
   const cacheKey = `img:${path}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;

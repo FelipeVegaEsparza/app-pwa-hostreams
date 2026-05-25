@@ -110,7 +110,6 @@
       
       /* Force menu content visible on mobile */
       #sidebar * {
-        display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
       }
@@ -135,6 +134,9 @@
       
       .menu-list li {
         display: block !important;
+      }
+      .menu-list li[data-hidden="true"] {
+        display: none !important;
       }
       
       .menu-item {

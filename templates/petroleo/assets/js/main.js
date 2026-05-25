@@ -11,7 +11,7 @@ class PetroleoTemplate extends TemplateBase {
       playButtonId: 'play-btn',
       volumeSliderId: 'volume-slider',
       defaultVolume: 50,
-      socialContainerIds: ['social-links', 'footer-social'],
+      socialContainerIds: ['header-social-main', 'footer-social'],
       customDomIds: {
         radioLogo: 'news-logo',
         footerRadioName: 'footer-title',
@@ -58,11 +58,9 @@ class PetroleoTemplate extends TemplateBase {
       const dataManager = getDataManager();
       this.videoStreamUrl = await dataManager.loadVideoStreamUrl();
       
-      if (this.videoStreamUrl) {
-        const tvButton = document.getElementById('tv-online-btn');
-        if (tvButton) {
-          tvButton.style.display = 'flex';
-        }
+      const tvSection = document.getElementById('tv-online-section');
+      if (tvSection) {
+        tvSection.style.display = this.videoStreamUrl ? 'block' : 'none';
       }
     } catch (error) {
       console.error('PetroleoTemplate: Error checking TV availability:', error);
@@ -94,9 +92,12 @@ class PetroleoTemplate extends TemplateBase {
       
       await Promise.all([
         this.loadHeroCarousel(),
+        this.loadBreakingNews(),
         this.loadFeaturedNews(),
         this.loadProgramsTimeline(),
-        this.loadSponsorsCarousel()
+        this.loadProgramsByDay(),
+        this.loadSponsorsCarousel(),
+        this.loadAllSponsors()
       ]);
       
       console.log('PetroleoTemplate: All content loaded successfully');
@@ -188,6 +189,34 @@ class PetroleoTemplate extends TemplateBase {
     console.log('PetroleoTemplate: featured-news-grid innerHTML set, length:', newsHtml.length);
   }
 
+  // Cargar breaking news
+  async loadBreakingNews() {
+    try {
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNews(1, 5);
+      if (news && news.data && news.data.length > 0) {
+        this.renderBreakingNews(news.data);
+      }
+    } catch (error) {
+      console.error('PetroleoTemplate: Error loading breaking news:', error);
+    }
+  }
+
+  renderBreakingNews(news) {
+    const container = document.getElementById('breaking-ticker');
+    if (!container) return;
+    if (!news || news.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    container.innerHTML = news.map(item => `
+      <span class="ticker-item">
+        <span class="ticker-badge">ÚLTIMA HORA</span>
+        <span class="ticker-text">${item.name}</span>
+      </span>
+    `).join('');
+  }
+
   // Cargar timeline de programas
   async loadProgramsTimeline() {
     try {
@@ -195,6 +224,11 @@ class PetroleoTemplate extends TemplateBase {
       const programs = await dataManager.loadPrograms();
       
       if (programs && programs.length > 0) {
+        for (const program of programs) {
+          if (program.imageUrl) {
+            program.imageUrl = await dataManager.getImageUrl(program.imageUrl);
+          }
+        }
         this.renderProgramsTimeline(programs);
       }
     } catch (error) {
@@ -218,7 +252,10 @@ class PetroleoTemplate extends TemplateBase {
     };
 
     const today = new Date().toLocaleDateString('es-ES', { weekday: 'long' });
-    const todayPrograms = programs.filter(p => getSpanishDay(p.day) === today);
+    const todayPrograms = programs.filter(p => p.weekDays && p.weekDays.some(d => {
+      const programDay = getSpanishDay(d);
+      return programDay && programDay.toLowerCase() === today.toLowerCase();
+    }));
 
     if (todayPrograms.length === 0) {
       container.innerHTML = `<p style="padding:20px;color:#ccc;">No hay programas para hoy (${today})</p>`;
@@ -226,14 +263,83 @@ class PetroleoTemplate extends TemplateBase {
     }
 
     const html = todayPrograms.map(program => `
-      <div class="program-item" style="padding:10px;margin:5px 0;background:rgba(255,255,255,0.1);border-radius:5px;">
-        <span style="color:#e74c3c;font-weight:bold;">${program.startTime}</span>
-        <span>${program.name}</span>
+      <div class="program-card-day" style="padding:15px;margin:8px 0;background:rgba(255,255,255,0.08);border-radius:8px;border-left:3px solid #e74c3c;display:flex;gap:15px;align-items:flex-start;">
+        ${program.imageUrl ? `<div class="program-image" style="flex-shrink:0;width:60px;height:60px;border-radius:8px;overflow:hidden;"><img src="${program.imageUrl}" alt="${program.name}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+        <div style="flex:1;">
+          <div class="program-time">
+            <span style="color:#e74c3c;font-weight:bold;font-size:0.9rem;">${program.startTime || ''} ${program.endTime ? '- ' + program.endTime : ''}</span>
+          </div>
+          <div style="color:#fff;font-weight:600;margin-top:4px;">${program.name}</div>
+          ${program.description ? `<div style="color:#aaa;font-size:0.85rem;margin-top:4px;">${program.description}</div>` : ''}
+        </div>
       </div>
     `).join('');
 
     container.innerHTML = html;
     console.log('PetroleoTemplate: programs-timeline rendered');
+  }
+
+  async loadProgramsByDay() {
+    try {
+      const dataManager = getDataManager();
+      const programs = await dataManager.loadPrograms();
+      if (programs && programs.length > 0) {
+        for (const program of programs) {
+          if (program.imageUrl) {
+            program.imageUrl = await dataManager.getImageUrl(program.imageUrl);
+          }
+        }
+        this.renderProgramsByDay(programs);
+      }
+    } catch (error) {
+      console.error('PetroleoTemplate: Error loading programs by day:', error);
+    }
+  }
+
+  renderProgramsByDay(programs) {
+    const dayMapping = {
+      'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
+      'thursday': 'Jueves', 'friday': 'Viernes', 'saturday': 'Sábado', 'sunday': 'Domingo'
+    };
+
+    const getSpanishDay = (englishDay) => {
+      if (!englishDay) return null;
+      return dayMapping[englishDay.toLowerCase()] || englishDay;
+    };
+
+    const days = [
+      { id: 'lunes', name: 'Lunes' },
+      { id: 'martes', name: 'Martes' },
+      { id: 'miercoles', name: 'Miércoles' },
+      { id: 'jueves', name: 'Jueves' },
+      { id: 'viernes', name: 'Viernes' },
+      { id: 'sabado', name: 'Sábado' },
+      { id: 'domingo', name: 'Domingo' }
+    ];
+
+    days.forEach(day => {
+      const grid = document.getElementById(`${day.id}-grid`);
+      if (!grid) return;
+
+      const dayPrograms = programs.filter(p => p.weekDays && p.weekDays.some(d => getSpanishDay(d) === day.name));
+      dayPrograms.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+
+      if (dayPrograms.length === 0) {
+        grid.innerHTML = `<p style="padding:20px;color:#ccc;">No hay programas para ${day.name}</p>`;
+      } else {
+        grid.innerHTML = dayPrograms.map(program => `
+          <div class="program-card-day" style="padding:15px;margin:12px 0;background:rgba(255,255,255,0.05);border-radius:10px;border-left:3px solid #e74c3c;display:flex;gap:15px;align-items:flex-start;">
+            ${program.imageUrl ? `<div class="program-image" style="flex-shrink:0;width:80px;height:80px;border-radius:8px;overflow:hidden;"><img src="${program.imageUrl}" alt="${program.name}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+            <div style="flex:1;">
+              <div style="color:#e74c3c;font-weight:bold;font-size:0.9rem;">${program.startTime || ''} ${program.endTime ? '- ' + program.endTime : ''}</div>
+              <div style="color:#fff;font-weight:600;margin-top:6px;font-size:1.1rem;">${program.name}</div>
+              ${program.description ? `<div style="color:#aaa;font-size:0.85rem;margin-top:6px;line-height:1.5;">${program.description}</div>` : ''}
+              ${program.host ? `<div style="color:#888;font-size:0.8rem;margin-top:4px;"><i class="fas fa-user"></i> ${program.host}</div>` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+    });
   }
 
   // Cargar sponsors
@@ -257,20 +363,75 @@ class PetroleoTemplate extends TemplateBase {
 
   renderSponsorsCarousel(sponsors) {
     const container = document.getElementById('sponsors-carousel');
-    console.log('PetroleoTemplate: renderSponsorsCarousel container:', container);
     if (!container) return;
 
-    const sponsorsHtml = sponsors.map(sponsor => `
-      <div class="swiper-slide" style="padding:20px;">
-        <div style="background:rgba(255,255,255,0.1);padding:15px;border-radius:10px;text-align:center;">
-          <img src="${sponsor.logoUrl || ''}" alt="${sponsor.name}" loading="lazy" style="max-width:100px;">
-          <h4>${sponsor.name}</h4>
+    const socialIcons = { facebook: 'fab fa-facebook-f', youtube: 'fab fa-youtube', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok', whatsapp: 'fab fa-whatsapp', x: 'fab fa-x-twitter' };
+
+    const sponsorsHtml = sponsors.map(sponsor => {
+      const socialLinks = Object.entries(socialIcons)
+        .filter(([key]) => sponsor[key])
+        .map(([key, icon]) => `<a href="${sponsor[key]}" target="_blank" rel="noopener" class="sponsor-social-link"><i class="${icon}"></i></a>`)
+        .join('');
+
+      return `
+      <div class="swiper-slide">
+        <div class="sponsor-card">
+          <div class="sponsor-card-header">
+            <img src="${sponsor.logoUrl || '/assets/icons/icon-96x96.png'}" alt="${sponsor.name}">
+            <h3>${sponsor.name}</h3>
+          </div>
+          ${sponsor.description ? `<p class="sponsor-description">${sponsor.description}</p>` : ''}
+          ${sponsor.address ? `<p class="sponsor-address"><i class="fas fa-map-marker-alt"></i> ${sponsor.address}</p>` : ''}
+          ${sponsor.website ? `<a href="${sponsor.website}" target="_blank" rel="noopener" class="sponsor-website"><i class="fas fa-globe"></i> ${sponsor.website}</a>` : ''}
+          ${socialLinks ? `<div class="sponsor-social-links">${socialLinks}</div>` : ''}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     container.innerHTML = sponsorsHtml;
-    console.log('PetroleoTemplate: sponsors-carousel rendered');
+  }
+
+  async loadAllSponsors() {
+    try {
+      const dataManager = getDataManager();
+      const sponsors = await dataManager.loadSponsors();
+      if (sponsors && sponsors.length > 0) {
+        for (const item of sponsors) {
+          if (item.logoUrl) item.logoUrl = await dataManager.getImageUrl(item.logoUrl);
+        }
+        this.renderAllSponsors(sponsors);
+      }
+    } catch (error) {
+      console.error('PetroleoTemplate: Error loading all sponsors:', error);
+    }
+  }
+
+  renderAllSponsors(sponsors) {
+    const container = document.getElementById('all-sponsors-grid');
+    if (!container) return;
+
+    const socialIcons = { facebook: 'fab fa-facebook-f', youtube: 'fab fa-youtube', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok', whatsapp: 'fab fa-whatsapp', x: 'fab fa-x-twitter' };
+
+    const sponsorsHtml = sponsors.map(sponsor => {
+      const socialLinks = Object.entries(socialIcons)
+        .filter(([key]) => sponsor[key])
+        .map(([key, icon]) => `<a href="${sponsor[key]}" target="_blank" rel="noopener" class="sponsor-social-link"><i class="${icon}"></i></a>`)
+        .join('');
+
+      return `
+      <div class="sponsor-card">
+        <div class="sponsor-card-header">
+          <img src="${sponsor.logoUrl || '/assets/icons/icon-96x96.png'}" alt="${sponsor.name}">
+          <h3>${sponsor.name}</h3>
+        </div>
+        ${sponsor.description ? `<p class="sponsor-description">${sponsor.description}</p>` : ''}
+        ${sponsor.address ? `<p class="sponsor-address"><i class="fas fa-map-marker-alt"></i> ${sponsor.address}</p>` : ''}
+        ${sponsor.website ? `<a href="${sponsor.website}" target="_blank" rel="noopener" class="sponsor-website"><i class="fas fa-globe"></i> ${sponsor.website}</a>` : ''}
+        ${socialLinks ? `<div class="sponsor-social-links">${socialLinks}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    container.innerHTML = sponsorsHtml;
   }
 
   // Sobrescribir: Cuando se carga la canción actual
@@ -400,6 +561,19 @@ class PetroleoTemplate extends TemplateBase {
           alert('Enlace copiado al portapapeles');
         }
       });
+    });
+
+    // Day buttons for programs schedule
+    document.querySelector('.weekly-schedule-nav')?.addEventListener('click', (e) => {
+      const dayBtn = e.target.closest('.day-btn');
+      if (!dayBtn) return;
+
+      document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('active'));
+      dayBtn.classList.add('active');
+
+      document.querySelectorAll('.day-programs').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(`${dayBtn.dataset.day}-programs`);
+      if (target) target.classList.add('active');
     });
   }
 
