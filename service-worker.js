@@ -1,3 +1,5 @@
+importScripts('/OneSignalSDKWorker.js');
+
 const CACHE_NAME = 'ipstream-cache-v8';
 const OFFLINE_URL = '/offline.html';
 
@@ -158,43 +160,4 @@ self.addEventListener('sync', event => {
   }
 });
 
-// Push notification handling
-self.addEventListener('push', event => {
-  const options = {
-    body: event.data ? event.data.text() : 'Nueva actualización disponible',
-    icon: '/assets/icons/icon-192x192.png',
-    badge: '/assets/icons/icon-72x72.png',
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'Ver',
-        icon: '/assets/icons/icon-72x72.png'
-      },
-      {
-        action: 'close',
-        title: 'Cerrar',
-        icon: '/assets/icons/icon-72x72.png'
-      }
-    ]
-  };
-  
-  event.waitUntil(
-    self.registration.showNotification('IPStream Radio', options)
-  );
-});
-
-// Notification click handling
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  }
-});
+// Push and notification click handled by OneSignal via OneSignalSDKWorker.js

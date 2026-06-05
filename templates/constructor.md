@@ -466,6 +466,67 @@ export default MiTemplate;
 | Social links | `social-links` |
 | Footer social | `footer-social` |
 
+## Integración de Notificaciones Push (OneSignal)
+
+Para que un nuevo template soporte notificaciones push, se deben agregar **tres elementos** al `index.html`:
+
+### 1. CSS del botón de notificaciones
+
+Agregar en el `<head>` junto a los otros CSS compartidos:
+
+```html
+<link rel="stylesheet" href="/assets/css/notification-button.css">
+```
+
+### 2. Contenedor del botón
+
+Agregar un `<div>` con `id="notification-button-container"` en el lugar donde quieras que aparezca el botón de suscripción. Ubicación recomendada: cerca de los enlaces a redes sociales en el header.
+
+```html
+<!-- Notification Button -->
+<div id="notification-button-container"></div>
+```
+
+### 3. Script de inicialización
+
+Agregar antes del `main.js` del template:
+
+```html
+<script type="module" src="/assets/js/onesignal-init.js"></script>
+```
+
+### Comportamiento
+
+- Si el cliente tiene `oneSignalAppId` configurado, el SDK se carga automáticamente y el botón se muestra en el contenedor.
+- Si no está configurado, el botón no se renderiza (no hay errores visibles).
+- El botón muestra "Activar notificaciones" y cambia a "Notificaciones activadas" tras aceptar.
+- OneSignal también se integra con el modal de instalación PWA: si está disponible, aparece un checkbox "Activar notificaciones push".
+
+### Ejemplo de integración completa
+
+```html
+<head>
+  <!-- ... otros CSS ... -->
+  <link rel="stylesheet" href="/assets/css/notification-button.css">
+</head>
+<body>
+  <header>
+    <div class="header-actions">
+      <div id="notification-button-container"></div>
+      <div class="social-links" id="social-links"></div>
+    </div>
+  </header>
+
+  <!-- ... contenido ... -->
+
+  <script src="/assets/js/pwa-installer.js?v=3"></script>
+  <script type="module" src="/assets/js/onesignal-init.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+```
+
+> **Nota**: `OneSignalSDKWorker.js` ya existe en `public/` y es servido automáticamente. El service worker principal (`service-worker.js`) ya importa OneSignal vía `importScripts('/OneSignalSDKWorker.js')`. No se requiere configuración adicional.
+
 ## Notas Importantes
 
 1. **No duplicar métodos**: Los métodos de setup ya están en TemplateBase, no es necesario reescribirlos a menos que tengas lógica diferente.
