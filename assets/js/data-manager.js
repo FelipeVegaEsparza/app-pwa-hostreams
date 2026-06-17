@@ -16,6 +16,12 @@ import {
   getSponsors,
   getPromotions,
   getSocialNetworks,
+  getGalleries,
+  getAnnouncers,
+  getPolls,
+  getEvents,
+  votePoll,
+  registerPwaInstall,
   getCurrentSong,
   getVideoStreamingUrl,
   buildImageUrl,
@@ -30,9 +36,14 @@ class DataManager {
       news: null,
       podcasts: null,
       videocasts: null,
+      videos: null,
       sponsors: null,
       promotions: null,
       socialNetworks: null,
+      galleries: null,
+      announcers: null,
+      polls: null,
+      events: null,
       currentSong: null,
       videoStreamUrl: null
     };
@@ -215,6 +226,81 @@ class DataManager {
     }
   }
 
+  // Obtener galerías
+  async loadGalleries() {
+    try {
+      const data = await getGalleries();
+      this.data.galleries = data;
+      this.emit('galleriesLoaded', data);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error loading galleries:', error);
+      return [];
+    }
+  }
+
+  // Obtener locutores
+  async loadAnnouncers() {
+    try {
+      const data = await getAnnouncers();
+      this.data.announcers = data;
+      this.emit('announcersLoaded', data);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error loading announcers:', error);
+      return [];
+    }
+  }
+
+  // Obtener encuestas activas
+  async loadPolls(forceRefresh) {
+    try {
+      const data = await getPolls(forceRefresh);
+      this.data.polls = data;
+      this.emit('pollsLoaded', data);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error loading polls:', error);
+      return [];
+    }
+  }
+
+  // Votar en una encuesta
+  async votePoll(pollId, optionId) {
+    try {
+      const data = await votePoll(pollId, optionId);
+      this.emit('pollVoted', data);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error voting in poll:', error);
+      throw error;
+    }
+  }
+
+  // Obtener eventos
+  async loadEvents() {
+    try {
+      const data = await getEvents();
+      this.data.events = data;
+      this.emit('eventsLoaded', data);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error loading events:', error);
+      return [];
+    }
+  }
+
+  // Registrar instalación PWA
+  async registerPwaInstall(deviceId) {
+    try {
+      const data = await registerPwaInstall(deviceId);
+      return data;
+    } catch (error) {
+      console.error('DataManager: Error registering PWA install:', error);
+      throw error;
+    }
+  }
+
   // Obtener canción actual
   async loadCurrentSong() {
     try {
@@ -262,8 +348,13 @@ class DataManager {
       this.loadNews(),
       this.loadPodcasts(),
       this.loadVideocasts(),
+      this.loadVideos(),
       this.loadSponsors(),
-      this.loadPromotions()
+      this.loadPromotions(),
+      this.loadGalleries(),
+      this.loadAnnouncers(),
+      this.loadPolls(),
+      this.loadEvents()
     ]);
   }
 
@@ -292,9 +383,14 @@ class DataManager {
       news: null,
       podcasts: null,
       videocasts: null,
+      videos: null,
       sponsors: null,
       promotions: null,
       socialNetworks: null,
+      galleries: null,
+      announcers: null,
+      polls: null,
+      events: null,
       currentSong: null,
       videoStreamUrl: null
     };
@@ -307,8 +403,13 @@ class DataManager {
   getNews() { return this.data.news; }
   getPodcasts() { return this.data.podcasts; }
   getVideocasts() { return this.data.videocasts; }
+  getVideos() { return this.data.videos; }
   getSponsors() { return this.data.sponsors; }
   getPromotions() { return this.data.promotions; }
+  getGalleries() { return this.data.galleries; }
+  getAnnouncers() { return this.data.announcers; }
+  getPolls() { return this.data.polls; }
+  getEvents() { return this.data.events; }
   getCurrentSong() { return this.data.currentSong; }
   getVideoStreamUrl() { return this.data.videoStreamUrl; }
 }

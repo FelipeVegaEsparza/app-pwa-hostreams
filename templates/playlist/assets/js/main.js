@@ -30,6 +30,28 @@ class PlaylistTemplate extends TemplateBase {
     this.currentView = 'now-playing';
     this.navigationSetup = false;
     this.videoStreamUrl = null;
+    this.sectionStates = {};
+  }
+
+  toggleSectionVisibility(sectionName, hasData) {
+    const view = document.getElementById(`${sectionName}-view`);
+    const menuItem = document.querySelector(`.menu-item[data-section="${sectionName}"]`);
+    const li = menuItem ? menuItem.closest('li') : null;
+
+    if (view) {
+      view.style.display = hasData ? '' : 'none';
+    }
+
+    if (li) {
+      li.style.display = hasData ? '' : 'none';
+      if (!hasData) {
+        li.setAttribute('data-hidden', 'true');
+      } else {
+        li.removeAttribute('data-hidden');
+      }
+    }
+
+    this.sectionStates[sectionName] = hasData;
   }
 
   async init() {
@@ -53,23 +75,10 @@ class PlaylistTemplate extends TemplateBase {
     try {
       const dataManager = getDataManager();
       this.videoStreamUrl = await dataManager.loadVideoStreamUrl();
-      
-      const tvMenuItem = document.querySelector('.menu-item[data-section="tv-online"]');
-      const tvView = document.getElementById('tv-online-view');
-      
-      if (this.videoStreamUrl) {
-        if (tvMenuItem) {
-          tvMenuItem.closest('li').style.display = '';
-          tvMenuItem.closest('li').removeAttribute('data-hidden');
-        }
-        if (tvView) tvView.style.display = '';
-      } else {
-        if (tvMenuItem) tvMenuItem.closest('li').style.display = 'none';
-        if (tvMenuItem) tvMenuItem.closest('li').setAttribute('data-hidden', 'true');
-        if (tvView) tvView.style.display = 'none';
-      }
+      this.toggleSectionVisibility('tv-online', !!this.videoStreamUrl);
     } catch (error) {
       console.error('PlaylistTemplate: Error checking TV availability:', error);
+      this.toggleSectionVisibility('tv-online', false);
     }
   }
 
@@ -129,6 +138,20 @@ class PlaylistTemplate extends TemplateBase {
     }
   }
 
+  onBasicDataLoaded(data) {
+    const coverImg = document.getElementById('radio-cover-img');
+    if (coverImg && data.coverUrl) {
+      this.dataManager.getImageUrl(data.coverUrl).then(url => {
+        coverImg.src = url;
+        coverImg.style.display = 'block';
+      });
+    }
+    const descEl = document.getElementById('radio-description-text');
+    if (descEl && data.projectDescription) {
+      descEl.textContent = data.projectDescription;
+    }
+  }
+
   // Cargar todo el contenido
   async loadAllContent() {
     try {
@@ -140,10 +163,32 @@ class PlaylistTemplate extends TemplateBase {
         this.loadPodcasts(),
         this.loadVideocasts(),
         this.loadSponsors(),
-        this.loadRecentTracks()
+        this.loadRecentTracks(),
+        this.preloadSection('promotions', () => dataManager.loadPromotions()),
+        this.preloadSection('videos', () => dataManager.loadVideos()),
+        this.loadSocialNetworks(),
+        this.preloadSection('galleries', () => dataManager.loadGalleries()),
+        this.preloadSection('announcers', () => dataManager.loadAnnouncers()),
+        this.preloadSection('polls', () => dataManager.loadPolls()),
+        this.preloadSection('events', () => dataManager.loadEvents())
       ]);
     } catch (error) {
       console.error('PlaylistTemplate: Error loading content:', error);
+    }
+  }
+
+  async preloadSection(sectionName, loader) {
+    try {
+      const data = await loader();
+      if (sectionName === 'polls') {
+        const active = (data || []).filter(p => p.active);
+        this.toggleSectionVisibility(sectionName, active.length > 0);
+      } else {
+        const hasData = Array.isArray(data) ? data.length > 0 : !!data;
+        this.toggleSectionVisibility(sectionName, hasData);
+      }
+    } catch {
+      this.toggleSectionVisibility(sectionName, false);
     }
   }
   
@@ -469,6 +514,9 @@ class PlaylistTemplate extends TemplateBase {
   
   // Mostrar sección
   async showSection(sectionName) {
+    if (this.sectionStates[sectionName] === false) {
+      return;
+    }
     this.currentView = sectionName;
     
     // Cerrar modales al cambiar de sección
@@ -476,8 +524,17 @@ class PlaylistTemplate extends TemplateBase {
     this.closeVideocastModal();
     this.closeVideoModal();
     this.closeNewsModal();
+    this.closeGalleryModal();
     
-    // Hide all content views first
+    // Load content for the selected section FIRST
+    await this.loadSectionContent(sectionName);
+    
+    // Only show if section has data
+    if (this.sectionStates[sectionName] === false) {
+      return;
+    }
+    
+    // Hide all content views
     document.querySelectorAll('.content-view').forEach(view => {
       view.classList.remove('active');
     });
@@ -510,9 +567,6 @@ class PlaylistTemplate extends TemplateBase {
     // Update breadcrumb
     const breadcrumb = document.getElementById('breadcrumb-title');
     if (breadcrumb) breadcrumb.textContent = this.getSectionTitle(sectionName);
-    
-    // Load content for the selected section
-    await this.loadSectionContent(sectionName);
     
     console.log('PlaylistTemplate: Showing section:', sectionName);
   }
@@ -548,25 +602,37 @@ class PlaylistTemplate extends TemplateBase {
       case 'tv-online':
         console.log('TV Online section');
         break;
+      case 'galleries':
+        await this.loadAllGalleries();
+        break;
+      case 'announcers':
+        await this.loadAllAnnouncers();
+        break;
+      case 'polls':
+        await this.loadAllPolls();
+        break;
+      case 'events':
+        await this.loadAllEvents();
+        break;
       default:
         console.log('No content to load for:', sectionName);
     }
   }
   
   async loadProgramsForAllDays() {
-    const container = document.querySelector('#programs-view .programs-content');
-    if (!container) return;
-    
     try {
       const dataManager = getDataManager();
       const programs = await dataManager.loadPrograms();
       
       if (!programs || programs.length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay programación disponible</div>';
+        this.toggleSectionVisibility('programs', false);
         return;
       }
+      this.toggleSectionVisibility('programs', true);
       
-      // Resolver URLs de imágenes
+      const container = document.querySelector('#programs-view .programs-content');
+      if (!container) return;
+      
       for (const program of programs) {
         if (program.imageUrl) {
           program.imageUrl = await dataManager.getImageUrl(program.imageUrl);
@@ -600,10 +666,8 @@ class PlaylistTemplate extends TemplateBase {
         if (dayContainer) {
           const timeline = dayContainer.querySelector('.programs-timeline');
           if (timeline) {
-            if (dayPrograms.length === 0) {
-              timeline.innerHTML = '<div class="empty-day">No hay programas para este día</div>';
-            } else {
-              timeline.innerHTML = dayPrograms.map(program => `
+            timeline.innerHTML = dayPrograms.length
+              ? dayPrograms.map(program => `
                 <div class="program-card">
                   ${program.imageUrl ? `<img src="${program.imageUrl}" alt="${program.name}" loading="lazy">` : ''}
                   <div class="program-info">
@@ -615,19 +679,18 @@ class PlaylistTemplate extends TemplateBase {
                     </div>
                   </div>
                 </div>
-              `).join('');
-            }
+              `).join('')
+              : '<div class="empty-day">No hay programas para este día</div>';
           }
         }
       });
       
-      // Activar primer día por defecto
       const firstTab = document.querySelector('.programs-tab-btn');
       if (firstTab) this.showProgramsDay(firstTab.dataset.day);
       
     } catch (error) {
       console.error('PlaylistTemplate: Error loading programs:', error);
-      container.innerHTML = '<div class="error-message">Error al cargar la programación</div>';
+      this.toggleSectionVisibility('programs', false);
     }
   }
   
@@ -641,23 +704,24 @@ class PlaylistTemplate extends TemplateBase {
   }
   
   async loadAllNews() {
-    const container = document.getElementById('news-feed');
-    if (!container) return;
-    
     try {
       const dataManager = getDataManager();
       const news = await dataManager.loadNews(1, 20);
       
       if (!news.data || news.data.length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay noticias disponibles</div>';
+        this.toggleSectionVisibility('news', false);
         return;
       }
+      this.toggleSectionVisibility('news', true);
+      
+      const container = document.getElementById('news-feed');
+      if (!container) return;
       
       for (const item of news.data) {
         if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
       }
       
-      const newsHtml = news.data.map(item => `
+      container.innerHTML = news.data.map(item => `
         <article class="news-item" data-slug="${item.slug}" style="cursor:pointer;">
           <img src="${item.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${item.name}" loading="lazy">
           <div class="news-content">
@@ -667,32 +731,31 @@ class PlaylistTemplate extends TemplateBase {
           </div>
         </article>
       `).join('');
-      
-      container.innerHTML = newsHtml;
     } catch (error) {
       console.error('PlaylistTemplate: Error loading news:', error);
-      container.innerHTML = '<div class="error-message">Error al cargar las noticias</div>';
+      this.toggleSectionVisibility('news', false);
     }
   }
   
   async loadAllPodcasts() {
-    const container = document.getElementById('podcast-library');
-    if (!container) return;
-    
     try {
       const dataManager = getDataManager();
       const podcasts = await dataManager.loadPodcasts(1, 20);
       
       if (!podcasts.data || podcasts.data.length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay podcasts disponibles</div>';
+        this.toggleSectionVisibility('podcasts', false);
         return;
       }
+      this.toggleSectionVisibility('podcasts', true);
+      
+      const container = document.getElementById('podcast-library');
+      if (!container) return;
       
       for (const item of podcasts.data) {
         if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
       }
       
-      const podcastsHtml = podcasts.data.map(podcast => `
+      container.innerHTML = podcasts.data.map(podcast => `
         <div class="podcast-card" data-podcast-id="${podcast.id}" style="cursor:pointer;">
           <img src="${podcast.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${podcast.title}" loading="lazy">
           <div class="podcast-info">
@@ -701,32 +764,31 @@ class PlaylistTemplate extends TemplateBase {
           </div>
         </div>
       `).join('');
-      
-      container.innerHTML = podcastsHtml;
     } catch (error) {
       console.error('PlaylistTemplate: Error loading podcasts:', error);
-      container.innerHTML = '<div class="error-message">Error al cargar los podcasts</div>';
+      this.toggleSectionVisibility('podcasts', false);
     }
   }
   
   async loadAllVideocasts() {
-    const container = document.getElementById('videocast-library');
-    if (!container) return;
-    
     try {
       const dataManager = getDataManager();
       const videocasts = await dataManager.loadVideocasts(1, 20);
       
       if (!videocasts.data || videocasts.data.length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay videocasts disponibles</div>';
+        this.toggleSectionVisibility('videocasts', false);
         return;
       }
+      this.toggleSectionVisibility('videocasts', true);
+      
+      const container = document.getElementById('videocast-library');
+      if (!container) return;
       
       for (const item of videocasts.data) {
         if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
       }
       
-      const videocastsHtml = videocasts.data.map(videocast => `
+      container.innerHTML = videocasts.data.map(videocast => `
         <div class="videocast-card" data-videocast-id="${videocast.id}" style="cursor:pointer;">
           <img src="${videocast.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${videocast.title}" loading="lazy">
           <div class="videocast-info">
@@ -736,26 +798,25 @@ class PlaylistTemplate extends TemplateBase {
           </div>
         </div>
       `).join('');
-      
-      container.innerHTML = videocastsHtml;
     } catch (error) {
       console.error('PlaylistTemplate: Error loading videocasts:', error);
-      container.innerHTML = '<div class="error-message">Error al cargar los videocasts</div>';
+      this.toggleSectionVisibility('videocasts', false);
     }
   }
   
   async loadAllSponsors() {
-    const container = document.getElementById('sponsors-showcase');
-    if (!container) return;
-    
     try {
       const dataManager = getDataManager();
       const sponsors = await dataManager.loadSponsors();
       
       if (!sponsors || sponsors.length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay patrocinadores disponibles</div>';
+        this.toggleSectionVisibility('sponsors', false);
         return;
       }
+      this.toggleSectionVisibility('sponsors', true);
+      
+      const container = document.getElementById('sponsors-showcase');
+      if (!container) return;
       
       for (const item of sponsors) {
         if (item.logoUrl) item.logoUrl = await dataManager.getImageUrl(item.logoUrl);
@@ -785,28 +846,29 @@ class PlaylistTemplate extends TemplateBase {
       container.innerHTML = sponsorsHtml;
     } catch (error) {
       console.error('PlaylistTemplate: Error loading sponsors:', error);
-      container.innerHTML = '<div class="error-message">Error al cargar los patrocinadores</div>';
+      this.toggleSectionVisibility('sponsors', false);
     }
   }
   
   async loadAllPromotions() {
-    const container = document.getElementById('promotions-grid');
-    if (!container) return;
-    
     try {
       const dataManager = getDataManager();
       const promotions = await dataManager.loadPromotions();
       
       if (!promotions || promotions.length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay anuncios disponibles</div>';
+        this.toggleSectionVisibility('promotions', false);
         return;
       }
+      this.toggleSectionVisibility('promotions', true);
+      
+      const container = document.getElementById('promotions-grid');
+      if (!container) return;
       
       for (const item of promotions) {
         if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
       }
       
-      const promotionsHtml = promotions.map(promo => `
+      container.innerHTML = promotions.map(promo => `
         <div class="promotion-card">
           <img src="${promo.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${promo.title}">
           <div class="promotion-info">
@@ -815,34 +877,33 @@ class PlaylistTemplate extends TemplateBase {
           </div>
         </div>
       `).join('');
-      
-      container.innerHTML = promotionsHtml;
     } catch (error) {
       console.error('PlaylistTemplate: Error loading promotions:', error);
-      container.innerHTML = '<div class="error-message">Error al cargar los anuncios</div>';
+      this.toggleSectionVisibility('promotions', false);
     }
   }
   
   async loadAllVideos() {
-    const container = document.getElementById('video-ranking');
-    if (!container) return;
-
     try {
       const dataManager = getDataManager();
       const videos = await dataManager.loadVideos();
 
       const items = videos.data || videos;
       if (!items || items.length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay videos disponibles</div>';
+        this.toggleSectionVisibility('videos', false);
         return;
       }
+      this.toggleSectionVisibility('videos', true);
+
+      const container = document.getElementById('video-ranking');
+      if (!container) return;
 
       const youtubeThumb = (url) => {
         const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
         return match ? `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg` : '/assets/icons/icon-96x96.png';
       };
 
-      const videosHtml = items.map((video, i) => `
+      container.innerHTML = items.map((video, i) => `
         <a href="${video.videoUrl}" target="_blank" rel="noopener" class="video-ranking-card" style="display:flex;gap:1rem;padding:1rem;background:#282828;border-radius:12px;align-items:center;cursor:pointer;text-decoration:none;color:inherit;margin-bottom:0.75rem;">
           <span style="font-size:1.2rem;font-weight:700;color:#1db954;min-width:30px;">#${video.order || i + 1}</span>
           <img src="${youtubeThumb(video.videoUrl)}" alt="${video.name}" style="width:100px;height:75px;object-fit:cover;border-radius:8px;flex-shrink:0;">
@@ -853,11 +914,9 @@ class PlaylistTemplate extends TemplateBase {
           <i class="fas fa-play-circle" style="font-size:2rem;color:#1db954;flex-shrink:0;"></i>
         </a>
       `).join('');
-
-      container.innerHTML = videosHtml;
     } catch (error) {
       console.error('PlaylistTemplate: Error loading videos:', error);
-      container.innerHTML = '<div class="error-message">Error al cargar el ranking</div>';
+      this.toggleSectionVisibility('videos', false);
     }
   }
 
@@ -881,15 +940,12 @@ class PlaylistTemplate extends TemplateBase {
   }
 
   async loadSocialNetworks() {
-    const container = document.getElementById('social-hub');
-    if (!container) return;
-    
     try {
       const dataManager = getDataManager();
       const socialData = await dataManager.loadSocialNetworks();
       
       if (!socialData || Object.keys(socialData).length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay redes sociales configuradas</div>';
+        this.toggleSectionVisibility('social', false);
         return;
       }
       
@@ -917,9 +973,10 @@ class PlaylistTemplate extends TemplateBase {
       ].filter(e => e.url);
       
       if (entries.length === 0) {
-        container.innerHTML = '<div class="empty-message">No hay redes sociales configuradas</div>';
+        this.toggleSectionVisibility('social', false);
         return;
       }
+      this.toggleSectionVisibility('social', true);
       
       const socialHtml = entries.map(item => `
         <a href="${item.url}" target="_blank" rel="noopener" class="social-link-item">
@@ -928,13 +985,309 @@ class PlaylistTemplate extends TemplateBase {
         </a>
       `).join('');
       
-      container.innerHTML = socialHtml;
+      const socialHub = document.getElementById('social-hub');
+      if (socialHub) socialHub.innerHTML = socialHtml;
+      
+      const radioSocialContainer = document.getElementById('radio-social-icons');
+      if (radioSocialContainer) {
+        radioSocialContainer.innerHTML = entries.map(item => `
+          <a href="${item.url}" target="_blank" rel="noopener" aria-label="${item.name}">
+            <i class="${iconMap[item.name] || 'fas fa-link'}"></i>
+          </a>
+        `).join('');
+      }
     } catch (error) {
       console.error('PlaylistTemplate: Error loading social networks:', error);
-      container.innerHTML = '<div class="error-message">Error al cargar las redes sociales</div>';
+      this.toggleSectionVisibility('social', false);
     }
   }
   
+  // ==========================================
+  // GALERÍAS
+  // ==========================================
+
+  async loadAllGalleries() {
+    try {
+      const dm = getDataManager();
+      const galleries = await dm.loadGalleries();
+
+      if (!galleries || galleries.length === 0) {
+        this.toggleSectionVisibility('galleries', false);
+        return;
+      }
+      this.toggleSectionVisibility('galleries', true);
+
+      const container = document.getElementById('galleries-grid');
+      if (!container) return;
+
+      for (const g of galleries) {
+        if (g.imageUrl) g.imageUrl = await dm.getImageUrl(g.imageUrl);
+      }
+
+      container.innerHTML = galleries.map(g => `
+        <div class="gallery-card" data-gallery-id="${g.id}" style="cursor:pointer;">
+          <div class="gallery-card-image">
+            <img src="${g.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${g.name}" loading="lazy">
+            <div class="gallery-card-overlay">
+              <i class="fas fa-images"></i>
+              <span>${(g.images || []).length} fotos</span>
+            </div>
+          </div>
+          <div class="gallery-card-info">
+            <h3>${g.name}</h3>
+            ${g.description ? `<p>${g.description}</p>` : ''}
+          </div>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('PlaylistTemplate: Error loading galleries:', error);
+      this.toggleSectionVisibility('galleries', false);
+    }
+  }
+
+  async openGalleryModal(id) {
+    try {
+      const dm = getDataManager();
+      const galleries = await dm.loadGalleries();
+      const gallery = (galleries || []).find(g => g.id === id);
+      if (!gallery || !gallery.images || gallery.images.length === 0) return;
+
+      for (const img of gallery.images) {
+        if (img.imageUrl) img.imageUrl = await dm.getImageUrl(img.imageUrl);
+      }
+
+      this.currentGalleryImages = gallery.images.sort((a, b) => (a.order || 0) - (b.order || 0));
+      this.currentGalleryIndex = 0;
+
+      const modal = document.getElementById('gallery-modal');
+      const titleEl = document.getElementById('gallery-modal-title');
+      const mainImg = document.getElementById('gallery-main-img');
+      const thumbs = document.getElementById('gallery-thumbnails');
+
+      if (titleEl) titleEl.textContent = gallery.name;
+      if (mainImg && this.currentGalleryImages[0]) {
+        mainImg.src = this.currentGalleryImages[0].imageUrl;
+      }
+      if (thumbs) {
+        thumbs.innerHTML = this.currentGalleryImages.map((img, i) => `
+          <img src="${img.imageUrl}" class="gallery-thumb ${i === 0 ? 'active' : ''}" data-index="${i}" loading="lazy">
+        `).join('');
+      }
+      if (modal) modal.classList.add('active');
+    } catch (error) {
+      console.error('PlaylistTemplate: Error opening gallery:', error);
+    }
+  }
+
+  closeGalleryModal() {
+    const modal = document.getElementById('gallery-modal');
+    if (modal) modal.classList.remove('active');
+    this.currentGalleryImages = null;
+    this.currentGalleryIndex = 0;
+  }
+
+  showGalleryImage(index) {
+    if (!this.currentGalleryImages || index < 0 || index >= this.currentGalleryImages.length) return;
+    this.currentGalleryIndex = index;
+    const mainImg = document.getElementById('gallery-main-img');
+    const thumbs = document.querySelectorAll('.gallery-thumb');
+    if (mainImg) mainImg.src = this.currentGalleryImages[index].imageUrl;
+    thumbs.forEach((t, i) => t.classList.toggle('active', i === index));
+  }
+
+  // ==========================================
+  // LOCUTORES
+  // ==========================================
+
+  async loadAllAnnouncers() {
+    try {
+      const dm = getDataManager();
+      const announcers = await dm.loadAnnouncers();
+
+      if (!announcers || announcers.length === 0) {
+        this.toggleSectionVisibility('announcers', false);
+        return;
+      }
+      this.toggleSectionVisibility('announcers', true);
+
+      const container = document.getElementById('announcers-grid');
+      if (!container) return;
+
+      for (const a of announcers) {
+        if (a.imageUrl) a.imageUrl = await dm.getImageUrl(a.imageUrl);
+      }
+
+      console.log('PlaylistTemplate: Announcers data:', JSON.stringify(announcers));
+
+      container.innerHTML = announcers.map(a => {
+        const bio = a.description || a.biography || a.bio || a.about || '';
+        const bioHtml = bio ? `<p>${bio}</p>` : '';
+        return `
+        <div class="announcer-card">
+          <div class="announcer-photo">
+            <img src="${a.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${a.name}" loading="lazy">
+          </div>
+          <h3>${a.name}</h3>
+          ${bioHtml}
+        </div>
+      `;
+      }).join('');
+    } catch (error) {
+      console.error('PlaylistTemplate: Error loading announcers:', error);
+      this.toggleSectionVisibility('announcers', false);
+    }
+  }
+
+  // ==========================================
+  // ENCUESTAS
+  // ==========================================
+
+  async loadAllPolls() {
+    try {
+      const dm = getDataManager();
+      const raw = await dm.loadPolls();
+      const polls = Array.isArray(raw) ? raw : (raw && raw.data ? raw.data : []);
+
+      const activePolls = (polls || []).filter(p => p.active);
+      if (activePolls.length === 0) {
+        this.toggleSectionVisibility('polls', false);
+        return;
+      }
+      this.toggleSectionVisibility('polls', true);
+
+      const container = document.getElementById('polls-container');
+      if (!container) return;
+
+      console.log('PlaylistTemplate: Polls data:', JSON.stringify(activePolls));
+
+      container.innerHTML = activePolls.map(poll => {
+        const question = poll.title || poll.question || poll.name || poll.text || '';
+        const optionsHtml = (poll.options || []).map(opt => {
+          const label = opt.text || opt.name || opt.label || '';
+          return `
+              <button class="poll-option" data-poll-id="${poll.id}" data-option-id="${opt.id}">
+                <span class="poll-option-text">${label}</span>
+                <span class="poll-bar" style="width: 0%"></span>
+                <span class="poll-count">${opt.votes || 0}</span>
+              </button>
+            `;
+        }).join('');
+        return `
+        <div class="poll-card" data-poll-id="${poll.id}">
+          <h3 class="poll-question">${question}</h3>
+          <div class="poll-options">${optionsHtml}</div>
+          <p class="poll-voted-msg" style="display:none;color:#1db954;margin-top:0.75rem;font-weight:600;">
+            <i class="fas fa-check-circle"></i> ¡Gracias por votar!
+          </p>
+        </div>
+      `;
+      }).join('');
+    } catch (error) {
+      console.error('PlaylistTemplate: Error loading polls:', error);
+      this.toggleSectionVisibility('polls', false);
+    }
+  }
+
+  async handleVote(pollId, optionId) {
+    const dm = getDataManager();
+    try {
+      const voteResult = await dm.votePoll(pollId, optionId);
+      const poll = voteResult && voteResult.options ? voteResult : null;
+
+      if (!poll) {
+        const polls = await dm.loadPolls(true);
+        const found = (polls || []).find(p => p.id === pollId);
+        if (!found) return;
+      }
+
+      const updatedPoll = poll || (await dm.loadPolls(true)).find(p => p.id === pollId);
+      if (!updatedPoll) return;
+
+      const total = (updatedPoll.options || []).reduce((sum, o) => sum + (o.votes || 0), 0);
+      const card = document.querySelector(`.poll-card[data-poll-id="${pollId}"]`);
+      if (!card) return;
+
+      const optionBtns = card.querySelectorAll('.poll-option');
+      optionBtns.forEach((btn, i) => {
+        const opt = (updatedPoll.options || [])[i];
+        if (!opt) return;
+        const pct = total > 0 ? Math.round((opt.votes / total) * 100) : 0;
+        btn.querySelector('.poll-bar').style.width = `${pct}%`;
+        btn.querySelector('.poll-count').textContent = `${opt.votes} (${pct}%)`;
+        btn.disabled = true;
+      });
+
+      const msg = card.querySelector('.poll-voted-msg');
+      if (msg) msg.style.display = 'block';
+    } catch (error) {
+      console.error('PlaylistTemplate: Error voting:', error);
+      alert('Error al registrar tu voto. Intenta de nuevo.');
+    }
+  }
+
+  // ==========================================
+  // EVENTOS
+  // ==========================================
+
+  async loadAllEvents() {
+    try {
+      const dm = getDataManager();
+      const events = await dm.loadEvents();
+
+      if (!events || events.length === 0) {
+        this.toggleSectionVisibility('events', false);
+        return;
+      }
+      this.toggleSectionVisibility('events', true);
+
+      const container = document.getElementById('events-timeline');
+      if (!container) return;
+
+      console.log('PlaylistTemplate: Events data:', JSON.stringify(events));
+
+      for (const e of events) {
+        if (e.imageUrl) e.imageUrl = await dm.getImageUrl(e.imageUrl);
+      }
+
+      const sorted = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      container.innerHTML = sorted.map(e => {
+        const title = e.name || e.title || e.text || '';
+        const desc = e.description || e.shortText || '';
+        const imgUrl = e.imageUrl || '';
+        const eventDate = e.date ? new Date(e.date) : null;
+        const day = eventDate ? eventDate.getDate() : '?';
+        const month = eventDate ? eventDate.toLocaleDateString('es-ES', { month: 'short' }) : '';
+        const imageHtml = imgUrl ? '<div class="event-image"><img src="' + imgUrl + '" alt="' + title + '" loading="lazy"></div>' : '';
+        const descHtml = desc ? '<p>' + desc + '</p>' : '';
+        const timeHtml = e.time ? '<span><i class="fas fa-clock"></i> ' + e.time + '</span>' : '';
+        const locationHtml = e.location ? '<span><i class="fas fa-map-marker-alt"></i> ' + e.location + '</span>' : '';
+        return `
+        <div class="event-card">
+          ${imageHtml}
+          <div class="event-card-body">
+            <div class="event-date-badge">
+              <span class="event-day">${day}</span>
+              <span class="event-month">${month}</span>
+            </div>
+            <div class="event-card-info">
+              <h3>${title}</h3>
+              ${descHtml}
+              <div class="event-meta">
+                ${timeHtml}
+                ${locationHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
+    } catch (error) {
+      console.error('PlaylistTemplate: Error loading events:', error);
+      this.toggleSectionVisibility('events', false);
+    }
+  }
+
   async openNewsModal(slug) {
     try {
       const dataManager = getDataManager();
@@ -1067,7 +1420,11 @@ class PlaylistTemplate extends TemplateBase {
       'sponsors': 'Patrocinadores',
       'promotions': 'Anuncios',
       'social': 'Redes Sociales',
-      'tv-online': 'TV Online'
+      'tv-online': 'TV Online',
+      'galleries': 'Galerías',
+      'announcers': 'Locutores',
+      'polls': 'Encuestas',
+      'events': 'Eventos'
     };
     return titles[section] || section;
   }
@@ -1078,7 +1435,8 @@ class PlaylistTemplate extends TemplateBase {
       'news-modal': 'closeNewsModal',
       'podcast-modal': 'closePodcastModal',
       'videocast-modal': 'closeVideocastModal',
-      'video-modal': 'closeVideoModal'
+      'video-modal': 'closeVideoModal',
+      'gallery-modal': 'closeGalleryModal'
     };
     
     Object.entries(modalIds).forEach(([id, method]) => {
@@ -1120,6 +1478,38 @@ class PlaylistTemplate extends TemplateBase {
         e.preventDefault();
         const id = videocastLink.getAttribute('data-videocast-id');
         this.openVideocastModal(id);
+        return;
+      }
+      const galleryCard = e.target.closest('[data-gallery-id]');
+      if (galleryCard) {
+        e.preventDefault();
+        const id = galleryCard.getAttribute('data-gallery-id');
+        this.openGalleryModal(id);
+        return;
+      }
+      const galleryThumb = e.target.closest('.gallery-thumb');
+      if (galleryThumb) {
+        e.preventDefault();
+        const index = parseInt(galleryThumb.dataset.index);
+        if (!isNaN(index)) this.showGalleryImage(index);
+        return;
+      }
+      const galleryPrev = e.target.closest('.gallery-prev');
+      if (galleryPrev) {
+        e.preventDefault();
+        this.showGalleryImage(this.currentGalleryIndex - 1);
+        return;
+      }
+      const galleryNext = e.target.closest('.gallery-next');
+      if (galleryNext) {
+        e.preventDefault();
+        this.showGalleryImage(this.currentGalleryIndex + 1);
+        return;
+      }
+      const pollOption = e.target.closest('.poll-option');
+      if (pollOption && !pollOption.disabled) {
+        e.preventDefault();
+        this.handleVote(pollOption.dataset.pollId, pollOption.dataset.optionId);
         return;
       }
     });

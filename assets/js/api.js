@@ -264,6 +264,47 @@ export async function getVideocastById(id) {
   return fetchJSON(`${base}/videocasts/${id}`, { cacheTTL: CACHE_TTL.default });
 }
 
+export async function getGalleries() {
+  const base = await getApiBase();
+  return fetchJSON(`${base}/galleries`, { cacheTTL: CACHE_TTL.default });
+}
+
+export async function getAnnouncers() {
+  const base = await getApiBase();
+  return fetchJSON(`${base}/announcers`, { cacheTTL: CACHE_TTL.default });
+}
+
+export async function getPolls(forceRefresh) {
+  const base = await getApiBase();
+  return fetchJSON(`${base}/polls`, { cacheTTL: CACHE_TTL.default, cache: !forceRefresh });
+}
+
+export async function votePoll(pollId, optionId) {
+  const base = await getApiBase();
+  const response = await fetchWithRetry(`${base}/polls/${pollId}/vote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ optionId })
+  });
+  return response.json();
+}
+
+export async function getEvents() {
+  const base = await getApiBase();
+  return fetchJSON(`${base}/events`, { cacheTTL: CACHE_TTL.default });
+}
+
+export async function registerPwaInstall(deviceId) {
+  const base = await getApiBase();
+  const response = await fetchWithRetry(`${base}/pwa/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId }),
+    retries: 1
+  });
+  return response.json();
+}
+
 export async function getSocialNetworks() {
   try {
     // Intentar obtener desde el endpoint dedicado primero (silenciosamente)
@@ -341,7 +382,7 @@ export async function getSonicPanelInfo() {
   const apiUrl = configData.sonicpanel_api_url || `https://stream.ipstream.cl/cp/get_info.php?p=${port}`;
   
   try {
-    const response = await fetchWithRetry(apiUrl, { cache: 'no-store', retries: 2 });
+    const response = await fetchWithRetry(apiUrl, { cache: 'no-store', retries: 1, timeout: 5000 });
     const data = await response.json();
     setCache(cacheKey, data, CACHE_TTL.sonic);
     return data;

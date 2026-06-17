@@ -69,6 +69,9 @@ class TemplateBase {
       // Configurar fecha actual
       this.setCurrentDate();
       
+      // Inicializar animaciones
+      this.setupAnimations();
+      
       console.log('TemplateBase: Initialization complete');
     } catch (error) {
       console.error('TemplateBase: Error initializing:', error);

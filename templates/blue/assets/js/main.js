@@ -29,7 +29,6 @@ class BlueTemplate extends TemplateBase {
         breakingNews: 'breaking-news',
         featuredNews: 'featured-news',
         allNews: 'all-news',
-        programsTimeline: 'programs-timeline',
         sponsorsCarousel: 'sponsors-carousel',
         podcastsTab: 'podcasts-tab',
         videocastsTab: 'videocasts-tab',
@@ -38,12 +37,13 @@ class BlueTemplate extends TemplateBase {
     });
     
     this.currentSection = 'home';
-    this.currentPage = { news: 1, podcasts: 1, videocasts: 1 };
+    this.currentPage = { events: 1, galleries: 1 };
     this.currentFilter = 'all';
     this.currentTab = 'podcasts';
     this.currentScheduleDay = 'today';
     this.heroSwiper = null;
     this.sponsorsSwiper = null;
+    this.sectionStates = {};
 
     this.dayMapping = {
       'monday': 'Lunes', 'tuesday': 'Martes', 'wednesday': 'Miércoles',
@@ -51,11 +51,23 @@ class BlueTemplate extends TemplateBase {
     };
     
     this.videoStreamUrl = null;
+    this._tvPlayer = null;
+    this._tvMode = null; // 'radio', 'tv', 'both'
   }
 
   getSpanishDay(englishDay) {
     if (!englishDay) return null;
     return this.dayMapping[englishDay.toLowerCase()] || englishDay;
+  }
+
+  toggleSectionVisibility(sectionName, hasData) {
+    const section = document.getElementById(`${sectionName}-section`);
+
+    if (section) {
+      section.style.setProperty('display', hasData ? '' : 'none', 'important');
+    }
+
+    this.sectionStates[sectionName] = hasData;
   }
 
   async init() {
@@ -64,7 +76,10 @@ class BlueTemplate extends TemplateBase {
     try {
       await this.checkTVAvailability();
       this.setupCarousels();
+      this.setupSectionEventDelegation();
       await this.loadAllContent();
+      this.setupTabs();
+      this.setupContactForm();
       
       console.log('BlueTemplate: Template fully initialized! 🚀');
     } catch (error) {
@@ -76,10 +91,49 @@ class BlueTemplate extends TemplateBase {
     try {
       const dataManager = getDataManager();
       this.videoStreamUrl = await dataManager.loadVideoStreamUrl();
-      
       const tvSection = document.getElementById('tv-online-section');
-      if (tvSection) {
-        tvSection.style.display = this.videoStreamUrl ? 'block' : 'none';
+      const hasTV = !!this.videoStreamUrl;
+
+      let hasRadio = false;
+      try {
+        const basicData = await dataManager.loadBasicData();
+        if (basicData) {
+          hasRadio = !!(basicData.radioStreamingUrl || basicData.radioStreamUrl);
+        }
+      } catch (e) {
+        hasRadio = false;
+      }
+
+      if (hasTV && hasRadio) this._tvMode = 'both';
+      else if (hasTV) this._tvMode = 'tv';
+      else this._tvMode = 'radio';
+
+      if (hasTV && tvSection) {
+        tvSection.style.display = 'block';
+        const tvContainer = document.getElementById('tv-player-container');
+        if (tvContainer && window.VideoPlayer) {
+          const player = new window.VideoPlayer('tv-player-container', {
+            autoplay: true, controls: true, muted: false
+          });
+          this._tvPlayer = player;
+          const waitForVideo = setInterval(() => {
+            if (player.videoElement) {
+              clearInterval(waitForVideo);
+              player.loadStream(this.videoStreamUrl);
+            }
+          }, 100);
+        }
+      }
+
+      if (hasTV) {
+        if (this._tvMode === 'both') {
+          const fixedPlayer = document.getElementById('fixed-player');
+          if (fixedPlayer) fixedPlayer.style.setProperty('display', 'flex', 'important');
+          document.body.style.paddingBottom = '80px';
+        } else {
+          const fixedPlayer = document.getElementById('fixed-player');
+          if (fixedPlayer) fixedPlayer.style.setProperty('display', 'none', 'important');
+        }
       }
     } catch (error) {
       console.error('BlueTemplate: Error checking TV availability:', error);
@@ -193,6 +247,173 @@ class BlueTemplate extends TemplateBase {
     });
   }
 
+  setupSectionEventDelegation() {
+    document.addEventListener('click', (e) => {
+      const pollOption = e.target.closest('.poll-option');
+      if (pollOption) {
+        const pollId = pollOption.dataset.pollId;
+        const optionId = pollOption.dataset.optionId;
+        this.handleVote(pollId, optionId);
+        return;
+      }
+
+      const galleryCard = e.target.closest('.gallery-card');
+      if (galleryCard) {
+        const id = galleryCard.dataset.galleryId;
+        this.openGalleryModal(id);
+        return;
+      }
+
+      const galleryPrev = e.target.closest('.gallery-prev');
+      if (galleryPrev) {
+        this.showGalleryImage(this.currentGalleryIndex - 1);
+        return;
+      }
+
+      const galleryNext = e.target.closest('.gallery-next');
+      if (galleryNext) {
+        this.showGalleryImage(this.currentGalleryIndex + 1);
+        return;
+      }
+
+      const galleryThumb = e.target.closest('.gallery-thumb');
+      if (galleryThumb) {
+        const index = parseInt(galleryThumb.dataset.index);
+        this.showGalleryImage(index);
+        return;
+      }
+
+      const galleryModalClose = e.target.closest('#gallery-modal .modal-close');
+      if (galleryModalClose) {
+        this.closeGalleryModal();
+        return;
+      }
+
+      const galleryModalOverlay = e.target.closest('#gallery-modal');
+      if (galleryModalOverlay && e.target === galleryModalOverlay) {
+        this.closeGalleryModal();
+        return;
+      }
+
+      const podcastCard = e.target.closest('[data-podcast-id]');
+      if (podcastCard) {
+        this.openPodcastModal(podcastCard.dataset.podcastId);
+        return;
+      }
+
+      const videocastCard = e.target.closest('[data-videocast-id]');
+      if (videocastCard) {
+        this.openVideocastModal(videocastCard.dataset.videocastId);
+        return;
+      }
+
+      const podcastClose = e.target.closest('#podcast-modal .modal-close');
+      if (podcastClose) {
+        this.closePodcastModal();
+        return;
+      }
+
+      const podcastOverlay = e.target.closest('#podcast-modal');
+      if (podcastOverlay && e.target === podcastOverlay) {
+        this.closePodcastModal();
+        return;
+      }
+
+      const videocastClose = e.target.closest('#videocast-modal .modal-close');
+      if (videocastClose) {
+        this.closeVideocastModal();
+        return;
+      }
+
+      const videocastOverlay = e.target.closest('#videocast-modal');
+      if (videocastOverlay && e.target === videocastOverlay) {
+        this.closeVideocastModal();
+        return;
+      }
+    });
+  }
+
+  setupContactForm() {
+    const form = document.getElementById('contact-form');
+    if (!form) return;
+
+    this._populateContactCover();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('.contact-submit-btn');
+      const feedback = document.getElementById('contact-feedback');
+      const name = document.getElementById('contact-name').value.trim();
+      const email = document.getElementById('contact-email').value.trim();
+      const subject = document.getElementById('contact-subject').value.trim();
+      const message = document.getElementById('contact-message').value.trim();
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+      try {
+        const resp = await fetch('/config/config.json');
+        const config = await resp.json();
+        const mailTo = config.contact_email || 'contacto@radio.cl';
+
+        const mailBody = 'Nombre: ' + name + '%0D%0A' +
+          'Email: ' + email + '%0D%0A' +
+          'Asunto: ' + subject + '%0D%0A' +
+          'Mensaje: ' + message;
+
+        const mailtoLink = 'mailto:' + mailTo + '?subject=' +
+          encodeURIComponent('Contacto desde la web: ' + subject) +
+          '&body=' + mailBody;
+
+        window.location.href = mailtoLink;
+
+        if (feedback) {
+          feedback.className = 'contact-feedback success';
+          feedback.textContent = 'Gracias por tu mensaje. Te responderemos pronto.';
+          feedback.style.display = 'block';
+        }
+        form.reset();
+      } catch (err) {
+        if (feedback) {
+          feedback.className = 'contact-feedback error';
+          feedback.textContent = 'Error al enviar el mensaje. Intenta de nuevo.';
+          feedback.style.display = 'block';
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i><span>Enviar mensaje</span>';
+      }
+    });
+  }
+
+  async _populateContactCover() {
+    try {
+      const { getBasicData } = await import('/assets/js/api.js');
+      const data = await getBasicData();
+      const img = document.getElementById('contact-cover-img');
+      const nameEl = document.getElementById('contact-radio-name');
+      const descEl = document.getElementById('contact-radio-desc');
+      const emailDisplay = document.getElementById('contact-email-display');
+
+      if (img && data.coverUrl) {
+        const dataManager = getDataManager();
+        img.src = await dataManager.getImageUrl(data.coverUrl);
+      } else if (img && data.logoUrl) {
+        const dataManager = getDataManager();
+        img.src = await dataManager.getImageUrl(data.logoUrl);
+      }
+      if (nameEl) nameEl.textContent = data.projectName || data.name || 'Nuestra Radio';
+      if (descEl) descEl.textContent = data.projectDescription || data.description || 'Estamos aquí para escucharte.';
+      if (emailDisplay) {
+        const resp = await fetch('/config/config.json');
+        const config = await resp.json();
+        emailDisplay.textContent = config.contact_email || 'contacto@radio.cl';
+      }
+    } catch (err) {
+      console.warn('BlueTemplate: Error populating contact cover:', err);
+    }
+  }
+
   // Actualizar estadísticas de la sidebar
   updateSidebarStats(songData) {
     const listenersEl = document.getElementById('sidebar-listeners');
@@ -227,77 +448,130 @@ class BlueTemplate extends TemplateBase {
     }
   }
 
-  // Cargar todo el contenido
+  // Cargar todo el contenido - all sections load on page load
   async loadAllContent() {
     try {
-      const dataManager = getDataManager();
-      
-      await this.loadHeroCarousel();
-      await this.loadBreakingNews();
-      await this.loadFeaturedNews();
-      await this.loadProgramsTimeline();
+      await this.loadAllNewsSections();
+      await this.loadAllProgramsSections();
       await this.loadRecentTracks();
-      await this.loadSponsorsCarousel();
-      await this.loadAllSponsors();
-      await this.loadAllNews();
-      await this.loadProgramsByDay();
+      await this.loadAllSponsorsSections();
+      
+      await Promise.all([
+        this.loadAllGalleries(),
+        this.loadAllAnnouncers(),
+        this.loadAllPolls(),
+        this.loadAllEvents(),
+        this.loadAllVideos(),
+        this.loadAllPodcasts(),
+        this.loadAllVideocasts(),
+        this.loadSocialNetworks()
+      ]);
       
     } catch (error) {
       console.error('BlueTemplate: Error loading content:', error);
     }
   }
 
+  // Cargar todas las secciones de noticias con UNA sola llamada a la API
+  async loadAllNewsSections() {
+    try {
+      const dataManager = getDataManager();
+      const news = await dataManager.loadNews(1, 20);
+      if (!news || !news.data || news.data.length === 0) {
+        const hero = document.getElementById('hero-carousel');
+        if (hero) hero.style.display = 'none';
+        const ticker = document.getElementById('breaking-ticker');
+        if (ticker) ticker.style.display = 'none';
+        const featured = document.getElementById('featured-news-grid');
+        if (featured) featured.style.display = 'none';
+        return;
+      }
+      for (const item of news.data) {
+        if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+      }
+      this.renderHeroCarousel(news.data.slice(0, 5));
+      this.renderBreakingNews(news.data.slice(0, 3));
+      this.renderFeaturedNews(news.data.slice(0, 6));
+    } catch (error) {
+      console.error('BlueTemplate: Error loading news sections:', error);
+    }
+  }
+
+  // Cargar programas con UNA sola llamada a la API
+  async loadAllProgramsSections() {
+    try {
+      const dataManager = getDataManager();
+      const programs = await dataManager.loadPrograms();
+      if (!programs || programs.length === 0) {
+        this.toggleSectionVisibility('programs', false);
+        return;
+      }
+      for (const program of programs) {
+        if (program.imageUrl) program.imageUrl = await dataManager.getImageUrl(program.imageUrl);
+      }
+      this.renderProgramsByDay(programs);
+      this.toggleSectionVisibility('programs', true);
+    } catch (error) {
+      console.error('BlueTemplate: Error loading programs sections:', error);
+      this.toggleSectionVisibility('programs', false);
+    }
+  }
+
+  // Cargar sponsors con UNA sola llamada a la API
+  async loadAllSponsorsSections() {
+    try {
+      const dataManager = getDataManager();
+      const sponsors = await dataManager.loadSponsors();
+      if (!sponsors || sponsors.length === 0) {
+        const carousel = document.getElementById('sponsors-carousel');
+        if (carousel) carousel.style.display = 'none';
+        this.toggleSectionVisibility('sponsors', false);
+        return;
+      }
+      for (const sponsor of sponsors) {
+        if (sponsor.logoUrl) sponsor.logoUrl = await dataManager.getImageUrl(sponsor.logoUrl);
+      }
+      this.renderSponsorsCarousel(sponsors);
+      this.renderAllSponsors(sponsors);
+      this.toggleSectionVisibility('sponsors', true);
+    } catch (error) {
+      console.error('BlueTemplate: Error loading sponsors sections:', error);
+      const carousel = document.getElementById('sponsors-carousel');
+      if (carousel) carousel.style.display = 'none';
+      this.toggleSectionVisibility('sponsors', false);
+    }
+  }
+
   // Cargar hero carousel
   async loadHeroCarousel() {
     try {
-      console.log('BlueTemplate: Loading hero carousel...');
       const dataManager = getDataManager();
       const news = await dataManager.loadNews(1, 5);
-      console.log('BlueTemplate: News loaded:', news);
       
       if (news && news.data && news.data.length > 0) {
-        console.log('BlueTemplate: Has', news.data.length, 'news items');
-        // Construir URLs de imágenes
         for (const item of news.data) {
           if (item.imageUrl) {
             item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
           }
         }
         this.renderHeroCarousel(news.data);
+        const container = document.getElementById('hero-carousel');
+        if (container) container.style.display = '';
       } else {
-        console.warn('BlueTemplate: No news data returned');
+        const container = document.getElementById('hero-carousel');
+        if (container) container.style.display = 'none';
       }
     } catch (error) {
       console.error('BlueTemplate: Error loading hero carousel:', error);
+      const container = document.getElementById('hero-carousel');
+      if (container) container.style.display = 'none';
     }
   }
 
   // Renderizar hero carousel
   renderHeroCarousel(news) {
-    console.log('BlueTemplate: renderHeroCarousel called with', news?.length, 'items');
     const container = document.getElementById('hero-carousel');
-    if (!container) {
-      console.error('BlueTemplate: hero-carousel container not found!');
-      return;
-    }
-
-    // Fallback: si no hay noticias, mostrar contenido de ejemplo
-    if (!news || news.length === 0) {
-      console.warn('BlueTemplate: No news, showing placeholder');
-      container.innerHTML = `
-        <div class="swiper-slide">
-          <div class="hero-slide" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
-            <div class="hero-overlay"></div>
-            <div class="hero-content">
-              <span class="hero-category">Bienvenido</span>
-              <h2 class="hero-title">Radio Pulse</h2>
-              <p class="hero-description">Tu radio online las 24 horas</p>
-            </div>
-          </div>
-        </div>
-      `;
-      return;
-    }
+    if (!container) return;
 
     const slidesHtml = news.map((item, index) => `
       <div class="swiper-slide" data-index="${index}">
@@ -325,8 +599,14 @@ class BlueTemplate extends TemplateBase {
       if (news && news.data && news.data.length > 0) {
         this.renderBreakingNews(news.data);
       }
+      const container = document.getElementById('breaking-ticker');
+      if (container && (!news || !news.data || news.data.length === 0)) {
+        container.style.display = 'none';
+      }
     } catch (error) {
       console.error('BlueTemplate: Error loading breaking news:', error);
+      const container = document.getElementById('breaking-ticker');
+      if (container) container.style.display = 'none';
     }
   }
 
@@ -334,11 +614,7 @@ class BlueTemplate extends TemplateBase {
   renderBreakingNews(news) {
     const container = document.getElementById('breaking-ticker');
     if (!container) return;
-
-    if (!news || news.length === 0) {
-      container.innerHTML = '<p style="padding:15px;color:#ccc;">No hay noticias disponibles</p>';
-      return;
-    }
+    container.style.display = '';
 
     container.innerHTML = news.map(item => `
       <span class="ticker-item">
@@ -351,51 +627,48 @@ class BlueTemplate extends TemplateBase {
 // Cargar featured news
   async loadFeaturedNews() {
     try {
-      console.log('BlueTemplate: Loading featured news...');
       const dataManager = getDataManager();
       const news = await dataManager.loadNews(1, 6);
-      console.log('BlueTemplate: Featured news data:', news);
       
       if (news && news.data && news.data.length > 0) {
-        // Construir URLs de imágenes
         for (const item of news.data) {
           if (item.imageUrl) {
             item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
           }
         }
         this.renderFeaturedNews(news.data);
-      } else {
-        console.warn('BlueTemplate: No featured news data');
+      }
+      const container = document.getElementById('featured-news-grid');
+      if (container && (!news || !news.data || news.data.length === 0)) {
+        container.style.display = 'none';
       }
     } catch (error) {
       console.error('BlueTemplate: Error loading featured news:', error);
+      const container = document.getElementById('featured-news-grid');
+      if (container) container.style.display = 'none';
     }
   }
 
   // Renderizar featured news
   renderFeaturedNews(news) {
-    console.log('BlueTemplate: renderFeaturedNews called with', news?.length, 'items');
     const container = document.getElementById('featured-news-grid');
-    console.log('BlueTemplate: featured-news-grid container:', !!container);
-    if (!container) {
-      console.error('BlueTemplate: container not found!');
-      return;
-    }
+    if (!container) return;
+    container.style.display = '';
 
-    if (!news || news.length === 0) {
-      container.innerHTML = '<p style="padding:20px;text-align:center;color:#ccc;">No hay noticias destacadas</p>';
-      return;
-    }
-
-    const newsHtml = news.map(item => `
-      <article class="news-card" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;overflow:hidden;margin-bottom:20px;">
-        <div class="news-image" style="height:200px;overflow:hidden;">
-          <img src="${item.imageUrl || '/assets/images/default-news.jpg'}" alt="${item.name}" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
+    const newsHtml = news.map((item, index) => `
+      <article class="news-card ${index === 0 ? 'featured' : ''}">
+        <div class="news-image">
+          <img src="${item.imageUrl || ''}" alt="${item.name}" loading="lazy">
+          <div class="news-overlay"></div>
         </div>
-        <div class="news-content" style="padding:15px;">
-          <h3 class="news-title" style="color:#fff;margin:0 0 10px 0;"><a href="#" data-slug="${item.slug}" style="color:#fff;text-decoration:none;">${item.name}</a></h3>
-          <p class="news-excerpt" style="color:#ccc;font-size:14px;">${item.shortText || ''}</p>
-          <span class="news-date" style="color:#888;font-size:12px;">${new Date(item.createdAt).toLocaleDateString('es-ES')}</span>
+        <div class="news-content">
+          <div class="news-meta">
+            <span class="news-date">${item.createdAt ? new Date(item.createdAt).toLocaleDateString('es-ES') : ''}</span>
+            <span class="news-category">Noticia</span>
+          </div>
+          <h3 class="news-title">${item.name}</h3>
+          <p class="news-excerpt">${item.shortText || ''}</p>
+          <a href="#" class="read-more" data-slug="${item.slug}">Leer más →</a>
         </div>
       </article>
     `).join('');
@@ -403,83 +676,7 @@ class BlueTemplate extends TemplateBase {
     container.innerHTML = newsHtml;
   }
 
-  // Cargar timeline de programas
-  async loadProgramsTimeline() {
-    try {
-      const dataManager = getDataManager();
-      const programs = await dataManager.loadPrograms();
-      
-      if (programs && programs.length > 0) {
-        for (const program of programs) {
-          if (program.imageUrl) {
-            program.imageUrl = await dataManager.getImageUrl(program.imageUrl);
-          }
-        }
-        this.renderProgramsTimeline(programs);
-      }
-    } catch (error) {
-      console.error('BlueTemplate: Error loading programs timeline:', error);
-    }
-  }
 
-  // Renderizar timeline de programas
-  renderProgramsTimeline(programs) {
-    const container = document.getElementById('programs-timeline');
-    if (!container) return;
-
-    const todaySpanish = new Date().toLocaleDateString('es-ES', { weekday: 'long' });
-    const todayPrograms = programs.filter(p => p.weekDays && p.weekDays.some(d => {
-      const programDay = this.getSpanishDay(d);
-      return programDay && programDay.toLowerCase() === todaySpanish.toLowerCase();
-    }));
-
-    if (todayPrograms.length === 0) {
-      container.innerHTML = `
-        <div class="no-programs-today">
-          <i class="fas fa-calendar-day"></i>
-          <p>No hay programas para hoy (${todaySpanish})</p>
-        </div>
-      `;
-      return;
-    }
-
-    // Ordenar por hora de inicio
-    todayPrograms.sort((a, b) => {
-      if (a.startTime && b.startTime) {
-        return a.startTime.localeCompare(b.startTime);
-      }
-      return 0;
-    });
-
-    const timelineHtml = todayPrograms.map(program => `
-      <div class="timeline-item" style="display:flex;gap:15px;align-items:flex-start;">
-        ${program.imageUrl ? `<div style="flex-shrink:0;width:60px;height:60px;border-radius:8px;overflow:hidden;"><img src="${program.imageUrl}" alt="${program.name}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
-        <div style="flex:1;">
-          <div class="timeline-time" style="margin-bottom:4px;">
-            <span style="color:#e74c3c;font-weight:bold;">${program.startTime || '00:00'} ${program.endTime ? '- ' + program.endTime : ''}</span>
-          </div>
-          <div class="timeline-content">
-            <h4 style="margin:0 0 6px 0;">${program.name}</h4>
-            <p style="margin:0;color:#aaa;">${program.description || ''}</p>
-          </div>
-        </div>
-      </div>
-    `).join('');
-
-    container.innerHTML = timelineHtml;
-  }
-
-  // Organizar programas por día
-  organizeProgramsByDay(programs) {
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    const organized = {};
-    
-    days.forEach(day => {
-      organized[day] = programs.filter(p => p.day === day);
-    });
-    
-    return organized;
-  }
 
   // Cargar sponsors
   async loadSponsorsCarousel() {
@@ -488,7 +685,6 @@ class BlueTemplate extends TemplateBase {
       const sponsors = await dataManager.loadSponsors();
       
       if (sponsors && sponsors.length > 0) {
-        // Construir URLs de logos
         for (const sponsor of sponsors) {
           if (sponsor.logoUrl) {
             sponsor.logoUrl = await dataManager.getImageUrl(sponsor.logoUrl);
@@ -496,8 +692,14 @@ class BlueTemplate extends TemplateBase {
         }
         this.renderSponsorsCarousel(sponsors);
       }
+      const container = document.getElementById('sponsors-carousel');
+      if (container && (!sponsors || sponsors.length === 0)) {
+        container.style.display = 'none';
+      }
     } catch (error) {
       console.error('BlueTemplate: Error loading sponsors:', error);
+      const container = document.getElementById('sponsors-carousel');
+      if (container) container.style.display = 'none';
     }
   }
 
@@ -505,6 +707,7 @@ class BlueTemplate extends TemplateBase {
   renderSponsorsCarousel(sponsors) {
     const container = document.getElementById('sponsors-carousel');
     if (!container) return;
+    container.style.display = '';
 
     const socialIcons = { facebook: 'fab fa-facebook-f', youtube: 'fab fa-youtube', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok', whatsapp: 'fab fa-whatsapp', x: 'fab fa-x-twitter' };
 
@@ -542,8 +745,10 @@ class BlueTemplate extends TemplateBase {
         }
         this.renderAllSponsors(sponsors);
       }
+      this.toggleSectionVisibility('sponsors', sponsors && sponsors.length > 0);
     } catch (error) {
       console.error('BlueTemplate: Error loading all sponsors:', error);
+      this.toggleSectionVisibility('sponsors', false);
     }
   }
 
@@ -575,48 +780,6 @@ class BlueTemplate extends TemplateBase {
     container.innerHTML = sponsorsHtml;
   }
 
-  // Cargar todas las noticias
-  async loadAllNews() {
-    try {
-      const dataManager = getDataManager();
-      const news = await dataManager.loadNews(this.currentPage.news, 10);
-      
-      if (news.data) {
-        // Construir URLs de imágenes
-        for (const item of news.data) {
-          if (item.imageUrl) {
-            item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
-          }
-        }
-        this.renderAllNews(news.data);
-        this.setupPagination('news', news.pagination);
-      }
-    } catch (error) {
-      console.error('BlueTemplate: Error loading all news:', error);
-    }
-  }
-
-  // Renderizar todas las noticias
-  renderAllNews(news) {
-    const container = document.getElementById('all-news-grid');
-    if (!container) return;
-
-    const newsHtml = news.map(item => `
-      <article class="news-grid-item">
-        <div class="news-grid-image">
-          <img src="${item.imageUrl || '/assets/images/default-news.jpg'}" alt="${item.name}" loading="lazy">
-        </div>
-        <div class="news-grid-content">
-          <h3>${item.name}</h3>
-          <p>${item.shortText || ''}</p>
-          <span class="news-date">${new Date(item.createdAt).toLocaleDateString('es-ES')}</span>
-        </div>
-      </article>
-    `).join('');
-
-    container.innerHTML = newsHtml;
-  }
-
   // Cargar programas por día
   async loadProgramsByDay() {
     try {
@@ -631,77 +794,91 @@ class BlueTemplate extends TemplateBase {
         }
         this.renderProgramsByDay(programs);
       }
+      this.toggleSectionVisibility('programs', programs && programs.length > 0);
     } catch (error) {
       console.error('BlueTemplate: Error loading programs by day:', error);
+      this.toggleSectionVisibility('programs', false);
     }
   }
 
-  // Renderizar programas por día
+  // Renderizar programas por día en contenedor único
   renderProgramsByDay(programs) {
-    const days = [
-      { id: 'lunes', name: 'Lunes' },
-      { id: 'martes', name: 'Martes' },
-      { id: 'miercoles', name: 'Miércoles' },
-      { id: 'jueves', name: 'Jueves' },
-      { id: 'viernes', name: 'Viernes' },
-      { id: 'sabado', name: 'Sábado' },
-      { id: 'domingo', name: 'Domingo' }
-    ];
+    this._programs = programs;
+    this._selectedDay = this._selectedDay || this._getTodayDayId();
+    this.renderDaySchedule(this._selectedDay);
+    this.setupDayButtons();
+  }
 
-    days.forEach(day => {
-      const container = document.getElementById(`${day.id}-grid`);
-      if (!container) return;
+  setupDayButtons() {
+    document.querySelectorAll('.day-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const day = btn.dataset.day;
+        if (!day || day === this._selectedDay) return;
+        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._selectedDay = day;
+        this.renderDaySchedule(day);
+      });
+    });
+    const activeBtn = document.querySelector(`.day-btn[data-day="${this._selectedDay}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+  }
 
-      const dayPrograms = programs.filter(p => p.weekDays && p.weekDays.some(d => {
-        const programDay = this.getSpanishDay(d);
-        return programDay && programDay.toLowerCase() === day.name.toLowerCase();
-      }));
+  _getTodayDayId() {
+    const map = { 0: 'domingo', 1: 'lunes', 2: 'martes', 3: 'miercoles', 4: 'jueves', 5: 'viernes', 6: 'sabado' };
+    return map[new Date().getDay()];
+  }
 
-      if (dayPrograms.length === 0) {
-        container.innerHTML = `
-          <div class="no-programs">
-            <i class="fas fa-calendar-times"></i>
-            <p>No hay programas para ${day.name}</p>
+  renderDaySchedule(dayId) {
+    const container = document.getElementById('day-schedule-container');
+    if (!container) return;
+
+    const dayNames = { lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles', jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo' };
+    const dayName = dayNames[dayId] || dayId;
+
+    const dayPrograms = (this._programs || []).filter(p =>
+      p.weekDays && p.weekDays.some(d => {
+        const pd = this.getSpanishDay(d);
+        return pd && pd.toLowerCase() === dayName.toLowerCase();
+      })
+    );
+
+    if (dayPrograms.length === 0) {
+      container.innerHTML = `<p style="text-align:center;color:#aaa;padding:40px 0;">No hay programación para el ${dayName}</p>`;
+      return;
+    }
+
+    dayPrograms.sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00'));
+
+    container.innerHTML = dayPrograms.map(program => `
+      <div class="program-card" style="display:flex;gap:15px;align-items:flex-start;padding:15px;margin:10px 0;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
+        ${program.imageUrl ? `<div style="flex-shrink:0;width:80px;height:80px;border-radius:8px;overflow:hidden;"><img src="${program.imageUrl}" alt="${program.name}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+        <div style="flex:1;">
+          <div class="program-time" style="color:#e74c3c;font-weight:bold;font-size:0.9rem;margin-bottom:4px;">
+            <span>${program.startTime || '00:00'}</span>
+            <span> - </span>
+            <span>${program.endTime || '00:00'}</span>
           </div>
-        `;
-        return;
-      }
-
-      const programsHtml = dayPrograms.map(program => `
-        <div class="program-card" style="display:flex;gap:15px;align-items:flex-start;padding:15px;margin:10px 0;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
-          ${program.imageUrl ? `<div style="flex-shrink:0;width:80px;height:80px;border-radius:8px;overflow:hidden;"><img src="${program.imageUrl}" alt="${program.name}" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
-          <div style="flex:1;">
-            <div class="program-time" style="color:#e74c3c;font-weight:bold;font-size:0.9rem;margin-bottom:4px;">
-              <span>${program.startTime || '00:00'}</span>
-              <span> - </span>
-              <span>${program.endTime || '00:00'}</span>
-            </div>
-            <div class="program-info">
-              <h4 style="margin:0 0 6px 0;color:#fff;">${program.name}</h4>
-              <p style="margin:0;color:#aaa;">${program.description || ''}</p>
-            </div>
+          <div class="program-info">
+            <h4 style="margin:0 0 6px 0;color:#fff;">${program.name}</h4>
+            <p style="margin:0;color:#aaa;">${program.description || ''}</p>
           </div>
         </div>
-      `).join('');
-
-      container.innerHTML = programsHtml;
-    });
+      </div>
+    `).join('');
   }
 
   // Cargar tracks recientes
   async loadRecentTracks() {
     const container = document.getElementById('recent-tracks');
-    if (!container || !this.currentSongData || !this.currentSongData.history) {
-      container.innerHTML = `
-        <div class="no-tracks">
-          <i class="fas fa-music"></i>
-          <p>No hay canciones recientes</p>
-        </div>
-      `;
+    if (!container) return;
+
+    if (!this.currentSongData || !this.currentSongData.history) {
+      container.style.display = 'none';
       return;
     }
+    container.style.display = '';
 
-    // Only show last 5 tracks
     const history = this.currentSongData.history.slice(-5);
     const tracksHtml = history.map((track, index) => {
       const cleanTrack = track.replace(/^\d+\.\s*/, '');
@@ -717,33 +894,28 @@ class BlueTemplate extends TemplateBase {
     container.innerHTML = tracksHtml;
   }
 
-  // Setup de navegación
-  setupNavigation() {
-    const menuToggle = document.querySelector('.mobile-menu-toggle');
-    const navMenu = document.querySelector('.nav-menu');
-    
-    if (menuToggle && navMenu) {
-      menuToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
-        menuToggle.classList.toggle('active');
-      });
-      
-      // Cerrar menú al hacer click en un link
-      navMenu.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-          navMenu.classList.remove('active');
-          menuToggle.classList.remove('active');
-        });
-      });
-      
-      // Cerrar menú al hacer click fuera
-      document.addEventListener('click', (e) => {
-        if (!navMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-          navMenu.classList.remove('active');
-          menuToggle.classList.remove('active');
-        }
-      });
-    }
+
+
+  renderLoadMoreButton(container, sectionName, hasMore) {
+    const btnClass = `load-more-btn-${sectionName}`;
+    const existing = document.querySelector(`.${btnClass}`);
+    if (existing) existing.remove();
+    if (!hasMore) return;
+    const btn = document.createElement('button');
+    btn.className = `load-more-btn glass-btn ${btnClass}`;
+    btn.textContent = 'Cargar m\u00E1s';
+    btn.addEventListener('click', () => this[`loadMore${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}`]());
+    container.after(btn);
+  }
+
+  async loadMoreGalleries() {
+    this.currentPage.galleries++;
+    await this.loadAllGalleries(true);
+  }
+
+  async loadMoreEvents() {
+    this.currentPage.events++;
+    await this.loadAllEvents(true);
   }
 
 // Setup de carouseles
@@ -806,45 +978,524 @@ class BlueTemplate extends TemplateBase {
     }, 1000);
   }
 
-  // Setup de paginación
-  setupPagination(type, pagination) {
-    if (!pagination || !pagination.hasMore) return;
+  // Smooth scroll to section (all sections are visible, no toggle needed)
+  async showSection(sectionName) {
+    if (this.sectionStates && this.sectionStates[sectionName] === false) return;
+    this.currentSection = sectionName;
     
-    const loadMoreBtn = document.getElementById('load-more-news');
-    if (loadMoreBtn) {
-      loadMoreBtn.style.display = 'block';
-      loadMoreBtn.addEventListener('click', () => {
-        this.currentPage.news++;
-        this.loadAllNews();
-      });
+    await this.loadSectionContent(sectionName);
+    
+    const section = document.getElementById(`${sectionName}-section`);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 
-  // Mostrar sección
-  showSection(sectionName) {
-    this.currentSection = sectionName;
-    
-    // Ocultar todas las secciones
-    const sections = document.querySelectorAll('.dynamic-section');
-    sections.forEach(s => s.classList.remove('active'));
-    
-    // Mostrar sección seleccionada
-    const activeSection = document.getElementById(`${sectionName}-section`);
-    if (activeSection) {
-      activeSection.classList.add('active');
+  async loadSectionContent(sectionName) {
+    switch (sectionName) {
+      case 'galleries': await this.loadAllGalleries(); break;
+      case 'announcers': await this.loadAllAnnouncers(); break;
+      case 'polls': await this.loadAllPolls(); break;
+      case 'events': await this.loadAllEvents(); break;
+      case 'videos': await this.loadAllVideos(); break;
+      case 'social': await this.loadSocialNetworks(); break;
     }
-    
-    // Actualizar navegación
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-      link.classList.toggle('active', link.dataset.section === sectionName);
-    });
-    
-    // Cerrar menú móvil
-    const navMenu = document.querySelector('.nav-menu');
-    const menuToggle = document.querySelector('.mobile-menu-toggle');
-    if (navMenu) navMenu.classList.remove('active');
-    if (menuToggle) menuToggle.classList.remove('active');
+  }
+
+  renderGalleryHtml(galleries) {
+    return galleries.map(g => `
+      <div class="gallery-card" data-gallery-id="${g.id}" style="cursor:pointer;">
+        <div class="gallery-card-image">
+          <img src="${g.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${g.name}" loading="lazy">
+          <div class="gallery-card-overlay">
+            <i class="fas fa-images"></i>
+            <span>${(g.images || []).length} fotos</span>
+          </div>
+        </div>
+        <div class="gallery-card-info">
+          <h3>${g.name}</h3>
+          ${g.description ? '<p>' + g.description + '</p>' : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async loadAllGalleries(append) {
+    try {
+      const dm = getDataManager();
+      const galleries = await dm.loadGalleries();
+      if (!galleries || galleries.length === 0) {
+        this.toggleSectionVisibility('galleries', false);
+        return;
+      }
+      this.toggleSectionVisibility('galleries', true);
+      const container = document.getElementById('galleries-grid');
+      if (!container) return;
+      for (const g of galleries) {
+        if (g.imageUrl) g.imageUrl = await dm.getImageUrl(g.imageUrl);
+      }
+      const html = this.renderGalleryHtml(galleries);
+      if (append) {
+        container.insertAdjacentHTML('beforeend', html);
+      } else {
+        container.innerHTML = html;
+        this.renderLoadMoreButton(container, 'galleries', galleries.length >= 10);
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading galleries:', error);
+      this.toggleSectionVisibility('galleries', false);
+    }
+  }
+
+  async openGalleryModal(id) {
+    try {
+      const dm = getDataManager();
+      const galleries = await dm.loadGalleries();
+      const gallery = (galleries || []).find(g => g.id === id);
+      if (!gallery || !gallery.images || gallery.images.length === 0) return;
+      for (const img of gallery.images) {
+        if (img.imageUrl) img.imageUrl = await dm.getImageUrl(img.imageUrl);
+      }
+      this.currentGalleryImages = gallery.images.sort((a, b) => (a.order || 0) - (b.order || 0));
+      this.currentGalleryIndex = 0;
+      const modal = document.getElementById('gallery-modal');
+      const titleEl = document.getElementById('gallery-modal-title');
+      const mainImg = document.getElementById('gallery-main-img');
+      const thumbs = document.getElementById('gallery-thumbnails');
+      if (titleEl) titleEl.textContent = gallery.name;
+      if (mainImg && this.currentGalleryImages[0]) {
+        mainImg.src = this.currentGalleryImages[0].imageUrl;
+      }
+      if (thumbs) {
+        thumbs.innerHTML = this.currentGalleryImages.map((img, i) => `
+          <img src="${img.imageUrl}" class="gallery-thumb ${i === 0 ? 'active' : ''}" data-index="${i}" loading="lazy">
+        `).join('');
+      }
+      if (modal) modal.classList.add('active');
+    } catch (error) {
+      console.error('BlueTemplate: Error opening gallery:', error);
+    }
+  }
+
+  closeGalleryModal() {
+    const modal = document.getElementById('gallery-modal');
+    if (modal) modal.classList.remove('active');
+    this.currentGalleryImages = null;
+    this.currentGalleryIndex = 0;
+  }
+
+  showGalleryImage(index) {
+    if (!this.currentGalleryImages || index < 0 || index >= this.currentGalleryImages.length) return;
+    this.currentGalleryIndex = index;
+    const mainImg = document.getElementById('gallery-main-img');
+    const thumbs = document.querySelectorAll('.gallery-thumb');
+    if (mainImg) mainImg.src = this.currentGalleryImages[index].imageUrl;
+    thumbs.forEach((t, i) => t.classList.toggle('active', i === index));
+  }
+
+  async loadAllAnnouncers() {
+    try {
+      const dm = getDataManager();
+      const announcers = await dm.loadAnnouncers();
+      if (!announcers || announcers.length === 0) {
+        this.toggleSectionVisibility('announcers', false);
+        return;
+      }
+      this.toggleSectionVisibility('announcers', true);
+      const container = document.getElementById('announcers-grid');
+      if (!container) return;
+      for (const a of announcers) {
+        if (a.imageUrl) a.imageUrl = await dm.getImageUrl(a.imageUrl);
+      }
+      container.innerHTML = announcers.map(a => {
+        const bio = a.description || a.biography || a.bio || a.about || '';
+        const bioHtml = bio ? '<p>' + bio + '</p>' : '';
+        return `
+        <div class="announcer-card">
+          <div class="announcer-photo">
+            <img src="${a.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${a.name}" loading="lazy">
+          </div>
+          <h3>${a.name}</h3>
+          ${bioHtml}
+        </div>
+      `;
+      }).join('');
+    } catch (error) {
+      console.error('BlueTemplate: Error loading announcers:', error);
+      this.toggleSectionVisibility('announcers', false);
+    }
+  }
+
+  async loadAllPolls() {
+    try {
+      const dm = getDataManager();
+      const raw = await dm.loadPolls();
+      const polls = Array.isArray(raw) ? raw : (raw && raw.data ? raw.data : []);
+      const activePolls = (polls || []).filter(p => p.active);
+      if (activePolls.length === 0) {
+        this.toggleSectionVisibility('polls', false);
+        return;
+      }
+      this.toggleSectionVisibility('polls', true);
+      const container = document.getElementById('polls-container');
+      if (!container) return;
+      container.innerHTML = activePolls.map(poll => {
+        const question = poll.title || poll.question || poll.name || poll.text || '';
+        const optionsHtml = (poll.options || []).map(opt => {
+          const label = opt.text || opt.name || opt.label || '';
+          return '<button class="poll-option" data-poll-id="' + poll.id + '" data-option-id="' + opt.id + '"><span class="poll-option-text">' + label + '</span><span class="poll-bar" style="width:0%"></span><span class="poll-count">' + (opt.votes || 0) + '</span></button>';
+        }).join('');
+        return '<div class="poll-card" data-poll-id="' + poll.id + '"><h3 class="poll-question">' + question + '</h3><div class="poll-options">' + optionsHtml + '</div><p class="poll-voted-msg" style="display:none;color:#1db954;margin-top:0.75rem;font-weight:600;"><i class="fas fa-check-circle"></i> Gracias por votar!</p></div>';
+      }).join('');
+    } catch (error) {
+      console.error('BlueTemplate: Error loading polls:', error);
+      this.toggleSectionVisibility('polls', false);
+    }
+  }
+
+  async handleVote(pollId, optionId) {
+    const dm = getDataManager();
+    try {
+      const voteResult = await dm.votePoll(pollId, optionId);
+      const poll = voteResult && voteResult.options ? voteResult : null;
+      if (!poll) {
+        const polls = await dm.loadPolls(true);
+        const found = (polls || []).find(p => p.id === pollId);
+        if (!found) return;
+      }
+      const updatedPoll = poll || (await dm.loadPolls(true)).find(p => p.id === pollId);
+      if (!updatedPoll) return;
+      const total = (updatedPoll.options || []).reduce((sum, o) => sum + (o.votes || 0), 0);
+      const card = document.querySelector('.poll-card[data-poll-id="' + pollId + '"]');
+      if (!card) return;
+      const optionBtns = card.querySelectorAll('.poll-option');
+      optionBtns.forEach((btn, i) => {
+        const opt = (updatedPoll.options || [])[i];
+        if (!opt) return;
+        const pct = total > 0 ? Math.round((opt.votes / total) * 100) : 0;
+        btn.querySelector('.poll-bar').style.width = pct + '%';
+        btn.querySelector('.poll-count').textContent = opt.votes + ' (' + pct + '%)';
+        btn.disabled = true;
+      });
+      const msg = card.querySelector('.poll-voted-msg');
+      if (msg) msg.style.display = 'block';
+    } catch (error) {
+      console.error('BlueTemplate: Error voting:', error);
+      alert('Error al registrar tu voto. Intenta de nuevo.');
+    }
+  }
+
+  renderEventHtml(e) {
+    const title = e.name || e.title || e.text || '';
+    const desc = e.description || e.shortText || '';
+    const imgUrl = e.imageUrl || '';
+    const eventDate = e.date ? new Date(e.date) : null;
+    const day = eventDate ? eventDate.getDate() : '?';
+    const month = eventDate ? eventDate.toLocaleDateString('es-ES', { month: 'short' }) : '';
+    const imageHtml = imgUrl ? '<div class="event-image"><img src="' + imgUrl + '" alt="' + title + '" loading="lazy"></div>' : '';
+    const descHtml = desc ? '<p>' + desc + '</p>' : '';
+    const timeHtml = e.time ? '<span><i class="fas fa-clock"></i> ' + e.time + '</span>' : '';
+    const locationHtml = e.location ? '<span><i class="fas fa-map-marker-alt"></i> ' + e.location + '</span>' : '';
+    return '<div class="event-card">' + imageHtml + '<div class="event-card-body"><div class="event-date-badge"><span class="event-day">' + day + '</span><span class="event-month">' + month + '</span></div><div class="event-card-info"><h3>' + title + '</h3>' + descHtml + '<div class="event-meta">' + timeHtml + locationHtml + '</div></div></div></div>';
+  }
+
+  async loadAllEvents(append) {
+    try {
+      const dm = getDataManager();
+      const events = await dm.loadEvents();
+      if (!events || events.length === 0) {
+        this.toggleSectionVisibility('events', false);
+        return;
+      }
+      this.toggleSectionVisibility('events', true);
+      const container = document.getElementById('events-timeline');
+      if (!container) return;
+      for (const e of events) {
+        if (e.imageUrl) e.imageUrl = await dm.getImageUrl(e.imageUrl);
+      }
+      const sorted = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const itemsHtml = sorted.map(e => this.renderEventHtml(e)).join('');
+      if (append) {
+        container.insertAdjacentHTML('beforeend', itemsHtml);
+      } else {
+        container.innerHTML = itemsHtml;
+        this.renderLoadMoreButton(container, 'events', events.length >= 10);
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error loading events:', error);
+      this.toggleSectionVisibility('events', false);
+    }
+  }
+
+  async loadAllVideos() {
+    try {
+      const dataManager = getDataManager();
+      const videos = await dataManager.loadVideos();
+      const items = videos.data || videos;
+      if (!items || items.length === 0) {
+        this.toggleSectionVisibility('videos', false);
+        return;
+      }
+      this.toggleSectionVisibility('videos', true);
+      const container = document.getElementById('videos-grid');
+      if (!container) return;
+      const youtubeThumb = (url) => {
+        const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+        return match ? 'https://img.youtube.com/vi/' + match[1] + '/mqdefault.jpg' : '/assets/icons/icon-96x96.png';
+      };
+      container.innerHTML = items.map((video, i) => {
+        const title = video.name || video.title || '';
+        const desc = video.description || '';
+        return '<a href="' + video.videoUrl + '" target="_blank" rel="noopener" class="video-card" style="display:flex;gap:1rem;padding:1rem;background:rgba(255,255,255,0.05);backdrop-filter:blur(25px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;align-items:center;cursor:pointer;text-decoration:none;color:inherit;margin-bottom:0.75rem;transition:all 0.3s ease;"><span style="font-size:1.2rem;font-weight:700;color:#bdc3c7;min-width:30px;">#' + (video.order || i + 1) + '</span><img src="' + youtubeThumb(video.videoUrl) + '" alt="' + title + '" style="width:100px;height:75px;object-fit:cover;border-radius:8px;flex-shrink:0;"><div style="flex:1;"><h4 style="margin:0 0 0.25rem;">' + title + '</h4><p style="margin:0;color:#aaa;font-size:0.85rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + desc + '</p></div><i class="fas fa-play-circle" style="font-size:2rem;color:#bdc3c7;flex-shrink:0;"></i></a>';
+      }).join('');
+    } catch (error) {
+      console.error('BlueTemplate: Error loading videos:', error);
+      this.toggleSectionVisibility('videos', false);
+    }
+  }
+
+  async loadSocialNetworks() {
+    try {
+      await super.loadSocialNetworks();
+      const dataManager = getDataManager();
+      const socialData = await dataManager.loadSocialNetworks();
+      if (!socialData || Object.keys(socialData).length === 0) {
+        this.toggleSectionVisibility('social', false);
+        return;
+      }
+      const iconMap = {
+        facebook: 'fab fa-facebook-f',
+        x: 'fab fa-x-twitter',
+        twitter: 'fab fa-twitter',
+        instagram: 'fab fa-instagram',
+        youtube: 'fab fa-youtube',
+        tiktok: 'fab fa-tiktok',
+        whatsapp: 'fab fa-whatsapp',
+        telegram: 'fab fa-telegram',
+        linkedin: 'fab fa-linkedin-in'
+      };
+      const entries = [
+        { name: 'facebook', url: socialData.facebook },
+        { name: 'instagram', url: socialData.instagram },
+        { name: 'twitter', url: socialData.x || socialData.twitter },
+        { name: 'youtube', url: socialData.youtube },
+        { name: 'tiktok', url: socialData.tiktok },
+        { name: 'whatsapp', url: socialData.whatsapp && socialData.whatsapp.startsWith('http') ? socialData.whatsapp : 'https://wa.me/' + (socialData.whatsapp || '').replace(/[^0-9]/g, '') },
+        { name: 'telegram', url: socialData.telegram },
+        { name: 'linkedin', url: socialData.linkedin }
+      ].filter(e => e.url);
+      if (entries.length === 0) {
+        this.toggleSectionVisibility('social', false);
+        return;
+      }
+      this.toggleSectionVisibility('social', true);
+      const socialHtml = entries.map(item => {
+        return '<a href="' + item.url + '" target="_blank" rel="noopener" class="social-link-item"><i class="' + (iconMap[item.name] || 'fas fa-link') + '"></i><span>' + item.name.charAt(0).toUpperCase() + item.name.slice(1) + '</span></a>';
+      }).join('');
+      const socialHub = document.getElementById('social-hub');
+      if (socialHub) socialHub.innerHTML = socialHtml;
+    } catch (error) {
+      console.error('BlueTemplate: Error loading social networks:', error);
+      this.toggleSectionVisibility('social', false);
+    }
+  }
+
+  async loadAllPodcasts() {
+    try {
+      const dataManager = getDataManager();
+      const podcasts = await dataManager.loadPodcasts(1, 20);
+      if (!podcasts.data || podcasts.data.length === 0) {
+        this.toggleSectionVisibility('multimedia', false);
+        return;
+      }
+      const container = document.getElementById('podcasts-grid');
+      if (!container) return;
+      for (const item of podcasts.data) {
+        if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+      }
+      container.innerHTML = podcasts.data.map(podcast => `
+        <div class="media-card" data-podcast-id="${podcast.id}" style="cursor:pointer;">
+          <div class="media-thumbnail">
+            <img src="${podcast.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${podcast.title || ''}" loading="lazy">
+            <div class="media-overlay">
+              <div class="play-btn"><i class="fas fa-play"></i></div>
+            </div>
+            ${podcast.duration ? '<span class="media-duration">' + podcast.duration + '</span>' : ''}
+          </div>
+          <div class="media-info" style="padding:15px;">
+            <h4>${podcast.title || ''}</h4>
+          </div>
+        </div>
+      `).join('');
+      this.toggleSectionVisibility('multimedia', true);
+    } catch (error) {
+      console.error('BlueTemplate: Error loading podcasts:', error);
+    }
+  }
+
+  async loadAllVideocasts() {
+    try {
+      const dataManager = getDataManager();
+      const videocasts = await dataManager.loadVideocasts(1, 20);
+      if (!videocasts.data || videocasts.data.length === 0) {
+        this.toggleSectionVisibility('multimedia', false);
+        return;
+      }
+      const container = document.getElementById('videocasts-grid');
+      if (!container) return;
+      for (const item of videocasts.data) {
+        if (item.imageUrl) item.imageUrl = await dataManager.getImageUrl(item.imageUrl);
+      }
+      container.innerHTML = videocasts.data.map(videocast => `
+        <div class="media-card" data-videocast-id="${videocast.id}" style="cursor:pointer;">
+          <div class="media-thumbnail">
+            <img src="${videocast.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${videocast.title || ''}" loading="lazy">
+            <div class="media-overlay">
+              <div class="play-btn"><i class="fas fa-play"></i></div>
+            </div>
+            ${videocast.duration ? '<span class="media-duration">' + videocast.duration + '</span>' : ''}
+          </div>
+          <div class="media-info" style="padding:15px;">
+            <h4>${videocast.title || ''}</h4>
+          </div>
+        </div>
+      `).join('');
+      this.toggleSectionVisibility('multimedia', true);
+    } catch (error) {
+      console.error('BlueTemplate: Error loading videocasts:', error);
+    }
+  }
+
+  async openPodcastModal(id) {
+    try {
+      const dataManager = getDataManager();
+      const data = await dataManager.loadPodcastById(id);
+      if (!data) return;
+      const modal = document.getElementById('podcast-modal');
+      const imgEl = document.getElementById('podcast-modal-image');
+      const titleEl = document.getElementById('podcast-modal-title');
+      const descEl = document.getElementById('podcast-modal-description');
+      const audioEl = document.getElementById('podcast-audio');
+      const durationEl = document.getElementById('podcast-modal-duration');
+      if (imgEl && data.imageUrl) {
+        imgEl.src = await dataManager.getImageUrl(data.imageUrl);
+        imgEl.parentElement.style.display = 'flex';
+      } else if (imgEl) {
+        imgEl.parentElement.style.display = 'none';
+      }
+      if (titleEl) titleEl.textContent = data.title || '';
+      if (descEl) descEl.textContent = data.description || data.shortText || '';
+      const audioUrl = data.audioUrl || data.fileUrl || data.url || data.audio || '';
+      if (audioEl && audioUrl) {
+        audioEl.src = audioUrl.startsWith('http') ? audioUrl : await dataManager.getImageUrl(audioUrl);
+        audioEl.load();
+      }
+      if (durationEl) {
+        const span = durationEl.querySelector('span');
+        if (span) span.textContent = data.duration || '';
+      }
+      const playBtn = document.getElementById('podcast-play-btn');
+      if (playBtn && audioEl) {
+        playBtn.onclick = () => {
+          if (audioEl.paused) {
+            audioEl.play();
+            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+          } else {
+            audioEl.pause();
+            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+          }
+        };
+        audioEl.onended = () => {
+          playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        };
+        audioEl.onpause = () => {
+          playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        };
+        audioEl.onplay = () => {
+          playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        };
+      }
+      if (modal) modal.classList.add('active');
+    } catch (error) {
+      console.error('BlueTemplate: Error opening podcast:', error);
+    }
+  }
+
+  closePodcastModal() {
+    const modal = document.getElementById('podcast-modal');
+    if (modal) modal.classList.remove('active');
+    const audio = document.getElementById('podcast-audio');
+    if (audio) {
+      audio.pause();
+      audio.src = '';
+      audio.load();
+    }
+    const playBtn = document.getElementById('podcast-play-btn');
+    if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+  }
+
+  async openVideocastModal(id) {
+    try {
+      const dataManager = getDataManager();
+      const data = await dataManager.loadVideocastById(id);
+      if (!data || !data.videoUrl) return;
+      const modal = document.getElementById('videocast-modal');
+      const titleEl = document.getElementById('videocast-modal-title');
+      const descEl = document.getElementById('videocast-modal-description');
+      const videoEl = document.getElementById('videocast-video');
+      const durationEl = document.getElementById('videocast-modal-duration');
+      if (titleEl) titleEl.textContent = data.title || '';
+      if (descEl) descEl.textContent = data.description || data.shortText || '';
+      if (durationEl) {
+        const span = durationEl.querySelector('span');
+        if (span) span.textContent = data.duration || '';
+      }
+      if (data.videoUrl.match(/youtube\.com|youtu\.be/i)) {
+        if (videoEl) {
+          videoEl.style.display = 'none';
+          const playerContainer = videoEl.parentElement;
+          let iframe = playerContainer.querySelector('.youtube-embed');
+          if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.className = 'youtube-embed';
+            iframe.style.cssText = 'width:100%;height:100%;border:none;border-radius:8px;';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+            playerContainer.appendChild(iframe);
+          }
+          const match = data.videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?]+)/);
+          if (match) iframe.src = 'https://www.youtube.com/embed/' + match[1] + '?autoplay=1';
+        }
+        if (modal) modal.classList.add('active');
+      } else {
+        if (videoEl) {
+          videoEl.style.display = '';
+          const iframe = videoEl.parentElement.querySelector('.youtube-embed');
+          if (iframe) iframe.src = '';
+          const source = videoEl.querySelector('source');
+          if (source) source.src = data.videoUrl;
+          videoEl.load();
+        }
+        if (modal) modal.classList.add('active');
+      }
+    } catch (error) {
+      console.error('BlueTemplate: Error opening videocast:', error);
+    }
+  }
+
+  closeVideocastModal() {
+    const modal = document.getElementById('videocast-modal');
+    if (modal) modal.classList.remove('active');
+    const video = document.getElementById('videocast-video');
+    if (video) {
+      video.pause();
+      const source = video.querySelector('source');
+      if (source) source.src = '';
+      video.load();
+      video.style.display = '';
+    }
+    const iframe = document.querySelector('.youtube-embed');
+    if (iframe) iframe.src = '';
   }
 }
 

@@ -110,45 +110,7 @@
         </div>
       </div>
     </div>
-    
-    <nav class="main-navigation">
-      <div class="nav-blur"></div>
-      <div class="container">
-        <ul class="nav-menu">
-          <li><a href="#" class="nav-link active" data-section="home">
-            <i class="fas fa-home"></i>
-            <span>Inicio</span>
-            <div class="nav-indicator"></div>
-          </a></li>
-          <li><a href="#" class="nav-link" data-section="news">
-            <i class="fas fa-newspaper"></i>
-            <span>Noticias</span>
-            <div class="nav-indicator"></div>
-          </a></li>
-          <li><a href="#" class="nav-link" data-section="programs">
-            <i class="fas fa-microphone"></i>
-            <span>Programas</span>
-            <div class="nav-indicator"></div>
-          </a></li>
-          <li><a href="#" class="nav-link" data-section="multimedia">
-            <i class="fas fa-play-circle"></i>
-            <span>Multimedia</span>
-            <div class="nav-indicator"></div>
-          </a></li>
-          <li><a href="#" class="nav-link" data-section="sponsors">
-            <i class="fas fa-handshake"></i>
-            <span>Patrocinadores</span>
-            <div class="nav-indicator"></div>
-          </a></li>
-        </ul>
-        
-        <button class="mobile-menu-toggle">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-      </div>
-    </nav>
+
   </header>
 
   <!-- TV Online Section (visible when TV streaming is available) -->
@@ -214,7 +176,7 @@
   <main class="dynamic-main">
     
     <!-- Home Section -->
-    <section id="home-section" class="dynamic-section active">
+    <section id="home-section" class="dynamic-section">
       
       <!-- Hero Carousel -->
       <div class="hero-section">
@@ -271,17 +233,6 @@
                     <div class="news-card-skeleton"></div>
                     <div class="news-card-skeleton"></div>
                   </div>
-                </div>
-              </div>
-              
-              <!-- Programs Today -->
-              <div class="programs-today">
-                <h2 class="section-title">
-                  <span class="title-text">Programación de Hoy</span>
-                  <div class="title-line"></div>
-                </h2>
-                <div class="programs-timeline glass-effect" id="programs-timeline">
-                  <!-- Programs timeline will be loaded here -->
                 </div>
               </div>
               
@@ -363,6 +314,8 @@
       
     </section>
 
+
+
     <!-- News Section -->
     <section id="news-section" class="dynamic-section">
       <div class="container">
@@ -370,16 +323,11 @@
           <div class="news-grid" id="all-news-grid">
             <!-- All news will be loaded here -->
           </div>
-          <div class="load-more-container">
-            <button class="load-more-btn glass-btn" id="load-more-news">
-              <i class="fas fa-plus"></i>
-              <span>Cargar Más Noticias</span>
-              <div class="btn-ripple"></div>
-            </button>
-          </div>
         </div>
       </div>
     </section>
+
+
 
     <!-- Programs Section -->
     <section id="programs-section" class="dynamic-section">
@@ -417,89 +365,16 @@
           </button>
         </div>
         
-        <!-- Programs by Day -->
-        <div class="programs-by-day">
-          
-          <!-- Lunes -->
-          <div class="day-programs" id="lunes-programs">
-            <h2 class="day-title">
-              <span class="title-text">Programación del Lunes</span>
-              <div class="title-line"></div>
-            </h2>
-            <div class="programs-grid" id="lunes-grid">
-              <!-- Programs for Monday will be loaded here -->
-            </div>
+        <!-- Programs Schedule (single container, day buttons switch content) -->
+        <div class="programs-schedule">
+          <div class="day-programs active" id="day-schedule-container">
+            <!-- Programs for selected day will be loaded here -->
           </div>
-          
-          <!-- Martes -->
-          <div class="day-programs" id="martes-programs">
-            <h2 class="day-title">
-              <span class="title-text">Programación del Martes</span>
-              <div class="title-line"></div>
-            </h2>
-            <div class="programs-grid" id="martes-grid">
-              <!-- Programs for Tuesday will be loaded here -->
-            </div>
-          </div>
-          
-          <!-- Miércoles -->
-          <div class="day-programs" id="miercoles-programs">
-            <h2 class="day-title">
-              <span class="title-text">Programación del Miércoles</span>
-              <div class="title-line"></div>
-            </h2>
-            <div class="programs-grid" id="miercoles-grid">
-              <!-- Programs for Wednesday will be loaded here -->
-            </div>
-          </div>
-          
-          <!-- Jueves -->
-          <div class="day-programs" id="jueves-programs">
-            <h2 class="day-title">
-              <span class="title-text">Programación del Jueves</span>
-              <div class="title-line"></div>
-            </h2>
-            <div class="programs-grid" id="jueves-grid">
-              <!-- Programs for Thursday will be loaded here -->
-            </div>
-          </div>
-          
-          <!-- Viernes -->
-          <div class="day-programs" id="viernes-programs">
-            <h2 class="day-title">
-              <span class="title-text">Programación del Viernes</span>
-              <div class="title-line"></div>
-            </h2>
-            <div class="programs-grid" id="viernes-grid">
-              <!-- Programs for Friday will be loaded here -->
-            </div>
-          </div>
-          
-          <!-- Sábado -->
-          <div class="day-programs" id="sabado-programs">
-            <h2 class="day-title">
-              <span class="title-text">Programación del Sábado</span>
-              <div class="title-line"></div>
-            </h2>
-            <div class="programs-grid" id="sabado-grid">
-              <!-- Programs for Saturday will be loaded here -->
-            </div>
-          </div>
-          
-          <!-- Domingo -->
-          <div class="day-programs" id="domingo-programs">
-            <h2 class="day-title">
-              <span class="title-text">Programación del Domingo</span>
-              <div class="title-line"></div>
-            </h2>
-            <div class="programs-grid" id="domingo-grid">
-              <!-- Programs for Sunday will be loaded here -->
-            </div>
-          </div>
-          
         </div>
       </div>
     </section>
+
+
 
     <!-- Multimedia Section -->
     <section id="multimedia-section" class="dynamic-section">
@@ -534,12 +409,98 @@
       </div>
     </section>
 
+
+
     <!-- Sponsors Section -->
     <section id="sponsors-section" class="dynamic-section">
       <div class="container">
         
         <div class="sponsors-grid" id="all-sponsors-grid">
           <!-- All sponsors will be loaded here -->
+        </div>
+      </div>
+    </section>
+
+
+
+    <!-- Galleries Section -->
+    <section id="galleries-section" class="dynamic-section"><div class="container"><h2 class="section-title" data-aos="fade-up">Galerías</h2><div class="galleries-grid" id="galleries-grid"></div></div></section>
+
+
+
+    <!-- Announcers Section -->
+    <section id="announcers-section" class="dynamic-section"><div class="container"><h2 class="section-title" data-aos="fade-up">Locutores</h2><div class="announcers-grid" id="announcers-grid"></div></div></section>
+
+
+
+    <!-- Polls Section -->
+    <section id="polls-section" class="dynamic-section"><div class="container"><h2 class="section-title" data-aos="fade-up">Encuestas</h2><div class="polls-container" id="polls-container"></div></div></section>
+
+
+
+    <!-- Events Section -->
+    <section id="events-section" class="dynamic-section"><div class="container"><h2 class="section-title" data-aos="fade-up">Eventos</h2><div class="events-timeline" id="events-timeline"></div></div></section>
+
+
+    <!-- Videos Section -->
+    <section id="videos-section" class="dynamic-section"><div class="container"><h2 class="section-title" data-aos="fade-up">Videos</h2><div class="videos-grid" id="videos-grid"></div></div></section>
+
+
+
+    <!-- Social Section -->
+    <section id="social-section" class="dynamic-section"><div class="container"><h2 class="section-title" data-aos="fade-up">Redes Sociales</h2><div class="social-hub" id="social-hub"></div></div></section>
+
+    <!-- Contact Section -->
+    <section id="contact-section" class="dynamic-section">
+      <div class="container">
+        <h2 class="section-title" data-aos="fade-up">
+          <span class="title-text">Contacto</span>
+          <div class="title-line"></div>
+        </h2>
+        <div class="contact-split" data-aos="fade-up" data-aos-delay="100">
+          <div class="contact-cover glass-effect">
+            <div class="contact-cover-image">
+              <img id="contact-cover-img" src="/assets/icons/icon-512x512.png" alt="Radio">
+            </div>
+            <div class="contact-cover-info">
+              <h3 id="contact-radio-name">Nuestra Radio</h3>
+              <p id="contact-radio-desc">Estamos aquí para escucharte. Déjanos tu mensaje y te responderemos a la brevedad.</p>
+              <div class="contact-details">
+                <div class="contact-detail-item">
+                  <i class="fas fa-envelope"></i>
+                  <span id="contact-email-display">correo@radio.cl</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="contact-form-wrap glass-effect">
+            <form class="contact-form" id="contact-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="contact-name">Nombre</label>
+                  <input type="text" id="contact-name" class="glass-input" placeholder="Tu nombre" required>
+                </div>
+                <div class="form-group">
+                  <label for="contact-email">Email</label>
+                  <input type="email" id="contact-email" class="glass-input" placeholder="tu@email.com" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="contact-subject">Asunto</label>
+                <input type="text" id="contact-subject" class="glass-input" placeholder="Asunto del mensaje" required>
+              </div>
+              <div class="form-group">
+                <label for="contact-message">Mensaje</label>
+                <textarea id="contact-message" class="glass-input" rows="5" placeholder="Escribe tu mensaje aquí..." required></textarea>
+              </div>
+              <button type="submit" class="glass-btn contact-submit-btn">
+                <i class="fas fa-paper-plane"></i>
+                <span>Enviar mensaje</span>
+                <div class="btn-ripple"></div>
+              </button>
+              <div class="contact-feedback" id="contact-feedback" style="display:none;"></div>
+            </form>
+          </div>
         </div>
       </div>
     </section>
@@ -637,7 +598,7 @@
   <!-- News Modal -->
   <div class="modal-overlay glass-effect" id="news-modal">
     <div class="modal-content glass-effect news-modal-content">
-      <button class="modal-close glass-btn" onclick="radioPulse.closeModal('news-modal')">
+      <button class="modal-close glass-btn">
         <i class="fas fa-times"></i>
       </button>
       <div class="modal-header">
@@ -656,7 +617,7 @@
           <p>Contenido de la noticia...</p>
         </div>
         <div class="news-modal-actions">
-          <button class="glass-btn share-btn" onclick="radioPulse.shareNews()">
+          <button class="glass-btn share-btn">
             <i class="fas fa-share-alt"></i>
             <span>Compartir</span>
             <div class="btn-ripple"></div>
@@ -666,10 +627,13 @@
     </div>
   </div>
 
+  <!-- Gallery Modal -->
+  <div class="modal-overlay" id="gallery-modal"><div class="modal-content glass-effect"><button class="modal-close">&times;</button><h3 id="gallery-modal-title"></h3><div class="gallery-main-image"><img id="gallery-main-img" src=""><button class="gallery-nav gallery-prev"><i class="fas fa-chevron-left"></i></button><button class="gallery-nav gallery-next"><i class="fas fa-chevron-right"></i></button></div><div class="gallery-thumbnails" id="gallery-thumbnails"></div></div></div>
+
   <!-- Podcast Modal -->
   <div class="modal-overlay glass-effect" id="podcast-modal">
     <div class="modal-content glass-effect media-modal-content">
-      <button class="modal-close glass-btn" onclick="radioPulse.closeModal('podcast-modal')">
+      <button class="modal-close glass-btn">
         <i class="fas fa-times"></i>
       </button>
       <div class="modal-header">
@@ -691,7 +655,7 @@
               </button>
             </div>
           </div>
-          <audio id="podcast-audio" preload="none"></audio>
+          <audio id="podcast-audio" controls preload="none"></audio>
           <div class="media-progress-container">
             <div class="media-progress-bar">
               <div class="media-progress-fill" id="podcast-progress"></div>
@@ -706,12 +670,12 @@
           <p>Descripción del podcast...</p>
         </div>
         <div class="media-modal-actions">
-          <button class="glass-btn download-btn" onclick="radioPulse.downloadPodcast()">
+          <button class="glass-btn download-btn">
             <i class="fas fa-download"></i>
             <span>Descargar</span>
             <div class="btn-ripple"></div>
           </button>
-          <button class="glass-btn share-btn" onclick="radioPulse.sharePodcast()">
+          <button class="glass-btn share-btn">
             <i class="fas fa-share-alt"></i>
             <span>Compartir</span>
             <div class="btn-ripple"></div>
@@ -724,7 +688,7 @@
   <!-- Videocast Modal -->
   <div class="modal-overlay glass-effect" id="videocast-modal">
     <div class="modal-content glass-effect media-modal-content">
-      <button class="modal-close glass-btn" onclick="radioPulse.closeModal('videocast-modal')">
+      <button class="modal-close glass-btn">
         <i class="fas fa-times"></i>
       </button>
       <div class="modal-header">
@@ -746,12 +710,12 @@
           <p>Descripción del videocast...</p>
         </div>
         <div class="media-modal-actions">
-          <button class="glass-btn download-btn" onclick="radioPulse.downloadVideocast()">
+          <button class="glass-btn download-btn">
             <i class="fas fa-download"></i>
             <span>Descargar</span>
             <div class="btn-ripple"></div>
           </button>
-          <button class="glass-btn share-btn" onclick="radioPulse.shareVideocast()">
+          <button class="glass-btn share-btn">
             <i class="fas fa-share-alt"></i>
             <span>Compartir</span>
             <div class="btn-ripple"></div>

@@ -264,6 +264,28 @@
             </a></li>
           </ul>
         </div>
+
+        <div class="menu-section">
+          <div class="section-title">Interactivo</div>
+          <ul class="menu-list">
+            <li><a href="#" class="menu-item" data-section="galleries">
+              <i class="fas fa-images"></i>
+              <span>Galerías</span>
+            </a></li>
+            <li><a href="#" class="menu-item" data-section="announcers">
+              <i class="fas fa-users"></i>
+              <span>Locutores</span>
+            </a></li>
+            <li><a href="#" class="menu-item" data-section="polls">
+              <i class="fas fa-poll"></i>
+              <span>Encuestas</span>
+            </a></li>
+            <li><a href="#" class="menu-item" data-section="events">
+              <i class="fas fa-calendar-alt"></i>
+              <span>Eventos</span>
+            </a></li>
+          </ul>
+        </div>
       </div>
       
       <div class="sidebar-footer">
@@ -329,14 +351,14 @@
               </div>
             </div>
             
-            <!-- Recently Played -->
-            <div class="recently-played-section">
-              <h2>Reproducidas Recientemente</h2>
-              <div class="track-list" id="recent-tracks">
-                <div class="loading-tracks">
-                  <i class="fas fa-spinner fa-spin"></i>
-                  <span>Cargando historial...</span>
-                </div>
+            <!-- Radio Info -->
+            <div class="radio-info-section">
+              <div class="radio-cover">
+                <img id="radio-cover-img" src="" alt="Radio Cover" style="display:none;">
+              </div>
+              <div class="radio-description">
+                <p id="radio-description-text"></p>
+                <div class="radio-social-icons" id="radio-social-icons"></div>
               </div>
             </div>
           </div>
@@ -560,6 +582,62 @@
           </div>
         </div>
 
+        <!-- Galleries View -->
+        <div id="galleries-view" class="content-view">
+          <div class="view-header">
+            <h1>Galerías</h1>
+            <p>Explora nuestras galerías de imágenes</p>
+          </div>
+          <div class="galleries-grid" id="galleries-grid">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando galerías...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Announcers View -->
+        <div id="announcers-view" class="content-view">
+          <div class="view-header">
+            <h1>Locutores</h1>
+            <p>Conoce a nuestro equipo de locutores</p>
+          </div>
+          <div class="announcers-grid" id="announcers-grid">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando locutores...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Polls View -->
+        <div id="polls-view" class="content-view">
+          <div class="view-header">
+            <h1>Encuestas</h1>
+            <p>Participa en nuestras encuestas</p>
+          </div>
+          <div class="polls-container" id="polls-container">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando encuestas...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Events View -->
+        <div id="events-view" class="content-view">
+          <div class="view-header">
+            <h1>Eventos</h1>
+            <p>No te pierdas nuestros próximos eventos</p>
+          </div>
+          <div class="events-timeline" id="events-timeline">
+            <div class="loading-content">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Cargando eventos...</span>
+            </div>
+          </div>
+        </div>
+
       </div>
       
       </div> <!-- End content-area -->
@@ -775,6 +853,26 @@
             Ver Oferta
           </a>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gallery Modal (Lightbox) -->
+  <div class="gallery-modal" id="gallery-modal">
+    <div class="gallery-modal-content">
+      <div class="gallery-modal-header">
+        <h2 id="gallery-modal-title">Galería</h2>
+        <button class="gallery-modal-close" onclick="streamApp.closeGalleryModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="gallery-modal-body">
+        <div class="gallery-main-image" id="gallery-main-image">
+          <img id="gallery-main-img" src="" alt="">
+          <button class="gallery-nav gallery-prev"><i class="fas fa-chevron-left"></i></button>
+          <button class="gallery-nav gallery-next"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="gallery-thumbnails" id="gallery-thumbnails"></div>
       </div>
     </div>
   </div>
