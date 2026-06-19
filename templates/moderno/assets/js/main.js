@@ -66,6 +66,23 @@ class ModernoTemplate extends TemplateBase {
     }
   }
 
+  onBasicDataLoaded(data) {
+    if (this._radioCoverUrl) {
+      const coverImg = document.getElementById('track-artwork');
+      const coverDefault = document.getElementById('default-artwork');
+      const heroBg = document.getElementById('hero-bg');
+      if (coverImg) {
+        coverImg.src = this._radioCoverUrl;
+        coverImg.style.display = 'block';
+        if (coverDefault) coverDefault.style.display = 'none';
+      }
+      if (heroBg) {
+        heroBg.style.backgroundImage = 'url(' + this._radioCoverUrl + ')';
+        heroBg.classList.add('loaded');
+      }
+    }
+  }
+
   async checkTV() {
     try {
       const dm = getDataManager();
@@ -929,26 +946,54 @@ class ModernoTemplate extends TemplateBase {
     if (audio && !audio.paused) audio.pause();
   }
 
+  _setHeroCover(url) {
+    const coverImg = document.getElementById('track-artwork');
+    const coverDefault = document.getElementById('default-artwork');
+    const heroBg = document.getElementById('hero-bg');
+    if (coverImg) {
+      coverImg.src = url;
+      coverImg.style.display = 'block';
+      if (coverDefault) coverDefault.style.display = 'none';
+    }
+    if (heroBg) {
+      heroBg.style.backgroundImage = 'url(' + url + ')';
+      heroBg.classList.add('loaded');
+    }
+  }
+
+  _showHeroDefault() {
+    const coverImg = document.getElementById('track-artwork');
+    const coverDefault = document.getElementById('default-artwork');
+    const heroBg = document.getElementById('hero-bg');
+    if (coverImg) coverImg.style.display = 'none';
+    if (coverDefault) coverDefault.style.display = 'flex';
+    if (heroBg) {
+      heroBg.style.backgroundImage = '';
+      heroBg.classList.remove('loaded');
+    }
+  }
+
   onCurrentSongLoaded(songData) {
     const heroStatus = document.getElementById('hero-status');
     if (heroStatus) heroStatus.textContent = songData.title ? 'EN VIVO' : 'OFFLINE';
 
     const coverImg = document.getElementById('track-artwork');
-    const coverDefault = document.getElementById('default-artwork');
-    const heroBg = document.getElementById('hero-bg');
     const artUrl = songData.art || '';
 
-    if (artUrl) {
+    if (artUrl && artUrl !== coverImg?.src) {
       const img = new Image();
-      img.onload = () => {
-        if (coverImg) { coverImg.src = artUrl; coverImg.style.display = 'block'; if (coverDefault) coverDefault.style.display = 'none'; }
-        if (heroBg) { heroBg.style.backgroundImage = 'url(' + artUrl + ')'; heroBg.classList.add('loaded'); }
+      img.onload = () => this._setHeroCover(artUrl);
+      img.onerror = () => {
+        if (this._radioCoverUrl) this._setHeroCover(this._radioCoverUrl);
+        else this._showHeroDefault();
       };
       img.src = artUrl;
-    } else {
-      if (coverImg) coverImg.style.display = 'none';
-      if (coverDefault) coverDefault.style.display = 'flex';
-      if (heroBg) { heroBg.style.backgroundImage = ''; heroBg.classList.remove('loaded'); }
+    } else if (!artUrl) {
+      if (this._radioCoverUrl && coverImg?.src !== this._radioCoverUrl) {
+        this._setHeroCover(this._radioCoverUrl);
+      } else if (!this._radioCoverUrl) {
+        this._showHeroDefault();
+      }
     }
 
     const disc = document.getElementById('cover-disc');

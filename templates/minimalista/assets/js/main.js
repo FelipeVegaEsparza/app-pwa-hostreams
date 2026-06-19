@@ -51,8 +51,14 @@ class MinimalistaTemplate extends TemplateBase {
     
     // Actualizar fondo con artwork si existe
     const bgCover = document.getElementById('bg-cover');
-    if (bgCover && songData.art) {
-      bgCover.style.backgroundImage = `url(${songData.art})`;
+    if (bgCover) {
+      if (songData.art) {
+        bgCover.style.backgroundImage = `url(${songData.art})`;
+      } else if (this._radioCoverUrl) {
+        bgCover.style.backgroundImage = `url(${this._radioCoverUrl})`;
+      } else {
+        bgCover.style.backgroundImage = '';
+      }
     }
   }
 

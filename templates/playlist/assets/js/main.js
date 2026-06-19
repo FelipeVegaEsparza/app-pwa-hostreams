@@ -105,7 +105,24 @@ class PlaylistTemplate extends TemplateBase {
     const playerArtwork = document.getElementById('player-artwork');
     const defaultPlayerArtwork = document.querySelector('.default-player-artwork');
     if (songData.art && playerArtwork) {
-      playerArtwork.src = songData.art;
+      if (songData.art !== playerArtwork.src) {
+        const img = new Image();
+        img.onload = () => {
+          playerArtwork.src = songData.art;
+          playerArtwork.style.display = 'block';
+          if (defaultPlayerArtwork) defaultPlayerArtwork.style.display = 'none';
+        };
+        img.onerror = () => {
+          if (this._radioCoverUrl) {
+            playerArtwork.src = this._radioCoverUrl;
+            playerArtwork.style.display = 'block';
+            if (defaultPlayerArtwork) defaultPlayerArtwork.style.display = 'none';
+          }
+        };
+        img.src = songData.art;
+      }
+    } else if (this._radioCoverUrl && playerArtwork && playerArtwork.src !== this._radioCoverUrl) {
+      playerArtwork.src = this._radioCoverUrl;
       playerArtwork.style.display = 'block';
       if (defaultPlayerArtwork) defaultPlayerArtwork.style.display = 'none';
     }
@@ -132,7 +149,24 @@ class PlaylistTemplate extends TemplateBase {
     const mainArtwork = document.getElementById('main-artwork');
     const defaultArtwork = document.querySelector('.default-artwork-large');
     if (songData.art && mainArtwork) {
-      mainArtwork.src = songData.art;
+      if (songData.art !== mainArtwork.src) {
+        const img = new Image();
+        img.onload = () => {
+          mainArtwork.src = songData.art;
+          mainArtwork.style.display = 'block';
+          if (defaultArtwork) defaultArtwork.style.display = 'none';
+        };
+        img.onerror = () => {
+          if (this._radioCoverUrl) {
+            mainArtwork.src = this._radioCoverUrl;
+            mainArtwork.style.display = 'block';
+            if (defaultArtwork) defaultArtwork.style.display = 'none';
+          }
+        };
+        img.src = songData.art;
+      }
+    } else if (this._radioCoverUrl && mainArtwork && mainArtwork.src !== this._radioCoverUrl) {
+      mainArtwork.src = this._radioCoverUrl;
       mainArtwork.style.display = 'block';
       if (defaultArtwork) defaultArtwork.style.display = 'none';
     }
@@ -140,11 +174,9 @@ class PlaylistTemplate extends TemplateBase {
 
   onBasicDataLoaded(data) {
     const coverImg = document.getElementById('radio-cover-img');
-    if (coverImg && data.coverUrl) {
-      this.dataManager.getImageUrl(data.coverUrl).then(url => {
-        coverImg.src = url;
-        coverImg.style.display = 'block';
-      });
+    if (coverImg && this._radioCoverUrl) {
+      coverImg.src = this._radioCoverUrl;
+      coverImg.style.display = 'block';
     }
     const descEl = document.getElementById('radio-description-text');
     if (descEl && data.projectDescription) {

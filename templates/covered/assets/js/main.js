@@ -33,6 +33,7 @@ class CoveredTemplate extends TemplateBase {
     this.videoStreamUrl = null;
     this._tvPlayer = null;
     this._tvMode = null; // 'radio', 'tv', 'both'
+    this._radioCoverUrl = null; // URL del cover de la radio (fallback)
   }
 
   async init() {
@@ -51,6 +52,23 @@ class CoveredTemplate extends TemplateBase {
       console.log('CoveredTemplate: Template fully initialized!');
     } catch (error) {
       console.error('CoveredTemplate: Error in init:', error);
+    }
+  }
+
+  onBasicDataLoaded(data) {
+    if (this._radioCoverUrl) {
+      const coverImg = document.getElementById('cover-artwork');
+      const coverDefault = document.getElementById('cover-card-default');
+      const heroBg = document.getElementById('hero-player-bg');
+      if (coverImg) {
+        coverImg.src = this._radioCoverUrl;
+        coverImg.style.display = 'block';
+        if (coverDefault) coverDefault.style.display = 'none';
+      }
+      if (heroBg) {
+        heroBg.style.backgroundImage = 'url(' + this._radioCoverUrl + ')';
+        heroBg.classList.add('loaded');
+      }
     }
   }
 
@@ -904,13 +922,38 @@ class CoveredTemplate extends TemplateBase {
     }
   }
 
+  _setHeroCover(url) {
+    const coverImg = document.getElementById('cover-artwork');
+    const coverDefault = document.getElementById('cover-card-default');
+    const heroBg = document.getElementById('hero-player-bg');
+    if (coverImg) {
+      coverImg.src = url;
+      coverImg.style.display = 'block';
+      if (coverDefault) coverDefault.style.display = 'none';
+    }
+    if (heroBg) {
+      heroBg.style.backgroundImage = 'url(' + url + ')';
+      heroBg.classList.add('loaded');
+    }
+  }
+
+  _showHeroDefault() {
+    const coverImg = document.getElementById('cover-artwork');
+    const coverDefault = document.getElementById('cover-card-default');
+    const heroBg = document.getElementById('hero-player-bg');
+    if (coverImg) coverImg.style.display = 'none';
+    if (coverDefault) coverDefault.style.display = 'flex';
+    if (heroBg) {
+      heroBg.style.backgroundImage = '';
+      heroBg.classList.remove('loaded');
+    }
+  }
+
   updateHeroPlayer(songData) {
     if (this._tvMode && this._tvMode !== 'radio') return;
     const titleEl = document.getElementById('track-title-main');
     const artistEl = document.getElementById('track-artist-main');
     const coverImg = document.getElementById('cover-artwork');
-    const coverDefault = document.getElementById('cover-card-default');
-    const heroBg = document.getElementById('hero-player-bg');
 
     const artUrl = songData.art || '';
     const title = songData.title || 'Radio';
@@ -921,24 +964,20 @@ class CoveredTemplate extends TemplateBase {
 
     if (artUrl && artUrl !== coverImg?.src) {
       const img = new Image();
-      img.onload = () => {
-        if (coverImg) {
-          coverImg.src = artUrl;
-          coverImg.style.display = 'block';
-          if (coverDefault) coverDefault.style.display = 'none';
-        }
-        if (heroBg) {
-          heroBg.style.backgroundImage = 'url(' + artUrl + ')';
-          heroBg.classList.add('loaded');
+      img.onload = () => this._setHeroCover(artUrl);
+      img.onerror = () => {
+        if (this._radioCoverUrl) {
+          this._setHeroCover(this._radioCoverUrl);
+        } else {
+          this._showHeroDefault();
         }
       };
       img.src = artUrl;
     } else if (!artUrl) {
-      if (coverImg) coverImg.style.display = 'none';
-      if (coverDefault) coverDefault.style.display = 'flex';
-      if (heroBg) {
-        heroBg.style.backgroundImage = '';
-        heroBg.classList.remove('loaded');
+      if (this._radioCoverUrl && coverImg?.src !== this._radioCoverUrl) {
+        this._setHeroCover(this._radioCoverUrl);
+      } else if (!this._radioCoverUrl) {
+        this._showHeroDefault();
       }
     }
   }

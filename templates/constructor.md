@@ -1331,11 +1331,54 @@ class MiTemplate extends TemplateBase {
   }
 
   // ==========================================
+  // GESTIÓN DEL COVER ARTWORK
+  // ==========================================
+  //
+  // TemplateBase ya gestiona el artwork automáticamente para los elementos
+  // estándar (trackArtwork / defaultArtwork). Solo necesitas los helpers
+  // _setHeroCover / _showHeroDefault si tu template tiene elementos
+  // de cover personalizados (hero background, dual artworks, etc.).
+  //
+  // this._radioCoverUrl está disponible como fallback desde la carga
+  // de datos básicos (lo resuelve TemplateBase.loadBasicData).
+  //
+  // Patrón recomendado cuando sobrescribes onCurrentSongLoaded:
+  //
+  // onCurrentSongLoaded(songData) {
+  //   const artUrl = songData.art || '';
+  //
+  //   if (artUrl && artUrl !== coverImg?.src) {
+  //     const img = new Image();
+  //     img.onload = () => this._setHeroCover(artUrl);
+  //     img.onerror = () => {
+  //       if (this._radioCoverUrl) this._setHeroCover(this._radioCoverUrl);
+  //       else this._showHeroDefault();
+  //     };
+  //     img.src = artUrl;
+  //   } else if (!artUrl) {
+  //     if (this._radioCoverUrl && coverImg?.src !== this._radioCoverUrl) {
+  //       this._setHeroCover(this._radioCoverUrl);
+  //     } else if (!this._radioCoverUrl) {
+  //       this._showHeroDefault();
+  //     }
+  //   }
+  // }
+
+  // ==========================================
   // HOOKS PARA SOBRESCRIBIR
   // ==========================================
 
   onBasicDataLoaded(data) {
-    // Custom logic después de cargar datos básicos
+    // Si tu template tiene elementos de cover personalizados (distintos
+    // a trackArtwork / defaultArtwork), usa this._radioCoverUrl aquí:
+    //
+    // if (this._radioCoverUrl) {
+    //   const coverImg = document.getElementById('mi-cover');
+    //   const heroBg = document.getElementById('mi-hero-bg');
+    //   coverImg.src = this._radioCoverUrl;
+    //   coverImg.style.display = 'block';
+    //   heroBg.style.backgroundImage = 'url(' + this._radioCoverUrl + ')';
+    // }
   }
 
   onSocialNetworksLoaded(data) {
@@ -1498,6 +1541,73 @@ getVideoStreamUrl()
 | `audioPlayer.play()` | Iniciar reproducción |
 | `audioPlayer.pause()` | Pausar reproducción |
 
+---
+
+## Gestión del Cover Artwork (Hero / Track)
+
+### Comportamiento automático en `TemplateBase`
+
+La clase base maneja el cover artwork de forma transparente:
+
+1. **Carga inicial** (`loadBasicData`):
+   - Resuelve `coverUrl` (o `logoUrl` como fallback) y lo almacena en `this._radioCoverUrl`
+   - Si el template usa los IDs estándar (`trackArtwork` / `defaultArtwork`), asigna el cover de la radio como artwork inicial — sin imagen rota
+
+2. **Actualización desde SonicPanel** (`updateCurrentSongDisplay`):
+   - Si `songData.art` existe: precarga con `new Image()` + `onload` / `onerror`
+   - Si `songData.art` falla: cae automáticamente a `this._radioCoverUrl`
+   - Si no hay `songData.art`: mantiene el cover de la radio en lugar de ocultarlo
+
+### Templates con elementos de cover personalizados
+
+Si tu template tiene elementos de cover distintos a los IDs estándar (ej: `#cover-artwork` + `#hero-player-bg` como en los templates app, covered, moderno, tradicional), debes:
+
+1. **Sobrescribir `onBasicDataLoaded`** — mostrar el cover de la radio como inicial:
+```js
+onBasicDataLoaded(data) {
+  if (this._radioCoverUrl) {
+    const coverImg = document.getElementById('mi-cover-img');
+    const defaultEl = document.getElementById('mi-cover-default');
+    const heroBg = document.getElementById('mi-hero-bg');
+    if (coverImg) {
+      coverImg.src = this._radioCoverUrl;
+      coverImg.style.display = 'block';
+      if (defaultEl) defaultEl.style.display = 'none';
+    }
+    if (heroBg) {
+      heroBg.style.backgroundImage = 'url(' + this._radioCoverUrl + ')';
+      heroBg.classList.add('loaded');
+    }
+  }
+}
+```
+
+2. **Implementar helpers** `_setHeroCover(url)` y `_showHeroDefault()` para reutilizar la lógica.
+
+3. **En `onCurrentSongLoaded`**, usar el patrón con `onerror`:
+```js
+onCurrentSongLoaded(songData) {
+  const artUrl = songData.art || '';
+  const coverImg = document.getElementById('mi-cover-img');
+
+  if (artUrl && artUrl !== coverImg?.src) {
+    const img = new Image();
+    img.onload = () => this._setHeroCover(artUrl);
+    img.onerror = () => {
+      if (this._radioCoverUrl) this._setHeroCover(this._radioCoverUrl);
+      else this._showHeroDefault();
+    };
+    img.src = artUrl;
+  } else if (!artUrl) {
+    if (this._radioCoverUrl && coverImg?.src !== this._radioCoverUrl) {
+      this._setHeroCover(this._radioCoverUrl);
+    } else if (!this._radioCoverUrl) {
+      this._showHeroDefault();
+    }
+  }
+}
+```
+
 ### Métodos para Sobrescribir en el Template
 
 | Método | Cuándo se ejecuta |
@@ -1529,6 +1639,9 @@ getVideoStreamUrl()
 | Calidad | `audio-quality` | No |
 | Artwork | `track-artwork` | No |
 | Default artwork | `default-artwork` | No |
+| | | |
+| Cover de radio | *(automático)* | — |
+| | `this._radioCoverUrl` se asigna como artwork inicial y fallback ante errores de carga o ausencia de `songData.art` |
 | Logo | `radio-logo` | No |
 | Footer name | `footer-radio-name` | No |
 | Fecha actual | `current-date` | No |

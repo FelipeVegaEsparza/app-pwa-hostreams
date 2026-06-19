@@ -29,6 +29,7 @@ class TemplateBase {
     this.currentVolume = options.defaultVolume || 50;
     this.sonicPanelInterval = null;
     this.currentSongData = null;
+    this._radioCoverUrl = null;
     
     // IDs de elementos DOM que pueden variar entre templates
     this.domIds = {
@@ -103,6 +104,23 @@ class TemplateBase {
         descElement.textContent = data.projectDescription;
       }
       
+      // Almacenar URL del cover de la radio para fallback
+      if (data.coverUrl) {
+        this._radioCoverUrl = await this.dataManager.getImageUrl(data.coverUrl);
+      } else if (data.logoUrl) {
+        this._radioCoverUrl = await this.dataManager.getImageUrl(data.logoUrl);
+      }
+
+      if (this._radioCoverUrl) {
+        const artworkEl = document.getElementById(this.domIds.trackArtwork);
+        const defaultArtworkEl = document.getElementById(this.domIds.defaultArtwork);
+        if (artworkEl && defaultArtworkEl) {
+          artworkEl.src = this._radioCoverUrl;
+          artworkEl.style.display = 'block';
+          defaultArtworkEl.style.display = 'none';
+        }
+      }
+
       // Configurar URL del stream
       if (data.radioStreamingUrl) {
         this.audioPlayer.setStreamUrl(data.radioStreamingUrl);
@@ -178,9 +196,26 @@ class TemplateBase {
     if (qualityEl) qualityEl.textContent = songData.bitrate ? `${songData.bitrate}k` : 'HD';
     if (bitrateEl) bitrateEl.textContent = songData.bitrate || 'N/A';
 
-    // Actualizar artwork
+    // Actualizar artwork con fallback al cover de la radio
     if (songData.art && artworkEl && defaultArtworkEl) {
-      artworkEl.src = songData.art;
+      if (songData.art !== artworkEl.src) {
+        const img = new Image();
+        img.onload = () => {
+          artworkEl.src = songData.art;
+          artworkEl.style.display = 'block';
+          defaultArtworkEl.style.display = 'none';
+        };
+        img.onerror = () => {
+          if (this._radioCoverUrl) {
+            artworkEl.src = this._radioCoverUrl;
+            artworkEl.style.display = 'block';
+            defaultArtworkEl.style.display = 'none';
+          }
+        };
+        img.src = songData.art;
+      }
+    } else if (this._radioCoverUrl && artworkEl && defaultArtworkEl && artworkEl.src !== this._radioCoverUrl) {
+      artworkEl.src = this._radioCoverUrl;
       artworkEl.style.display = 'block';
       defaultArtworkEl.style.display = 'none';
     }

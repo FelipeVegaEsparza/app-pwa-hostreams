@@ -63,6 +63,25 @@ class TradicionalTemplate extends TemplateBase {
     }
   }
 
+  onBasicDataLoaded(data) {
+    if (this._radioCoverUrl) {
+      const img = document.getElementById('track-artwork');
+      const def = document.getElementById('default-artwork');
+      const heroImg = document.getElementById('hero-track-artwork');
+      const heroDef = document.getElementById('hero-cover-default');
+      if (img) {
+        img.src = this._radioCoverUrl;
+        img.style.display = 'block';
+        if (def) def.style.display = 'none';
+      }
+      if (heroImg) {
+        heroImg.src = this._radioCoverUrl;
+        heroImg.style.display = 'block';
+        if (heroDef) heroDef.style.display = 'none';
+      }
+    }
+  }
+
   async checkTV() {
     try {
       const dm = getDataManager();
@@ -734,15 +753,33 @@ class TradicionalTemplate extends TemplateBase {
     if (a && !a.paused) a.pause();
   }
 
+  _setHeroCover(url) {
+    const img = document.getElementById('track-artwork');
+    const def = document.getElementById('default-artwork');
+    const heroImg = document.getElementById('hero-track-artwork');
+    const heroDef = document.getElementById('hero-cover-default');
+    if (img) { img.src = url; img.style.display = 'block'; if (def) def.style.display = 'none'; }
+    if (heroImg) { heroImg.src = url; heroImg.style.display = 'block'; if (heroDef) heroDef.style.display = 'none'; }
+  }
+
+  _showHeroDefault() {
+    const img = document.getElementById('track-artwork');
+    const def = document.getElementById('default-artwork');
+    const heroImg = document.getElementById('hero-track-artwork');
+    const heroDef = document.getElementById('hero-cover-default');
+    if (img) img.style.display = 'none';
+    if (def) def.style.display = 'flex';
+    if (heroImg) heroImg.style.display = 'none';
+    if (heroDef) heroDef.style.display = 'flex';
+  }
+
   onCurrentSongLoaded(songData) {
     const art = songData.art || '';
     const title = songData.title || '';
     const artist = songData.artist || songData.djUsername || 'En Vivo';
 
     const img = document.getElementById('track-artwork');
-    const def = document.getElementById('default-artwork');
     const heroImg = document.getElementById('hero-track-artwork');
-    const heroDef = document.getElementById('hero-cover-default');
     const heroTitle = document.getElementById('hero-track-title');
     const heroArtist = document.getElementById('hero-track-artist');
     const statusEl = document.getElementById('hero-status');
@@ -756,18 +793,20 @@ class TradicionalTemplate extends TemplateBase {
         : '<span class="status-dot"></span><span>OFFLINE</span>';
     }
 
-    if (art) {
+    if (art && art !== img?.src) {
       const i = new Image();
-      i.onload = () => {
-        if (img) { img.src = art; img.style.display = 'block'; if (def) def.style.display = 'none'; }
-        if (heroImg) { heroImg.src = art; heroImg.style.display = 'block'; if (heroDef) heroDef.style.display = 'none'; }
+      i.onload = () => this._setHeroCover(art);
+      i.onerror = () => {
+        if (this._radioCoverUrl) this._setHeroCover(this._radioCoverUrl);
+        else this._showHeroDefault();
       };
       i.src = art;
-    } else {
-      if (img) img.style.display = 'none';
-      if (def) def.style.display = 'flex';
-      if (heroImg) heroImg.style.display = 'none';
-      if (heroDef) heroDef.style.display = 'flex';
+    } else if (!art) {
+      if (this._radioCoverUrl && img?.src !== this._radioCoverUrl) {
+        this._setHeroCover(this._radioCoverUrl);
+      } else if (!this._radioCoverUrl) {
+        this._showHeroDefault();
+      }
     }
   }
 
