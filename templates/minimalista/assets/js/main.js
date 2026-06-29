@@ -34,14 +34,57 @@ class MinimalistaTemplate extends TemplateBase {
     try {
       const dataManager = getDataManager();
       this.videoStreamUrl = await dataManager.loadVideoStreamUrl();
-      
+
       const tvBtn = document.getElementById('tv-online-btn');
       if (tvBtn) {
         tvBtn.style.display = this.videoStreamUrl ? 'flex' : 'none';
+        tvBtn.addEventListener('click', () => this.openTVPopup());
+      }
+
+      const closeBtn = document.getElementById('tv-popup-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => this.closeTVPopup());
+      }
+
+      const overlay = document.getElementById('tv-popup-overlay');
+      if (overlay) {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) this.closeTVPopup();
+        });
       }
     } catch (error) {
       console.error('MinimalistaTemplate: Error checking TV availability:', error);
     }
+  }
+
+  openTVPopup() {
+    const overlay = document.getElementById('tv-popup-overlay');
+    if (overlay) {
+      overlay.classList.add('active');
+      if (!this._tvPlayer) this._initTVPlayer();
+    }
+  }
+
+  closeTVPopup() {
+    const overlay = document.getElementById('tv-popup-overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
+
+  _initTVPlayer() {
+    const container = document.getElementById('tv-player-container');
+    if (!container || !window.VideoPlayer || !this.videoStreamUrl) return;
+    this._tvPlayer = new window.VideoPlayer('tv-player-container', {
+      autoplay: true,
+      controls: false,
+      muted: false
+    });
+    const player = this._tvPlayer;
+    const waitForVideo = setInterval(() => {
+      if (player.videoElement) {
+        clearInterval(waitForVideo);
+        player.loadStream(this.videoStreamUrl);
+      }
+    }, 100);
   }
 
   // Sobrescribir: Actualizar display de canción actual con estilo minimalista
