@@ -4133,8 +4133,12 @@ y Schedule Navigation */
    ========================================== */
 
 .polls-container {
-  max-width: 700px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+  max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .poll-card {
@@ -4230,10 +4234,10 @@ y Schedule Navigation */
    ========================================== */
 
 .events-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 800px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  max-width: 1400px;
   margin: 0 auto;
   width: 100%;
 }
@@ -4468,6 +4472,7 @@ y Schedule Navigation */
   }
 
   .polls-container {
+    grid-template-columns: 1fr;
     padding: 0 10px;
   }
 
@@ -4481,6 +4486,7 @@ y Schedule Navigation */
   }
 
   .events-timeline {
+    grid-template-columns: 1fr;
     gap: 15px;
   }
 
