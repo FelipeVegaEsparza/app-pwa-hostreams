@@ -714,15 +714,20 @@ class TradicionalTemplate extends TemplateBase {
       const message = document.getElementById('contact-message').value.trim();
       btn.disabled = true; btn.textContent = 'Enviando...';
       try {
-        const resp = await fetch('/config/config.json');
-        const config = await resp.json();
-        const to = config.contact_email || 'contacto@radio.cl';
-        const bdy = 'Nombre: ' + name + '%0D%0AEmail: ' + email + '%0D%0AAsunto: ' + subject + '%0D%0AMensaje: ' + message;
-        window.location.href = 'mailto:' + to + '?subject=' + encodeURIComponent('Contacto: ' + subject) + '&body=' + bdy;
-        if (fb) { fb.className = 'contact-feedback success'; fb.textContent = 'Mensaje enviado'; fb.style.display = 'block'; }
-        form.reset();
+        const resp = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, subject, message })
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.success) {
+          if (fb) { fb.className = 'contact-feedback success'; fb.textContent = data.message || 'Gracias por tu mensaje. Te responderemos pronto.'; fb.style.display = 'block'; }
+          form.reset();
+        } else {
+          throw new Error(data.message || 'Error al enviar el mensaje');
+        }
       } catch (err) {
-        if (fb) { fb.className = 'contact-feedback error'; fb.textContent = 'Error al enviar'; fb.style.display = 'block'; }
+        if (fb) { fb.className = 'contact-feedback error'; fb.textContent = err.message || 'Error al enviar el mensaje. Intenta de nuevo.'; fb.style.display = 'block'; }
       } finally { btn.disabled = false; btn.textContent = 'Enviar mensaje'; }
     });
   }

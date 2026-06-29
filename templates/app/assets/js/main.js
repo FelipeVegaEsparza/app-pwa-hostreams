@@ -456,15 +456,20 @@ class AppTemplate extends TemplateBase {
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
       try {
-        const resp = await fetch('/config/config.json');
-        const config = await resp.json();
-        const mailTo = config.contact_email || 'contacto@radio.cl';
-        const mailBody = 'Nombre: ' + name + '%0D%0A' + 'Email: ' + email + '%0D%0A' + 'Asunto: ' + subject + '%0D%0A' + 'Mensaje: ' + message;
-        window.location.href = 'mailto:' + mailTo + '?subject=' + encodeURIComponent('Contacto: ' + subject) + '&body=' + mailBody;
-        if (feedback) { feedback.className = 'contact-feedback success'; feedback.textContent = 'Mensaje enviado'; feedback.style.display = 'block'; }
-        form.reset();
+        const resp = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, subject, message })
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.success) {
+          if (feedback) { feedback.className = 'contact-feedback success'; feedback.textContent = data.message || 'Gracias por tu mensaje. Te responderemos pronto.'; feedback.style.display = 'block'; }
+          form.reset();
+        } else {
+          throw new Error(data.message || 'Error al enviar el mensaje');
+        }
       } catch (err) {
-        if (feedback) { feedback.className = 'contact-feedback error'; feedback.textContent = 'Error al enviar'; feedback.style.display = 'block'; }
+        if (feedback) { feedback.className = 'contact-feedback error'; feedback.textContent = err.message || 'Error al enviar el mensaje. Intenta de nuevo.'; feedback.style.display = 'block'; }
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-paper-plane"></i><span>Enviar</span>';

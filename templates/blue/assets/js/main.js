@@ -337,8 +337,6 @@ class BlueTemplate extends TemplateBase {
     const form = document.getElementById('contact-form');
     if (!form) return;
 
-    this._populateContactCover();
-
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = form.querySelector('.contact-submit-btn');
@@ -352,31 +350,27 @@ class BlueTemplate extends TemplateBase {
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
       try {
-        const resp = await fetch('/config/config.json');
-        const config = await resp.json();
-        const mailTo = config.contact_email || 'contacto@radio.cl';
+        const resp = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, subject, message })
+        });
+        const data = await resp.json().catch(() => ({}));
 
-        const mailBody = 'Nombre: ' + name + '%0D%0A' +
-          'Email: ' + email + '%0D%0A' +
-          'Asunto: ' + subject + '%0D%0A' +
-          'Mensaje: ' + message;
-
-        const mailtoLink = 'mailto:' + mailTo + '?subject=' +
-          encodeURIComponent('Contacto desde la web: ' + subject) +
-          '&body=' + mailBody;
-
-        window.location.href = mailtoLink;
-
-        if (feedback) {
-          feedback.className = 'contact-feedback success';
-          feedback.textContent = 'Gracias por tu mensaje. Te responderemos pronto.';
-          feedback.style.display = 'block';
+        if (resp.ok && data.success) {
+          if (feedback) {
+            feedback.className = 'contact-feedback success';
+            feedback.textContent = data.message || 'Gracias por tu mensaje. Te responderemos pronto.';
+            feedback.style.display = 'block';
+          }
+          form.reset();
+        } else {
+          throw new Error(data.message || 'Error al enviar el mensaje');
         }
-        form.reset();
       } catch (err) {
         if (feedback) {
           feedback.className = 'contact-feedback error';
-          feedback.textContent = 'Error al enviar el mensaje. Intenta de nuevo.';
+          feedback.textContent = err.message || 'Error al enviar el mensaje. Intenta de nuevo.';
           feedback.style.display = 'block';
         }
       } finally {
@@ -393,7 +387,6 @@ class BlueTemplate extends TemplateBase {
       const img = document.getElementById('contact-cover-img');
       const nameEl = document.getElementById('contact-radio-name');
       const descEl = document.getElementById('contact-radio-desc');
-      const emailDisplay = document.getElementById('contact-email-display');
 
       if (img && data.coverUrl) {
         const dataManager = getDataManager();
@@ -404,11 +397,6 @@ class BlueTemplate extends TemplateBase {
       }
       if (nameEl) nameEl.textContent = data.projectName || data.name || 'Nuestra Radio';
       if (descEl) descEl.textContent = data.projectDescription || data.description || 'Estamos aquí para escucharte.';
-      if (emailDisplay) {
-        const resp = await fetch('/config/config.json');
-        const config = await resp.json();
-        emailDisplay.textContent = config.contact_email || 'contacto@radio.cl';
-      }
     } catch (err) {
       console.warn('BlueTemplate: Error populating contact cover:', err);
     }
