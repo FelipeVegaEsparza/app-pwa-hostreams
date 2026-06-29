@@ -146,35 +146,55 @@
     btn.type = 'button';
     btn.title = 'Compartir';
     btn.setAttribute('aria-label', 'Compartir');
-    btn.innerHTML = '<i class="fas fa-share-alt"></i>';
+    btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartir';
 
-    const container = document.getElementById('share-button-container');
-    if (container) {
-      container.appendChild(btn);
-    } else {
-      const targets = [
-        'notification-button-container',
-        'header-social-main',
-        'header-actions',
-        'topbar-actions',
-        'social-section',
-        'header-inner',
-        'topbar-inner',
-        'player-header',
-        'dynamic-header',
-        'masthead',
-        'topbar',
-        'header'
-      ];
-      let target = null;
-      for (const sel of targets) {
-        target = document.querySelector(sel);
-        if (target) break;
-      }
-      if (target) target.appendChild(btn);
+    const explicitContainer = document.getElementById('share-button-container');
+    if (explicitContainer) {
+      explicitContainer.appendChild(btn);
+      btn.addEventListener('click', openShareModal);
+      return;
     }
 
-    btn.addEventListener('click', openShareModal);
+    const socialTargets = [
+      'header-social-main',
+      'social-links',
+      'header-social',
+      'sidebar-social'
+    ];
+    for (const sel of socialTargets) {
+      const target = document.getElementById(sel);
+      if (target) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'share-btn-wrapper';
+        wrapper.style.display = 'inline-flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.appendChild(btn);
+        target.appendChild(wrapper);
+        btn.addEventListener('click', openShareModal);
+        return;
+      }
+    }
+
+    const fallbackTargets = [
+      'header-actions',
+      'topbar-actions',
+      'social-section',
+      'header-inner',
+      'topbar-inner',
+      'player-header',
+      'dynamic-header',
+      'masthead',
+      'topbar',
+      'header'
+    ];
+    for (const sel of fallbackTargets) {
+      const target = document.querySelector(sel);
+      if (target) {
+        target.appendChild(btn);
+        btn.addEventListener('click', openShareModal);
+        return;
+      }
+    }
   }
 
   function init() {
