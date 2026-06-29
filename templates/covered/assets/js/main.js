@@ -138,7 +138,7 @@ class CoveredTemplate extends TemplateBase {
     if (window.VideoPlayer) {
       const player = new window.VideoPlayer('tv-player-inner', {
         autoplay: true,
-        controls: true,
+        controls: false,
         muted: false
       });
       this._tvPlayer = player;
@@ -588,18 +588,19 @@ class CoveredTemplate extends TemplateBase {
     const container = document.getElementById('galleries-list');
     if (!container) return;
     for (const g of galleries) {
-      if (g.imageUrl) g.imageUrl = await dm.getImageUrl(g.imageUrl);
+      const cover = (g.images && g.images.length) ? g.images[0].imageUrl : null;
+      g._coverUrl = cover ? await dm.getImageUrl(cover) : null;
     }
     container.innerHTML = galleries.map(g => `
       <div class="gallery-card" data-id="${g.id}">
         <div class="gallery-card-img">
-          <img src="${g.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${g.name}" loading="lazy">
+          <img src="${g._coverUrl || '/assets/icons/icon-96x96.png'}" alt="${g.title || g.name || ''}" loading="lazy">
           <div class="gallery-card-overlay">
             <span><i class="fas fa-images"></i> ${(g.images || []).length} fotos</span>
           </div>
         </div>
         <div class="gallery-card-body">
-          <h3>${g.name}</h3>
+          <h3>${g.title || g.name || ''}</h3>
           ${g.description ? '<p>' + g.description + '</p>' : ''}
           ${g.createdAt ? '<small>' + new Date(g.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) + '</small>' : ''}
         </div>
@@ -652,16 +653,17 @@ class CoveredTemplate extends TemplateBase {
     const container = document.getElementById('announcers-grid');
     if (!container) return;
     for (const a of announcers) {
-      if (a.photoUrl) a.photoUrl = await dm.getImageUrl(a.photoUrl);
+      const img = a.imageUrl || a.photoUrl;
+      if (img) a._photoUrl = await dm.getImageUrl(img);
     }
     container.innerHTML = announcers.map(a => {
       const bio = a.biography || a.description || a.bio || a.about || '';
       return `
       <div class="announcer-card">
         <div class="announcer-photo">
-          <img src="${a.photoUrl || '/assets/icons/icon-96x96.png'}" alt="${a.name}" loading="lazy">
+          <img src="${a._photoUrl || '/assets/icons/icon-96x96.png'}" alt="${a.name || ''}" loading="lazy">
         </div>
-        <h3>${a.name}</h3>
+        <h3>${a.name || ''}</h3>
         ${bio ? '<p>' + bio + '</p>' : ''}
         ${a.createdAt ? '<span class="announcer-date">Desde ' + new Date(a.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) + '</span>' : ''}
       </div>
@@ -748,17 +750,20 @@ class CoveredTemplate extends TemplateBase {
     }
     container.innerHTML = sorted.map(e => `
       <div class="event-item">
-        ${e.imageUrl ? '<div class="event-img"><img src="' + e.imageUrl + '" alt="' + e.name + '" loading="lazy"></div>' : ''}
-        <div class="event-date">
-          <span class="event-day">${new Date(e.date).getDate()}</span>
-          <span class="event-month">${new Date(e.date).toLocaleDateString('es-ES', { month: 'short' })}</span>
+        <div class="event-img">
+          ${e.imageUrl ? '<img src="' + e.imageUrl + '" alt="' + (e.title || e.name || '') + '" loading="lazy">' : ''}
+          <div class="event-date-badge">
+            <span class="event-day">${new Date(e.date).getDate()}</span>
+            <span class="event-month">${new Date(e.date).toLocaleDateString('es-ES', { month: 'short' })}</span>
+          </div>
         </div>
         <div class="event-info">
-          <h3>${e.name}</h3>
+          <h3>${e.title || e.name || ''}</h3>
           <p>${e.description || ''}</p>
           <div class="event-meta">
             ${e.time ? '<span><i class="fas fa-clock"></i> ' + e.time + '</span>' : ''}
             ${e.location ? '<span><i class="fas fa-map-marker-alt"></i> ' + e.location + '</span>' : ''}
+            ${e.eventUrl ? '<a href="' + e.eventUrl + '" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Más info</a>' : ''}
           </div>
         </div>
       </div>
@@ -1022,31 +1027,28 @@ class CoveredTemplate extends TemplateBase {
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
       try {
-        const resp = await fetch('/config/config.json');
-        const config = await resp.json();
-        const mailTo = config.contact_email || 'contacto@radio.cl';
+        const resp = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, subject, message })
+        });
 
-        const mailBody = 'Nombre: ' + name + '%0D%0A' +
-          'Email: ' + email + '%0D%0A' +
-          'Asunto: ' + subject + '%0D%0A' +
-          'Mensaje: ' + message;
+        const data = await resp.json().catch(() => ({}));
 
-        const mailtoLink = 'mailto:' + mailTo + '?subject=' +
-          encodeURIComponent('Contacto desde la web: ' + subject) +
-          '&body=' + mailBody;
-
-        window.location.href = mailtoLink;
-
-        if (feedback) {
-          feedback.className = 'contact-feedback success';
-          feedback.textContent = 'Gracias por tu mensaje. Te responderemos pronto.';
-          feedback.style.display = 'block';
+        if (resp.ok && data.success) {
+          if (feedback) {
+            feedback.className = 'contact-feedback success';
+            feedback.textContent = data.message || 'Gracias por tu mensaje. Te responderemos pronto.';
+            feedback.style.display = 'block';
+          }
+          form.reset();
+        } else {
+          throw new Error(data.message || 'Error al enviar el mensaje');
         }
-        form.reset();
       } catch (err) {
         if (feedback) {
           feedback.className = 'contact-feedback error';
-          feedback.textContent = 'Error al enviar el mensaje. Intenta de nuevo.';
+          feedback.textContent = err.message || 'Error al enviar el mensaje. Intenta de nuevo.';
           feedback.style.display = 'block';
         }
       } finally {

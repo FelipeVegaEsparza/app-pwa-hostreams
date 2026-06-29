@@ -1787,3 +1787,168 @@ export default MiTemplate;
 9. **Modal de noticia**: Al hacer clic en una noticia (hero, breaking, featured, grid), llamar a `loadNewsDetail(slug)` que abre el modal con el contenido completo.
 
 10. **Cache de API**: La API tiene caché en memoria con TTL configurable. Usar `clearAPICache()` si se necesita forzar recarga.
+
+---
+
+## Formulario de Contacto
+
+El sistema incluye un endpoint `/api/contact` en el servidor Node que envía los mensajes del formulario al email configurado de cada cliente usando **Resend** como servicio de envío.
+
+### Arquitectura
+
+```
+[Formulario JS]  →  POST /api/contact  →  [Server.js]  →  [Resend API]  →  [Email del cliente]
+```
+
+**Multi-tenant**: la API key de Resend es única a nivel de plataforma (configurada por el administrador), pero el email de destino se lee del `config.json` de cada cliente. Esto permite que cada cliente reciba sus mensajes sin configuración adicional.
+
+### Configuración inicial (una sola vez por plataforma)
+
+1. **Crear cuenta en Resend**
+   - Ir a https://resend.com
+   - Crear cuenta (free tier: 3000 emails/mes, 100/día)
+   - Ir a "API Keys" → "Create API Key"
+   - Copiar la key (empieza con `re_`)
+
+2. **Verificar dominio (recomendado para producción)**
+   - En Resend → "Domains" → "Add Domain"
+   - Agregar los registros DNS que indica Resend
+   - Esto permite enviar desde `noreply@tu-dominio.cl` en vez del de prueba
+   - Para testing rápido podés usar `onboarding@resend.dev` (ya viene configurado por defecto)
+
+3. **Configurar variables de entorno del servidor**
+
+   ```bash
+   # Obligatoria
+   export RESEND_API_KEY="re_TU_API_KEY_AQUI"
+
+   # Opcionales (para usar tu propio dominio verificado)
+   export RESEND_FROM_EMAIL="noreply@tu-dominio.cl"
+   export RESEND_FROM_NAME="Radio Online"
+   ```
+
+   En producción, configurar en el sistema (systemd, Docker, Easypanel, etc.) o usar un archivo `.env`.
+
+### Configuración por cliente
+
+**Cada cliente solo necesita tener `contact_email` en su `config.json`**. Nada más.
+
+```json
+{
+  "clientId": "cmf4...",
+  "contact_email": "contacto@mi-radio.cl",
+  ...
+}
+```
+
+El servidor lee este campo automáticamente y envía los mensajes del formulario a esa dirección. **No hay que tocar nada más por cliente**.
+
+### Implementación en el template
+
+En el HTML, el formulario debe tener estos IDs:
+
+```html
+<form class="contact-form" id="contact-form">
+  <input type="text" id="contact-name" required>
+  <input type="email" id="contact-email" required>
+  <input type="text" id="contact-subject" required>
+  <textarea id="contact-message" required></textarea>
+  <button type="submit" class="contact-submit-btn">Enviar</button>
+  <div class="contact-feedback" id="contact-feedback" style="display:none;"></div>
+</form>
+```
+
+En el JS, el handler de submit debe:
+
+```js
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = form.querySelector('.contact-submit-btn');
+  const feedback = document.getElementById('contact-feedback');
+  const name = document.getElementById('contact-name').value.trim();
+  const email = document.getElementById('contact-email').value.trim();
+  const subject = document.getElementById('contact-subject').value.trim();
+  const message = document.getElementById('contact-message').value.trim();
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+  try {
+    const resp = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, subject, message })
+    });
+    const data = await resp.json().catch(() => ({}));
+
+    if (resp.ok && data.success) {
+      feedback.className = 'contact-feedback success';
+      feedback.textContent = data.message || 'Gracias por tu mensaje.';
+      feedback.style.display = 'block';
+      form.reset();
+    } else {
+      throw new Error(data.message || 'Error al enviar');
+    }
+  } catch (err) {
+    feedback.className = 'contact-feedback error';
+    feedback.textContent = err.message || 'Error al enviar el mensaje.';
+    feedback.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i><span>Enviar</span>';
+  }
+});
+```
+
+### Características de seguridad incluidas
+
+- **Rate limiting**: 5 envíos por hora por IP (configurable en `server.js`)
+- **Validación de campos**: todos obligatorios, email con regex
+- **Límite de longitud**: nombre 100, asunto 200, mensaje 5000 caracteres
+- **Sanitización**: se eliminan saltos de línea en headers para evitar inyección
+- **CORS restringido**: solo POST y OPTIONS en `/api/contact`
+- **Body limit**: 10KB máximo por request
+
+### Respuesta del endpoint
+
+**Éxito (200):**
+```json
+{ "success": true, "message": "Mensaje enviado correctamente." }
+```
+
+**Error de validación (400):**
+```json
+{ "success": false, "message": "Todos los campos son obligatorios." }
+```
+
+**Rate limit excedido (429):**
+```json
+{ "success": false, "message": "Demasiados intentos. Intenta de nuevo en una hora." }
+```
+
+**Error de Resend (500):**
+```json
+{ "success": false, "message": "No se pudo enviar el mensaje. Intenta más tarde." }
+```
+
+### Variables de entorno de Resend
+
+| Variable | Obligatoria | Default | Descripción |
+|----------|-------------|---------|-------------|
+| `RESEND_API_KEY` | Sí | — | API key de Resend |
+| `RESEND_FROM_EMAIL` | No | `onboarding@resend.dev` | Email remitente (debe ser dominio verificado) |
+| `RESEND_FROM_NAME` | No | `Formulario Web` | Nombre que aparece como remitente |
+
+### Troubleshooting
+
+**El servidor devuelve "El servicio de contacto no está configurado"**
+- Falta `RESEND_API_KEY` en las variables de entorno del servidor
+
+**Los correos llegan a spam**
+- Verificar dominio en Resend y configurar SPF/DKIM/DMARC en los DNS
+
+**Responde con error 500 pero los logs no muestran nada**
+- Revisar la consola del servidor Node, los errores de Resend se loguean ahí
+
+**El rate limit es muy estricto / muy permisivo**
+- Ajustar `max` y `windowMs` en `contactLimiter` dentro de `server.js`

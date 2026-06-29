@@ -1,4 +1,8 @@
-importScripts('/OneSignalSDKWorker.js');
+try {
+  importScripts('/OneSignalSDKWorker.js');
+} catch (e) {
+  console.warn('SW: OneSignalSDKWorker.js not found, continuing without it');
+}
 
 const CACHE_NAME = 'ipstream-cache-v8';
 const OFFLINE_URL = '/offline.html';

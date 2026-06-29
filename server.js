@@ -29,8 +29,8 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS - Restringido a orígenes específicos
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:3000', 'http://localhost:8080'];
 
 const corsOptions = {
@@ -50,6 +50,10 @@ const corsOptions = {
   credentials: false
 };
 app.use(cors(corsOptions));
+
+// Body parser para endpoints que reciben JSON (ej: /api/contact)
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Content Security Policy (CSP)
 // Configurado para permitir todos los recursos que la app utiliza
@@ -114,6 +118,8 @@ const cspDirectives = {
   objectSrc: ["'none'"],
   baseUri: ["'self'"],
   formAction: ["'self'"],
+  workerSrc: ["'self'", "blob:"],
+  childSrc: ["'self'", "blob:"],
   upgradeInsecureRequests: []
 };
 
@@ -375,11 +381,138 @@ app.get('/config/:file', (req, res) => {
 
 // Endpoint para obtener el template actual
 app.get('/api/current-template', (req, res) => {
-  res.json({ 
+  res.json({
     template: currentTemplate,
     source: clientId ? 'api' : 'local',
     timestamp: new Date().toISOString()
   });
+});
+
+// ==========================================
+// ENDPOINT: Formulario de contacto
+// Envía el mensaje al email configurado del cliente usando Resend
+// Requiere: RESEND_API_KEY en variables de entorno
+// ==========================================
+
+// Rate limiter específico para el formulario (más estricto)
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 5, // 5 envíos por hora por IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiados intentos. Intenta de nuevo en una hora.' }
+});
+
+// CORS específico para permitir POST en /api/contact
+const contactCors = cors({
+  origin: true,
+  methods: ['POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+  credentials: false
+});
+
+app.post('/api/contact', contactCors, contactLimiter, async (req, res) => {
+  const { name, email, subject, message } = req.body || {};
+
+  // Validación básica
+  if (!name || !email || !subject || !message) {
+    return res.status(400).json({
+      success: false,
+      message: 'Todos los campos son obligatorios.'
+    });
+  }
+
+  // Validar formato de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({
+      success: false,
+      message: 'El email ingresado no es válido.'
+    });
+  }
+
+  // Limitar longitud para evitar abuso
+  if (name.length > 100 || subject.length > 200 || message.length > 5000) {
+    return res.status(400).json({
+      success: false,
+      message: 'Uno o más campos exceden el largo permitido.'
+    });
+  }
+
+  // Verificar que la API key de Resend esté configurada
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
+    console.error('Contact form: RESEND_API_KEY no está configurada');
+    return res.status(500).json({
+      success: false,
+      message: 'El servicio de contacto no está configurado. Contacta al administrador.'
+    });
+  }
+
+  // Leer el email de destino del config del cliente (ya cargado al inicio)
+  const contactEmail = clientConfig && clientConfig.contact_email;
+
+  if (!contactEmail) {
+    return res.status(500).json({
+      success: false,
+      message: 'No hay email de contacto configurado para este cliente.'
+    });
+  }
+
+  // Sanitizar para evitar inyección de headers en el correo
+  const sanitize = (str) => String(str).replace(/[\r\n]/g, ' ').trim();
+
+  const emailSubject = `Contacto desde la web: ${sanitize(subject)}`;
+  const emailBody = [
+    `Nombre: ${sanitize(name)}`,
+    `Email: ${sanitize(email)}`,
+    `Asunto: ${sanitize(subject)}`,
+    '',
+    'Mensaje:',
+    String(message).trim()
+  ].join('\n');
+
+  // Remitente: usa el dominio verificado en Resend o el de prueba
+  const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+  const fromName = process.env.RESEND_FROM_NAME || 'Formulario Web';
+
+  try {
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: `${fromName} <${fromAddress}>`,
+        to: [contactEmail],
+        reply_to: email,
+        subject: emailSubject,
+        text: emailBody
+      })
+    });
+
+    const result = await resendResponse.json();
+
+    if (!resendResponse.ok) {
+      console.error('Contact form: Error de Resend:', result);
+      return res.status(500).json({
+        success: false,
+        message: 'No se pudo enviar el mensaje. Intenta más tarde.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Mensaje enviado correctamente.'
+    });
+  } catch (err) {
+    console.error('Contact form: Error al enviar:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: 'No se pudo enviar el mensaje. Intenta más tarde.'
+    });
+  }
 });
 
 // Ruta para assets - CON VALIDACIÓN

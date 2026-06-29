@@ -25,14 +25,21 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.3s ease;
   pointer-events: none;
 }
 
-.video-player-wrapper:hover .video-overlay {
-  opacity: 1;
+.video-overlay > * {
   pointer-events: auto;
+}
+
+.video-player-wrapper.controls-hidden .video-overlay {
+  opacity: 0;
+}
+
+.video-player-wrapper.controls-hidden {
+  cursor: none;
 }
 
 .video-controls {
@@ -107,12 +114,8 @@
 
 .volume-slider {
   width: 80px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.video-volume:hover .volume-slider {
   opacity: 1;
+  transition: opacity 0.3s ease;
 }
 
 .volume-slider input[type="range"] {

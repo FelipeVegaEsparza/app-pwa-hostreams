@@ -131,7 +131,7 @@ class VideoPlayer {
     // Volume control
     const volumeBtn = document.getElementById(`${this.containerId}-volume-btn`);
     const volumeSlider = document.getElementById(`${this.containerId}-volume-slider`);
-    
+
     volumeBtn?.addEventListener('click', () => this.toggleMute());
     volumeSlider?.addEventListener('input', (e) => this.setVolume(e.target.value / 100));
 
@@ -150,6 +150,70 @@ class VideoPlayer {
       this.videoElement.addEventListener('error', () => this.showError());
       this.videoElement.addEventListener('play', () => this.onPlay());
       this.videoElement.addEventListener('pause', () => this.onPause());
+    }
+
+    // Auto-hide controls
+    this._setupAutoHideControls();
+
+    // Fullscreen state tracking
+    document.addEventListener('fullscreenchange', () => this._updateFullscreenState());
+    document.addEventListener('webkitfullscreenchange', () => this._updateFullscreenState());
+  }
+
+  _setupAutoHideControls() {
+    const wrapper = this.container.querySelector('.video-player-wrapper');
+    if (!wrapper) return;
+
+    this._hideControlsTimer = null;
+    this._controlsHidden = false;
+
+    const showControls = () => {
+      wrapper.classList.remove('controls-hidden');
+      this._controlsHidden = false;
+      clearTimeout(this._hideControlsTimer);
+      if (this.videoElement && !this.videoElement.paused) {
+        this._hideControlsTimer = setTimeout(() => this._hideControls(), 3000);
+      }
+    };
+
+    const onMouseMove = () => showControls();
+
+    const onMouseLeave = () => {
+      clearTimeout(this._hideControlsTimer);
+      if (this.videoElement && !this.videoElement.paused) {
+        this._hideControls();
+      }
+    };
+
+    wrapper.addEventListener('mousemove', onMouseMove);
+    wrapper.addEventListener('mouseleave', onMouseLeave);
+    wrapper.addEventListener('mouseenter', showControls);
+
+    showControls();
+  }
+
+  _hideControls() {
+    const wrapper = this.container.querySelector('.video-player-wrapper');
+    if (!wrapper) return;
+    wrapper.classList.add('controls-hidden');
+    this._controlsHidden = true;
+  }
+
+  _showControls() {
+    const wrapper = this.container.querySelector('.video-player-wrapper');
+    if (!wrapper) return;
+    wrapper.classList.remove('controls-hidden');
+    this._controlsHidden = false;
+  }
+
+  _updateFullscreenState() {
+    this.isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const btn = document.getElementById(`${this.containerId}-fullscreen-btn`);
+    if (btn) {
+      btn.innerHTML = this.isFullscreen
+        ? '<i class="fas fa-compress"></i>'
+        : '<i class="fas fa-expand"></i>';
+      btn.title = this.isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa';
     }
   }
 
@@ -253,8 +317,9 @@ class VideoPlayer {
 
   toggleFullscreen() {
     const wrapper = this.container.querySelector('.video-player-wrapper');
-    
-    if (!this.isFullscreen) {
+    const isCurrentlyFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+
+    if (!isCurrentlyFullscreen) {
       if (wrapper.requestFullscreen) {
         wrapper.requestFullscreen();
       } else if (wrapper.webkitRequestFullscreen) {
@@ -279,6 +344,10 @@ class VideoPlayer {
     if (playBtn) {
       playBtn.innerHTML = '<i class="fas fa-pause"></i>';
     }
+    const wrapper = this.container.querySelector('.video-player-wrapper');
+    if (wrapper && this._hideControlsTimer === null) {
+      this._hideControlsTimer = setTimeout(() => this._hideControls(), 3000);
+    }
   }
 
   onPause() {
@@ -287,6 +356,9 @@ class VideoPlayer {
     if (playBtn) {
       playBtn.innerHTML = '<i class="fas fa-play"></i>';
     }
+    clearTimeout(this._hideControlsTimer);
+    this._hideControlsTimer = null;
+    this._showControls();
   }
 
   updateVolumeIcon() {
