@@ -113,7 +113,7 @@ class BlueTemplate extends TemplateBase {
         const tvContainer = document.getElementById('tv-player-container');
         if (tvContainer && window.VideoPlayer) {
           const player = new window.VideoPlayer('tv-player-container', {
-            autoplay: true, controls: true, muted: false
+            autoplay: true, controls: false, muted: false
           });
           this._tvPlayer = player;
           const waitForVideo = setInterval(() => {
