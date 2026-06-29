@@ -137,8 +137,8 @@
     if (overlay) overlay.classList.remove('active');
   }
 
-  function injectButton() {
-    if (document.getElementById(SHARE_BTN_ID)) return;
+  function createButton() {
+    if (document.getElementById(SHARE_BTN_ID)) return null;
 
     const btn = document.createElement('button');
     btn.className = 'share-btn-header';
@@ -146,12 +146,17 @@
     btn.type = 'button';
     btn.title = 'Compartir';
     btn.setAttribute('aria-label', 'Compartir');
-    btn.innerHTML = '<i class="fas fa-share-alt"></i> Compartir';
+    btn.innerHTML = '<i class="fas fa-share-alt"></i>';
+    btn.addEventListener('click', openShareModal);
+    return btn;
+  }
+
+  function injectButton() {
+    if (document.getElementById(SHARE_BTN_ID)) return;
 
     const explicitContainer = document.getElementById('share-button-container');
     if (explicitContainer) {
-      explicitContainer.appendChild(btn);
-      btn.addEventListener('click', openShareModal);
+      explicitContainer.appendChild(createButton());
       return;
     }
 
@@ -161,11 +166,20 @@
       'header-social',
       'sidebar-social'
     ];
+
     for (const sel of socialTargets) {
-      const target = document.getElementById(sel);
-      if (target) {
-        target.appendChild(btn);
-        btn.addEventListener('click', openShareModal);
+      const container = document.getElementById(sel);
+      if (container) {
+        const btn = createButton();
+        if (!btn) return;
+        container.appendChild(btn);
+
+        const observer = new MutationObserver(() => {
+          if (!container.contains(btn)) {
+            container.appendChild(btn);
+          }
+        });
+        observer.observe(container, { childList: true, subtree: false });
         return;
       }
     }
@@ -185,8 +199,8 @@
     for (const sel of fallbackTargets) {
       const target = document.querySelector(sel);
       if (target) {
-        target.appendChild(btn);
-        btn.addEventListener('click', openShareModal);
+        const btn = createButton();
+        if (btn) target.appendChild(btn);
         return;
       }
     }
