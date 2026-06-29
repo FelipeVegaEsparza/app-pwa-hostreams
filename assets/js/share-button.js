@@ -146,9 +146,16 @@
     btn.type = 'button';
     btn.title = 'Compartir';
     btn.setAttribute('aria-label', 'Compartir');
-    btn.innerHTML = '<i class="fas fa-share-alt"></i>';
+    btn.innerHTML = '<i class="fas fa-share-alt"></i><span>Compartir</span>';
     btn.addEventListener('click', openShareModal);
     return btn;
+  }
+
+  function findInnerContainer(outerContainer) {
+    if (!outerContainer) return null;
+    const inner = outerContainer.querySelector('.social-link');
+    if (inner) return inner.parentElement;
+    return outerContainer;
   }
 
   function injectButton() {
@@ -168,20 +175,24 @@
     ];
 
     for (const sel of socialTargets) {
-      const container = document.getElementById(sel);
-      if (container) {
-        const btn = createButton();
-        if (!btn) return;
-        container.appendChild(btn);
+      const outerContainer = document.getElementById(sel);
+      if (!outerContainer) continue;
 
-        const observer = new MutationObserver(() => {
-          if (!container.contains(btn)) {
-            container.appendChild(btn);
-          }
-        });
-        observer.observe(container, { childList: true, subtree: false });
-        return;
-      }
+      const btn = createButton();
+      if (!btn) return;
+
+      const placeButton = () => {
+        const innerContainer = findInnerContainer(outerContainer);
+        if (innerContainer && !innerContainer.contains(btn)) {
+          innerContainer.appendChild(btn);
+        }
+      };
+
+      placeButton();
+
+      const observer = new MutationObserver(placeButton);
+      observer.observe(outerContainer, { childList: true, subtree: true });
+      return;
     }
 
     const fallbackTargets = [
