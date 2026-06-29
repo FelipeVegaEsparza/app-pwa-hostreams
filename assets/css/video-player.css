@@ -239,19 +239,17 @@
 }
 
 /* Fullscreen styles */
-.video-player-wrapper:-webkit-full-screen {
-  width: 100vw;
-  height: 100vh;
-}
-
-.video-player-wrapper:-moz-full-screen {
-  width: 100vw;
-  height: 100vh;
-}
-
-.video-player-wrapper:fullscreen {
-  width: 100vw;
-  height: 100vh;
+.video-player-wrapper:fullscreen,
+.video-player:fullscreen,
+.video-player-wrapper:-webkit-full-screen,
+.video-player:-webkit-full-screen,
+.video-player-wrapper:-moz-full-screen,
+.video-player:-moz-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  object-fit: contain !important;
 }
 
 /* TV Mode Styles */

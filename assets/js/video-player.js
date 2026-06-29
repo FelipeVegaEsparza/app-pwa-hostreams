@@ -316,16 +316,16 @@ class VideoPlayer {
   }
 
   toggleFullscreen() {
-    const wrapper = this.container.querySelector('.video-player-wrapper');
+    if (!this.videoElement) return;
     const isCurrentlyFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
 
     if (!isCurrentlyFullscreen) {
-      if (wrapper.requestFullscreen) {
-        wrapper.requestFullscreen();
-      } else if (wrapper.webkitRequestFullscreen) {
-        wrapper.webkitRequestFullscreen();
-      } else if (wrapper.msRequestFullscreen) {
-        wrapper.msRequestFullscreen();
+      if (this.videoElement.requestFullscreen) {
+        this.videoElement.requestFullscreen();
+      } else if (this.videoElement.webkitRequestFullscreen) {
+        this.videoElement.webkitRequestFullscreen();
+      } else if (this.videoElement.msRequestFullscreen) {
+        this.videoElement.msRequestFullscreen();
       }
     } else {
       if (document.exitFullscreen) {
