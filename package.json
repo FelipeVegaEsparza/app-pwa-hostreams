@@ -1,6 +1,6 @@
 {
   "name": "@felipevegaesparza/radio-pwa-core",
-  "version": "1.0.37",
+  "version": "1.0.38",
   "description": "PWA Radio Core - Sistema de radio streaming con templates personalizables",
   "main": "server.js",
   "scripts": {
