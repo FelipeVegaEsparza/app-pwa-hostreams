@@ -994,14 +994,14 @@ class BlueTemplate extends TemplateBase {
     return galleries.map(g => `
       <div class="gallery-card" data-gallery-id="${g.id}" style="cursor:pointer;">
         <div class="gallery-card-image">
-          <img src="${g.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${g.name}" loading="lazy">
+          <img src="${g._coverUrl || '/assets/icons/icon-96x96.png'}" alt="${g.title || g.name || ''}" loading="lazy">
           <div class="gallery-card-overlay">
             <i class="fas fa-images"></i>
             <span>${(g.images || []).length} fotos</span>
           </div>
         </div>
         <div class="gallery-card-info">
-          <h3>${g.name}</h3>
+          <h3>${g.title || g.name || ''}</h3>
           ${g.description ? '<p>' + g.description + '</p>' : ''}
         </div>
       </div>
@@ -1020,7 +1020,8 @@ class BlueTemplate extends TemplateBase {
       const container = document.getElementById('galleries-grid');
       if (!container) return;
       for (const g of galleries) {
-        if (g.imageUrl) g.imageUrl = await dm.getImageUrl(g.imageUrl);
+        const cover = (g.images && g.images.length) ? g.images[0].imageUrl : null;
+        g._coverUrl = cover ? await dm.getImageUrl(cover) : null;
       }
       const html = this.renderGalleryHtml(galleries);
       if (append) {
@@ -1050,7 +1051,7 @@ class BlueTemplate extends TemplateBase {
       const titleEl = document.getElementById('gallery-modal-title');
       const mainImg = document.getElementById('gallery-main-img');
       const thumbs = document.getElementById('gallery-thumbnails');
-      if (titleEl) titleEl.textContent = gallery.name;
+      if (titleEl) titleEl.textContent = gallery.title || gallery.name || '';
       if (mainImg && this.currentGalleryImages[0]) {
         mainImg.src = this.currentGalleryImages[0].imageUrl;
       }
