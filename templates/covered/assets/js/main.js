@@ -1065,7 +1065,6 @@ class CoveredTemplate extends TemplateBase {
       const img = document.getElementById('contact-cover-img');
       const nameEl = document.getElementById('contact-radio-name');
       const descEl = document.getElementById('contact-radio-desc');
-      const emailDisplay = document.getElementById('contact-email-display');
       const dm = getDataManager();
 
       if (img && data.coverUrl) {
@@ -1075,11 +1074,6 @@ class CoveredTemplate extends TemplateBase {
       }
       if (nameEl) nameEl.textContent = data.projectName || data.name || 'Nuestra Radio';
       if (descEl) descEl.textContent = data.projectDescription || data.description || 'Estamos aquí para escucharte.';
-      if (emailDisplay) {
-        const resp = await fetch('/config/config.json');
-        const config = await resp.json();
-        emailDisplay.textContent = config.contact_email || 'contacto@radio.cl';
-      }
     } catch (e) {
       console.warn('CoveredTemplate: Error loading contact cover:', e);
     }
