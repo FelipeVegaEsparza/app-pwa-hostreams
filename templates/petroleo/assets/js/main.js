@@ -601,13 +601,13 @@ class PetroleoTemplate extends TemplateBase {
 
   renderGalleryHtml(galleries) {
     return galleries.map(g => {
-      const title = g.name || '';
+      const title = g.title || g.name || '';
       const desc = g.description || '';
       const count = (g.images || []).length;
       return `
       <div class="gallery-card" data-gallery-id="${g.id}" style="cursor:pointer;">
         <div class="gallery-card-image">
-          <img src="${g.imageUrl || '/assets/icons/icon-96x96.png'}" alt="${title}" loading="lazy">
+          <img src="${g._coverUrl || '/assets/icons/icon-96x96.png'}" alt="${title}" loading="lazy">
           <div class="gallery-card-overlay">
             <i class="fas fa-images"></i>
             <span>${count} fotos</span>
@@ -636,7 +636,8 @@ class PetroleoTemplate extends TemplateBase {
       if (!container) return;
 
       for (const g of galleries) {
-        if (g.imageUrl) g.imageUrl = await dm.getImageUrl(g.imageUrl);
+        const cover = (g.images && g.images.length) ? g.images[0].imageUrl : null;
+        g._coverUrl = cover ? await dm.getImageUrl(cover) : null;
       }
 
       const html = this.renderGalleryHtml(galleries);
@@ -671,7 +672,7 @@ class PetroleoTemplate extends TemplateBase {
       const mainImg = document.getElementById('gallery-main-img');
       const thumbs = document.getElementById('gallery-thumbnails');
 
-      if (titleEl) titleEl.textContent = gallery.name;
+      if (titleEl) titleEl.textContent = gallery.title || gallery.name || '';
       if (mainImg && this.currentGalleryImages[0]) {
         mainImg.src = this.currentGalleryImages[0].imageUrl;
       }
