@@ -1812,22 +1812,42 @@ El sistema incluye un endpoint `/api/contact` en el servidor Node que envía los
 
 2. **Verificar dominio (recomendado para producción)**
    - En Resend → "Domains" → "Add Domain"
-   - Agregar los registros DNS que indica Resend
-   - Esto permite enviar desde `noreply@tu-dominio.cl` en vez del de prueba
-   - Para testing rápido podés usar `onboarding@resend.dev` (ya viene configurado por defecto)
+   - Agregar el dominio o subdominio (ej: `resend.ipstream.cl`)
+   - Resend te da registros DNS para agregar (SPF, DKIM, verificación)
+   - Esperar la verificación (puede tardar minutos a horas)
+   - Una vez verificado, podés usar cualquier `email@ese-dominio` como remitente
+   - Para testing rápido sin verificar dominio, podés usar `onboarding@resend.dev` por defecto, pero solo enviará al email con el que creaste la cuenta de Resend
 
 3. **Configurar variables de entorno del servidor**
 
+   **Opción A — Archivo `.env` (desarrollo local):**
    ```bash
-   # Obligatoria
-   export RESEND_API_KEY="re_TU_API_KEY_AQUI"
+   cp .env.example .env
+   # Editar .env y completar RESEND_API_KEY, RESEND_FROM_EMAIL, etc.
+   npm start
+   ```
+   El servidor carga automáticamente el `.env` al iniciar (gracias a `dotenv`).
 
-   # Opcionales (para usar tu propio dominio verificado)
-   export RESEND_FROM_EMAIL="noreply@tu-dominio.cl"
+   **Opción B — Variables de entorno del sistema (producción):**
+   ```bash
+   export RESEND_API_KEY="re_TU_API_KEY_AQUI"
+   export RESEND_FROM_EMAIL="noreply@resend.ipstream.cl"
    export RESEND_FROM_NAME="Radio Online"
+   node server.js
    ```
 
-   En producción, configurar en el sistema (systemd, Docker, Easypanel, etc.) o usar un archivo `.env`.
+   **Opción C — En Docker/contenedor:**
+   ```bash
+   docker run -e RESEND_API_KEY=re_xxx \
+              -e RESEND_FROM_EMAIL=noreply@resend.ipstream.cl \
+              -e RESEND_FROM_NAME="Radio Online" \
+              -p 3000:3000 mi-app
+   ```
+
+   **Opción D — Easypanel / panel del hosting:**
+   Configurar las variables en la sección de "Environment Variables" del servicio.
+
+   > El archivo `.env` ya está en `.gitignore`, así que es seguro para desarrollo. En producción, usar variables del sistema.
 
 ### Configuración por cliente
 
@@ -1936,8 +1956,16 @@ form.addEventListener('submit', async (e) => {
 | Variable | Obligatoria | Default | Descripción |
 |----------|-------------|---------|-------------|
 | `RESEND_API_KEY` | Sí | — | API key de Resend |
-| `RESEND_FROM_EMAIL` | No | `onboarding@resend.dev` | Email remitente (debe ser dominio verificado) |
+| `RESEND_FROM_EMAIL` | No | `onboarding@resend.dev` | Email remitente (debe ser de un dominio verificado en Resend) |
 | `RESEND_FROM_NAME` | No | `Formulario Web` | Nombre que aparece como remitente |
+
+Ejemplo de `.env` para producción con dominio verificado:
+
+```bash
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx
+RESEND_FROM_EMAIL=noreply@resend.ipstream.cl
+RESEND_FROM_NAME=Radio Online
+```
 
 ### Troubleshooting
 

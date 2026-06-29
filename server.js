@@ -5,6 +5,13 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
+// Cargar variables de entorno desde .env si existe (solo desarrollo local)
+try {
+  require('dotenv').config();
+} catch (e) {
+  // dotenv no instalado, usar variables de entorno del sistema
+}
+
 const app = express();
 
 // Trust proxy para funcionar detrás de reverse proxy (Nginx/Cloudflare)
