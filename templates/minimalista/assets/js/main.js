@@ -68,6 +68,10 @@ class MinimalistaTemplate extends TemplateBase {
   closeTVPopup() {
     const overlay = document.getElementById('tv-popup-overlay');
     if (overlay) overlay.classList.remove('active');
+    if (this._tvPlayer && this._tvPlayer.videoElement) {
+      this._tvPlayer.videoElement.pause();
+      this._tvPlayer.videoElement.currentTime = 0;
+    }
   }
 
   _initTVPlayer() {
