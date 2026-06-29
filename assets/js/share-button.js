@@ -164,12 +164,7 @@
     for (const sel of socialTargets) {
       const target = document.getElementById(sel);
       if (target) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'share-btn-wrapper';
-        wrapper.style.display = 'inline-flex';
-        wrapper.style.alignItems = 'center';
-        wrapper.appendChild(btn);
-        target.appendChild(wrapper);
+        target.appendChild(btn);
         btn.addEventListener('click', openShareModal);
         return;
       }
