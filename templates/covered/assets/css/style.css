@@ -189,6 +189,65 @@ body {
 .player-stats-hero { display: flex; gap: 24px; font-size: 0.85rem; color: rgba(255,255,255,0.35); }
 .player-stats-hero i { margin-right: 6px; color: rgba(255,255,255,0.2); }
 
+/* ========== VU METER (visualizador de audio) ========== */
+.vumeter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  /* Ocupa la mitad inferior del hero (hero es 80vh → ~40vh) */
+  height: 50%;
+  /* z-index 0: por delante del bg (z=0 implícito) pero por detrás
+     del overlay (z=1) y del cover/info (z=3). Así el overlay
+     oscuro lo tinta, integrado al diseño. */
+  z-index: 0;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+  padding: 0 6px 16px;
+}
+.vumeter-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+}
+.vumeter-bars span {
+  flex: 1 1 0;
+  min-width: 6px;
+  background: linear-gradient(
+    to top,
+    #e94560 0%,
+    #ff6b6b 100%
+  );
+  border-radius: 3px 3px 0 0;
+  height: 14px;
+  transition: height 0.06s ease-out, opacity 0.3s ease;
+  opacity: 1;
+  will-change: height;
+  /* Glow rojo para destacar a través del overlay oscuro */
+  box-shadow: 0 0 14px rgba(255, 90, 100, 0.7),
+              0 0 4px rgba(255, 130, 140, 0.85);
+}
+.vumeter.playing .vumeter-bars span {
+  box-shadow: 0 0 14px rgba(255, 90, 100, 0.9),
+              0 0 4px rgba(255, 150, 160, 1);
+}
+
+/* Ajustes responsive */
+@media (max-width: 480px) {
+  .vumeter { padding: 0 4px 12px; }
+  .vumeter-bars { gap: 3px; }
+  .vumeter-bars span { min-width: 4px; }
+}
+@media (min-width: 768px) {
+  .vumeter { padding: 0 16px 24px; }
+  .vumeter-bars { gap: 6px; }
+  .vumeter-bars span { min-width: 8px; border-radius: 4px 4px 0 0; }
+}
+
 /* ========== VOLUME (hidden) ========== */
 .volume-control { display: none; }
 
@@ -1753,6 +1812,16 @@ body {
     min-height: auto;
     padding: 30px 0;
   }
+  /* FIX: el reproductor TV (.tv-player-container) es position:absolute
+     y no aporta altura al padre. Cuando existe, restauramos una altura
+     mínima para que el video no quede aplastado bajo el header sticky. */
+  .hero-player:has(> .tv-player-container) {
+    min-height: 70vh;
+    padding: 12px 0 20px;
+  }
+  .hero-player:has(> .tv-player-container) .tv-player-container {
+    padding: 12px;
+  }
   .hero-player-inner {
     flex-direction: column;
     gap: 30px;
@@ -1801,6 +1870,11 @@ body {
 }
 
 @media (max-width: 600px) {
+  /* FIX: en pantallas muy chicas reducimos un poco la altura del hero
+     con TV para que el video no domine toda la pantalla. */
+  .hero-player:has(> .tv-player-container) {
+    min-height: 56vh;
+  }
   .hero-player-inner {
     gap: 20px;
     padding: 20px 0 20px;

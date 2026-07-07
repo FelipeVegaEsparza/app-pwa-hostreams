@@ -5,6 +5,7 @@
  */
 import TemplateBase from '/assets/js/template-base.js';
 import { getDataManager } from '/assets/js/data-manager.js';
+import VuMeter from '/assets/js/vu-meter.js';
 
 class MinimalistaTemplate extends TemplateBase {
   constructor() {
@@ -15,14 +16,21 @@ class MinimalistaTemplate extends TemplateBase {
       defaultVolume: 50,
       socialContainerIds: ['social-links']
     });
-    
+
     this.videoStreamUrl = null;
+    this.vuMeter = null;
   }
 
   async init() {
     await super.init();
-    
+
     try {
+      // Inicializa el VU meter en modo idle (visible desde el primer
+      // render, sin esperar a que el usuario haga play)
+      this.vuMeter = new VuMeter();
+      this.vuMeter.init();
+      this.vuMeter.stop();
+
       await this.checkTVAvailability();
       console.log('MinimalistaTemplate: Template fully initialized! 🚀');
     } catch (error) {
@@ -112,13 +120,11 @@ class MinimalistaTemplate extends TemplateBase {
   // Sobrescribir: Cuando se reproduce audio
   onAudioPlay() {
     super.onAudioPlay();
-    
-    // Iniciar animaciones específicas del template minimalista
-    const visualizer = document.getElementById('audio-visualizer');
-    if (visualizer) {
-      visualizer.classList.add('playing');
-    }
-    
+
+    // Arranca el VU meter (análisis real del audio)
+    if (this.vuMeter) this.vuMeter.start();
+
+    // Animación del disco
     const artworkInner = document.querySelector('.artwork-inner');
     if (artworkInner) {
       artworkInner.classList.add('playing');
@@ -128,16 +134,22 @@ class MinimalistaTemplate extends TemplateBase {
   // Sobrescribir: Cuando se pausa audio
   onAudioPause() {
     super.onAudioPause();
-    
-    // Detener animaciones
-    const visualizer = document.getElementById('audio-visualizer');
-    if (visualizer) {
-      visualizer.classList.remove('playing');
-    }
-    
+
+    // Detiene el VU meter
+    if (this.vuMeter) this.vuMeter.stop();
+
+    // Detiene la animación del disco
     const artworkInner = document.querySelector('.artwork-inner');
     if (artworkInner) {
       artworkInner.classList.remove('playing');
+    }
+  }
+
+  // Cleanup
+  destroy() {
+    if (this.vuMeter) {
+      this.vuMeter.destroy();
+      this.vuMeter = null;
     }
   }
 }

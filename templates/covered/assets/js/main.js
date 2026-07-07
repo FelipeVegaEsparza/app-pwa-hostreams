@@ -1,5 +1,6 @@
 import TemplateBase from '/assets/js/template-base.js';
 import { getDataManager } from '/assets/js/data-manager.js';
+import VuMeter from '/assets/js/vu-meter.js';
 
 class CoveredTemplate extends TemplateBase {
   constructor() {
@@ -34,6 +35,7 @@ class CoveredTemplate extends TemplateBase {
     this._tvPlayer = null;
     this._tvMode = null; // 'radio', 'tv', 'both'
     this._radioCoverUrl = null; // URL del cover de la radio (fallback)
+    this.vuMeter = null; // visualizador de audio en el hero
   }
 
   async init() {
@@ -49,6 +51,12 @@ class CoveredTemplate extends TemplateBase {
       this.setupModalHandlers();
       this.setupTabs();
       this.setupAnimations();
+      // Inicializa el VU meter (visualizador de audio en el hero).
+      // Lo iniciamos en modo idle para que se vea desde el primer
+      // render, sin esperar a que el usuario haga play.
+      this.vuMeter = new VuMeter();
+      this.vuMeter.init();
+      this.vuMeter.stop();
       console.log('CoveredTemplate: Template fully initialized!');
     } catch (error) {
       console.error('CoveredTemplate: Error in init:', error);
@@ -1090,6 +1098,32 @@ class CoveredTemplate extends TemplateBase {
     if (!container) return;
     const section = container.closest('.section') || container.closest('.full-section') || container.closest('[class*="section"]');
     if (section) section.style.display = hasData ? '' : 'none';
+  }
+
+  // ============================================================
+  // AUDIO PLAYBACK HOOKS
+  // El TemplateBase llama a estos métodos en play/pause del audio.
+  // Los usamos para arrancar/detener el VU meter.
+  // ============================================================
+  onAudioPlay() {
+    super.onAudioPlay();
+    if (this.vuMeter) this.vuMeter.start();
+  }
+
+  onAudioPause() {
+    super.onAudioPause();
+    if (this.vuMeter) this.vuMeter.stop();
+  }
+
+  // ============================================================
+  // CLEANUP
+  // ============================================================
+  destroy() {
+    if (this.vuMeter) {
+      this.vuMeter.destroy();
+      this.vuMeter = null;
+    }
+    // (TV player cleanup lo maneja el TemplateBase si corresponde)
   }
 }
 

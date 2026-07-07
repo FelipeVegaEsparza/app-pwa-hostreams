@@ -43,6 +43,11 @@
       <div class="hero-player-bg" id="hero-player-bg"></div>
       <div class="hero-player-overlay"></div>
 
+      <!-- VU Meter: visualizador de audio en tiempo real -->
+      <div class="vumeter" id="vumeter" aria-hidden="true">
+        <div class="vumeter-bars" id="vumeter-bars"></div>
+      </div>
+
       <div class="container">
         <div class="hero-player-inner">
           <div class="hero-player-cover" id="hero-player-cover">
@@ -216,7 +221,9 @@
 
   </main>
 
-  <audio id="radio-audio" preload="none"></audio>
+  <!-- crossorigin="anonymous" habilita el análisis real con Web Audio API
+       (ipstream.cl envía Access-Control-Allow-Origin: *) -->
+  <audio id="radio-audio" preload="none" crossorigin="anonymous"></audio>
   <input type="range" id="volume-slider" min="0" max="100" value="50" style="display:none;">
 
   <div class="loading-overlay" id="loading-overlay">
