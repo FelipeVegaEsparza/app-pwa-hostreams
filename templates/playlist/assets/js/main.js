@@ -82,6 +82,35 @@ class PlaylistTemplate extends TemplateBase {
     }
   }
 
+  // FIX: crea el VideoPlayer una sola vez y carga el stream.
+  // Antes nunca se instanciaba, por eso el contenedor quedaba vacío.
+  _initTVPlayer() {
+    if (this._tvPlayer) return;
+    const container = document.getElementById('tv-player-container');
+    if (!container || !window.VideoPlayer || !this.videoStreamUrl) return;
+
+    this._tvPlayer = new window.VideoPlayer('tv-player-container', {
+      autoplay: true,
+      controls: false,
+      muted: false
+    });
+    const player = this._tvPlayer;
+    const waitForVideo = setInterval(() => {
+      if (player.videoElement) {
+        clearInterval(waitForVideo);
+        player.loadStream(this.videoStreamUrl);
+      }
+    }, 100);
+  }
+
+  // Pausa el video de TV. Se usa al navegar a otra sección
+  // para que no siga consumiendo ancho de banda de fondo.
+  _pauseTVPlayer() {
+    if (this._tvPlayer && this._tvPlayer.videoElement && !this._tvPlayer.videoElement.paused) {
+      this._tvPlayer.videoElement.pause();
+    }
+  }
+
   // Sobrescribir: Actualizar display de canción actual
   updateCurrentSongDisplay(songData) {
     super.updateCurrentSongDisplay(songData);
@@ -550,6 +579,12 @@ class PlaylistTemplate extends TemplateBase {
       return;
     }
     this.currentView = sectionName;
+
+    // FIX: si salimos de la sección TV Online, pausar el video
+    // para que no siga reproduciéndose de fondo.
+    if (sectionName !== 'tv-online') {
+      this._pauseTVPlayer();
+    }
     
     // Cerrar modales al cambiar de sección
     this.closePodcastModal();
@@ -632,7 +667,7 @@ class PlaylistTemplate extends TemplateBase {
         await this.loadAllVideos();
         break;
       case 'tv-online':
-        console.log('TV Online section');
+        this._initTVPlayer();
         break;
       case 'galleries':
         await this.loadAllGalleries();
