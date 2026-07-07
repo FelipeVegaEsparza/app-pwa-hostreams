@@ -35,6 +35,11 @@
             <div class="hero-player-bg" id="hero-player-bg"></div>
             <div class="hero-player-overlay"></div>
 
+            <!-- VU Meter (entre el cover y el efecto blur) -->
+            <div class="vumeter" id="vumeter" aria-hidden="true">
+              <div class="vumeter-bars" id="vumeter-bars"></div>
+            </div>
+
             <header class="header">
               <div class="container">
                 <div class="header-inner">
@@ -126,6 +131,64 @@
           </div>
         </div>
 
+        <div class="tab-content" id="tab-videos">
+          <div class="container">
+            <section class="section" data-aos="fade-up">
+              <h2 class="section-title">Ranking de Videos</h2>
+              <div class="videos-ranking" id="videos-ranking"></div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-videocasts">
+          <div class="container">
+            <section class="section" data-aos="fade-up">
+              <h2 class="section-title">Videocasts</h2>
+              <div id="videocasts-list" class="card-grid"></div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-galleries">
+          <div class="container">
+            <section class="section" data-aos="fade-up">
+              <h2 class="section-title">Galerías</h2>
+              <div id="galleries-list" class="card-grid"></div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-announcers">
+          <div class="container">
+            <section class="section" data-aos="fade-up">
+              <h2 class="section-title">Locutores</h2>
+              <div id="announcers-list" class="card-grid"></div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-sponsors">
+          <div class="container">
+            <section class="section" data-aos="fade-up">
+              <h2 class="section-title">Auspiciadores</h2>
+              <div class="sponsors-grid" id="sponsors-list"></div>
+            </section>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-tv">
+          <div class="container">
+            <section class="section" data-aos="fade-up">
+              <h2 class="section-title">TV Online</h2>
+              <div class="tv-online-container">
+                <div id="tv-player-container">
+                  <!-- TV Player will be injected here -->
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
         <div class="tab-content" id="tab-events">
           <div class="container">
             <section class="section" data-aos="fade-up">
@@ -204,6 +267,30 @@
         <i class="fas fa-chart-bar"></i>
         <span>Encuestas</span>
       </button>
+      <button class="nav-item" data-tab="videos" style="display:none;">
+        <i class="fas fa-trophy"></i>
+        <span>Videos</span>
+      </button>
+      <button class="nav-item" data-tab="videocasts" style="display:none;">
+        <i class="fas fa-video"></i>
+        <span>Videocasts</span>
+      </button>
+      <button class="nav-item" data-tab="galleries" style="display:none;">
+        <i class="fas fa-images"></i>
+        <span>Galerías</span>
+      </button>
+      <button class="nav-item" data-tab="announcers" style="display:none;">
+        <i class="fas fa-microphone"></i>
+        <span>Locutores</span>
+      </button>
+      <button class="nav-item" data-tab="sponsors" style="display:none;">
+        <i class="fas fa-handshake"></i>
+        <span>Auspiciadores</span>
+      </button>
+      <button class="nav-item" data-tab="tv" style="display:none;">
+        <i class="fas fa-tv"></i>
+        <span>TV</span>
+      </button>
       <button class="nav-item" data-tab="events" style="display:none;">
         <i class="fas fa-calendar-check"></i>
         <span>Eventos</span>
@@ -250,7 +337,31 @@
     </div>
   </div>
 
-  <audio id="radio-audio" preload="none"></audio>
+  <div id="videocast-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <div id="videocast-modal-body"></div>
+    </div>
+  </div>
+
+  <div id="video-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <div id="video-modal-body"></div>
+    </div>
+  </div>
+
+  <div id="gallery-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <div id="gallery-modal-body"></div>
+      <div class="gallery-thumbnails" id="gallery-thumbnails"></div>
+    </div>
+  </div>
+
+  <!-- crossorigin="anonymous" habilita el análisis real con Web Audio API
+       (ipstream.cl envía Access-Control-Allow-Origin: *) -->
+  <audio id="radio-audio" preload="none" crossorigin="anonymous"></audio>
   <input type="range" id="volume-slider" min="0" max="100" value="50" style="display:none;">
 
   <script>
