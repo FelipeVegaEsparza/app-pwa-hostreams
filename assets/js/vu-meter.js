@@ -280,6 +280,18 @@ export default class VuMeter {
       this.s.smoothed = new Array(this.s.bars.length).fill(0);
     }
 
+    // El AudioContext se crea en init() sin gesto del usuario, por lo
+    // que los navegadores lo dejan en 'suspended'. Si el <audio> ya está
+    // conectado al grafo vía MediaElementSource, el sonido no se oye
+    // hasta que el contexto pase a 'running'. Lo reanudamos acá, que
+    // sí se ejecuta en respuesta al click del usuario (cumple la
+    // autoplay policy de los navegadores).
+    if (this.s.ctx && this.s.ctx.state === 'suspended') {
+      this.s.ctx.resume().catch((err) => {
+        console.warn('VuMeter: no se pudo reanudar el AudioContext', err);
+      });
+    }
+
     // Crear el AudioContext en respuesta al click del usuario
     // (así arranca en "running" state y el audio sigue sonando)
     if (this.s.mode === 'fake') {
