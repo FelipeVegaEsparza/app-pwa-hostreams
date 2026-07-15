@@ -27,14 +27,14 @@ const PRESETS = {
   enhanced: {
     width: 1.15,
     low:    { type: 'lowshelf',  freq: 80,   gain:  5.0 },
-    mid:    { type: 'peaking',   freq: 250,  gain: -2.0, Q: 0.7 },
-    pres:   { type: 'peaking',   freq: 3200, gain:  2.0, Q: 0.8 },
-    high:   { type: 'highshelf', freq: 8000, gain:  1.0 },
+    mid:    { type: 'peaking',   freq: 250,  gain: -3.0, Q: 0.7 },
+    pres:   { type: 'peaking',   freq: 3200, gain:  2.5, Q: 0.8 },
+    high:   { type: 'highshelf', freq: 8000, gain:  1.5 },
     multiband: {
       bands: [
         { type: 'lowpass',  freq: 200, comp: { threshold: -28, ratio: 3.5, attack: 0.010, release: 0.100, knee: 10 } },
-        { type: 'bandpass', lowFreq: 200, highFreq: 3000, comp: { threshold: -24, ratio: 2.5, attack: 0.008, release: 0.120, knee: 10 } },
-        { type: 'highpass', freq: 3000, comp: { threshold: -22, ratio: 4.0, attack: 0.005, release: 0.060, knee: 8 } }
+        { type: 'bandpass', lowFreq: 200, highFreq: 3500, comp: { threshold: -23, ratio: 2.5, attack: 0.008, release: 0.120, knee: 10 } },
+        { type: 'highpass', freq: 3500, comp: { threshold: -22, ratio: 4.0, attack: 0.005, release: 0.060, knee: 8 } }
       ]
     },
     limit:  { threshold: -0.5, ratio: 20.0,  attack: 0.001, release: 0.050, knee: 0 },

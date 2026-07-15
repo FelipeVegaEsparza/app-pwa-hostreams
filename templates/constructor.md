@@ -1794,7 +1794,7 @@ Si el bloque **no existe**, el enhancer se activa con defaults (`enabled: true`,
 
 | Preset      | Low-shelf 80 Hz | Peaking 250 Hz | Peaking 3.2 kHz | High-shelf 8 kHz | Compresor | Limiter | Out  | Uso                            |
 |-------------|-----------------|----------------|-----------------|------------------|-----------|---------|------|--------------------------------|
-| `enhanced`  | +5 dB           | −2 dB          | +2 dB           | +1 dB            | **Multibanda 3 bandas** | −0.5 dBFS | +2 dB | Default. Radio comercial FM, alto y natural. |
+| `enhanced`  | +5 dB           | −3 dB          | +2.5 dB         | +1.5 dB          | **Multibanda 3 bandas** | −0.5 dBFS | +2 dB | Default. Radio comercial FM, alto, natural, voz presente. |
 | `flat`      | 0               | 0              | 0               | 0                | 2:1 broadband | —       | +0   | Solo normalización suave.      |
 | `vocal`     | −6 dB           | −4 dB          | +3 dB           | +2 dB            | 2.5:1 broadband | −1 dBFS | +0   | Talk radio, podcasts, noticias.|
 | `bass`      | +9 dB           | +3 dB          | −2 dB           | 0                | 2:1 broadband | −1 dBFS | +0   | Reggaetón / electrónica.       |
@@ -1807,8 +1807,8 @@ Si el bloque **no existe**, el enhancer se activa con defaults (`enabled: true`,
 | Banda       | Rango       | Threshold | Ratio | Attack | Release | Knee | Función |
 |-------------|-------------|-----------|-------|--------|---------|------|---------|
 | Baja (LP)   | < 200 Hz    | −28 dB    | 3.5:1 | 10 ms  | 100 ms  | 10   | Aprieta graves sin matar el punch. Ataque medio para no perder el "kick". |
-| Media (BP)  | 200 Hz–3 kHz| −24 dB    | 2.5:1 | 8 ms   | 120 ms  | 10   | Vocales e instrumentos. Control transparente del nivel general. |
-| Alta (HP)   | > 3 kHz     | −22 dB    | 4:1   | 5 ms   | 60 ms   | 8    | Caza transientes y sibilancia sin generar "grit" en los platillos. |
+| Media (BP)  | 200 Hz–3.5 kHz| −23 dB   | 2.5:1 | 8 ms   | 120 ms  | 10   | Vocales e instrumentos. Crossover en 3.5 kHz para mantener más energía vocal en la banda media (donde vive la voz). Threshold menos agresivo preserva la dinámica de la voz. |
+| Alta (HP)   | > 3.5 kHz   | −22 dB    | 4:1   | 5 ms   | 60 ms   | 8    | Caza transientes y sibilancia sin generar "grit" en los platillos. |
 
 La cadena completa del `enhanced`:
 
