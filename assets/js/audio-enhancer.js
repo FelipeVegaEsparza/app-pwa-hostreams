@@ -191,6 +191,16 @@ class AudioEnhancer {
       prev.connect(analyser);
       analyser.connect(ctx.destination);
 
+      // El AudioContext del VU meter se crea durante init (sin gesto
+      // del usuario) y queda en 'suspended'. Lo reanudamos aca para
+      // que el audio sea audible. Si el VU meter ya lo reanudo (caso
+      // vu-meter.js compartido), este llamado es un no-op.
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch((err) => {
+          console.warn('AudioEnhancer: no se pudo reanudar el AudioContext', err);
+        });
+      }
+
       this._nodes = {
         mode: 'vu',
         ctx,

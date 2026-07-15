@@ -799,6 +799,17 @@ class AppTemplate extends TemplateBase {
       this._tryRealAudio();
     }
 
+    // Reanudar el AudioContext si esta en suspended. _tryRealAudio
+    // se llamo durante _initVuMeter (sin gesto del usuario), por
+    // lo que el contexto queda en 'suspended' hasta que el usuario
+    // interactue. El click del play cuenta como gesto, asi que
+    // lo reanudamos aca.
+    if (v.ctx && v.ctx.state === 'suspended') {
+      v.ctx.resume().catch((err) => {
+        console.warn('VU meter: no se pudo reanudar el AudioContext', err);
+      });
+    }
+
     const tick = () => {
       if (!v.running) return;
       const now = performance.now();
