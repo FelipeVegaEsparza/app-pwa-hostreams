@@ -129,6 +129,26 @@ export default class VuMeter {
   }
 
   // ===============================================================
+  // PUBLIC GETTERS: para que el AudioEnhancer pueda re-cablear
+  // el grafo sin necesidad de un segundo createMediaElementSource.
+  // ===============================================================
+  getAudioContext() {
+    return this.s ? this.s.ctx : null;
+  }
+
+  getSourceNode() {
+    return this.s ? this.s.source : null;
+  }
+
+  getAnalyserNode() {
+    return this.s ? this.s.analyser : null;
+  }
+
+  isRealAnalysisActive() {
+    return !!(this.s && this.s.mode === 'real' && this.s.source);
+  }
+
+  // ===============================================================
   // ANÁLISIS REAL: Web Audio API
   // ===============================================================
   _tryRealAudio() {
@@ -162,6 +182,7 @@ export default class VuMeter {
         v.bands = this._computeBands(v.bars.length, analyser.frequencyBinCount, sr);
       }
       console.info('VuMeter: análisis real habilitado');
+      window.dispatchEvent(new CustomEvent('vumeter:realanalysis', { detail: { vuMeter: this } }));
     } catch (e) {
       console.warn('VuMeter: createMediaElementSource falló, probando captureStream', e);
       v.source = null;
@@ -207,6 +228,7 @@ export default class VuMeter {
         v.bands = this._computeBands(v.bars.length, analyser.frequencyBinCount, sr);
       }
       console.info('VuMeter: análisis real habilitado (captureStream)');
+      window.dispatchEvent(new CustomEvent('vumeter:realaudiofallback', { detail: { vuMeter: this, mode: 'captureStream' } }));
     } catch (e) {
       console.warn('VuMeter: captureStream falló, fallback', e);
       v.mode = 'fake';

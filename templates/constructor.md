@@ -66,8 +66,8 @@ templates/
 ### Elementos Obligatorios del Reproductor
 
 ```html
-<!-- Audio element (ID configurable) -->
-<audio id="radio-audio" preload="none"></audio>
+<!-- Audio element (ID configurable). `crossorigin` es OBLIGATORIO para que la mejora funcione. -->
+<audio id="radio-audio" preload="none" crossorigin="anonymous"></audio>
 
 <!-- Botón de play (ID configurable) -->
 <button id="play-btn">
@@ -1763,6 +1763,106 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 export default MiTemplate;
 ```
+
+---
+
+## Audio Enhancer (Mejora de Calidad del Stream)
+
+### ¿Qué hace?
+
+Procesa el audio del stream de radio en vivo con una cadena tipo "radio comercial FM": **EQ 4 bandas → Compressor → Limiter → Output Gain**. Se aplica solo al `<audio>` principal del stream (no a podcasts ni a `<video>` del TV). Sin recargar ni re-buferar: los nodos siempre están conectados y el bypass se hace animando un `GainNode` (crossfade ~50 ms).
+
+### ¿Cómo se activa?
+
+Se activa automáticamente si `config/config.json` tiene el bloque:
+
+```json
+{
+  "audio_enhancer": {
+    "enabled": true,
+    "preset": "enhanced"
+  }
+}
+```
+
+- `enabled` (bool, default `true`): on/off por cliente desde el servidor.
+- `preset` (string, default `"enhanced"`): uno de `enhanced | flat | vocal | bass | soft`.
+
+Si el bloque **no existe**, el enhancer se activa con defaults (`enabled: true`, `preset: "enhanced"`). Si solo falta un campo, se aplica el default para ese campo.
+
+### Presets disponibles
+
+| Preset      | Low-shelf 80 Hz | Peaking 250 Hz | Peaking 3.2 kHz | High-shelf 8 kHz | Compresor | Limiter | Out  | Uso                            |
+|-------------|-----------------|----------------|-----------------|------------------|-----------|---------|------|--------------------------------|
+| `enhanced`  | +5 dB           | −2 dB          | +2 dB           | +1 dB            | **Multibanda 3 bandas** | −0.5 dBFS | +2 dB | Default. Radio comercial FM, alto y natural. |
+| `flat`      | 0               | 0              | 0               | 0                | 2:1 broadband | —       | +0   | Solo normalización suave.      |
+| `vocal`     | −6 dB           | −4 dB          | +3 dB           | +2 dB            | 2.5:1 broadband | −1 dBFS | +0   | Talk radio, podcasts, noticias.|
+| `bass`      | +9 dB           | +3 dB          | −2 dB           | 0                | 2:1 broadband | −1 dBFS | +0   | Reggaetón / electrónica.       |
+| `soft`      | −2 dB           | 0              | −3 dB           | 0                | 1.5:1 broadband | −3 dBFS | −3   | Audio de fondo / madrugada.    |
+
+### Multibanda del preset `enhanced`
+
+`enhanced` usa compresión multibanda en 3 bandas con crossover **Linkwitz-Riley 4° orden** (dos Butterworth Q=0.707 cascados por filtro). L-R 4° orden suma plano en potencia: 0 dB exacto en los puntos de cruce, sin bultos ni valles, y la fase queda coherente entre bandas (no hay cancelación).
+
+| Banda       | Rango       | Threshold | Ratio | Attack | Release | Knee | Función |
+|-------------|-------------|-----------|-------|--------|---------|------|---------|
+| Baja (LP)   | < 200 Hz    | −28 dB    | 3.5:1 | 10 ms  | 100 ms  | 10   | Aprieta graves sin matar el punch. Ataque medio para no perder el "kick". |
+| Media (BP)  | 200 Hz–3 kHz| −24 dB    | 2.5:1 | 8 ms   | 120 ms  | 10   | Vocales e instrumentos. Control transparente del nivel general. |
+| Alta (HP)   | > 3 kHz     | −22 dB    | 4:1   | 5 ms   | 60 ms   | 8    | Caza transientes y sibilancia sin generar "grit" en los platillos. |
+
+La cadena completa del `enhanced`:
+
+```
+    source → stereoWidener (1.15) → EQ (4 bandas)
+      → multibanda (3 bandas, L-R 4° orden)
+      → limitador (-0.5 dBFS) → outGain (+2 dB) → userGain → destination
+```
+
+**Stereo widener**: matriz crossfeed que ensancha la imagen estéreo. `width: 1.15` da un ensanchamiento sutil y musical — las voces se quedan centradas (la señal "mid" no se toca) pero los instrumentos de los lados se separan un poco más. Con `width: 1.0` queda en passthrough transparente.
+
+Output gain conservador (+2 dB) porque el multiband ya aumenta el loudness percibido. El limitador a -0.5 dBFS da headroom y evita clipping sin ser agresivo.
+
+### Requisitos en el template
+
+**El `<audio id="radio-audio">` (o el id configurado en `audioElementId`) DEBE tener `crossorigin="anonymous"`.** Sin este atributo, cuando el enhancer (o el VU meter compartido) crea un `MediaElementSource` sobre el elemento, el navegador silencia la salida con un warning `MediaElementAudioSource outputs zeroes due to CORS access restrictions`. El stream se carga pero no se oye nada.
+
+El servidor de streaming (ipstream.cl) ya envía `Access-Control-Allow-Origin: *`, así que no hay riesgo al agregar el atributo. Si en el futuro cambiás de proveedor de stream, verificá primero en DevTools → Network → response headers del stream que el header CORS esté presente antes de deployar.
+
+### Habilitar la mejora en un template nuevo
+
+1. Asegurarse de que el `<audio>` del stream principal tenga `crossorigin="anonymous"` (ver snippet actualizado arriba en "Elementos Obligatorios del Reproductor").
+2. (Opcional) Editar `config/config.json` para fijar `audio_enhancer.preset` según el público de la radio.
+3. Si el template usa un id distinto a `radio-audio` (caso `blue` que usa `news-audio`), no hay cambios extra: el enhancer se engancha al elemento que el `AudioPlayer` del template controle.
+
+### Inspección y control en runtime
+
+El módulo expone el singleton como `window.__audioEnhancer` apenas se carga, así que no hace falta importar nada en la consola. Comandos disponibles:
+
+```js
+// Estado actual
+__audioEnhancer.getState();
+// → { enabled: true, preset: "enhanced", active: true, reason: null }
+
+// Cambiar preset en vivo
+__audioEnhancer.setPreset('vocal');
+__audioEnhancer.setPreset('bass');
+__audioEnhancer.setPreset('soft');
+__audioEnhancer.setPreset('flat');
+
+// Apagar / encender (bypass sin corte)
+__audioEnhancer.setEnabled(false);
+__audioEnhancer.setEnabled(true);
+```
+
+### Compatibilidad
+
+- Web Audio API requiere un gesto del usuario para arrancar el `AudioContext` en algunos navegadores. El enhancer se cablea en respuesta al primer click de play (cumple autoplay policy).
+- **Dos modos de cableado** (automático, según lo que dispare primero):
+  - **Modo VU**: si el template usa el VU meter compartido (`assets/js/vu-meter.js`) y este crea su `AudioContext` + `MediaElementSource`, el enhancer re-usa ese grafo e inserta su cadena entre el `source` y el `analyser`.
+  - **Modo standalone**: si el template NO usa el VU meter compartido (caso `app`, que tiene su propio VU meter local), el enhancer crea su propio `AudioContext` + `MediaElementSource` en el primer `play` y se cablea solo.
+- **Control de volumen**: cuando el enhancer toma el control del audio (modo standalone, o en modo VU si CORS está OK), el `GainNode` del `<audio>` queda fuera de la ruta de señal. El enhancer agrega un `userGain` interno que se sincroniza con `audioElement.volume` mediante el evento `volumechange`, así el slider de volumen del reproductor sigue funcionando.
+- Probado: Chrome/Edge/Firefox desktop y Android, Safari iOS (con `crossorigin` configurado).
+- Si el navegador no soporta Web Audio API, el enhancer queda inactivo y el audio pasa intacto.
 
 ---
 

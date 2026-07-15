@@ -651,6 +651,7 @@ class AppTemplate extends TemplateBase {
         v.bands = this._computeBands(v.bars.length, analyser.frequencyBinCount, sr);
       }
       console.info('VU meter: análisis real habilitado (createMediaElementSource)');
+      window.dispatchEvent(new CustomEvent('vumeter:realanalysis', { detail: { vuMeter: this } }));
     } catch (e) {
       console.warn('VU meter: createMediaElementSource falló, probando captureStream', e);
       v.source = null;
@@ -698,6 +699,7 @@ class AppTemplate extends TemplateBase {
         v.bands = this._computeBands(v.bars.length, analyser.frequencyBinCount, sr);
       }
       console.info('VU meter: análisis real habilitado (captureStream)');
+      window.dispatchEvent(new CustomEvent('vumeter:realaudiofallback', { detail: { vuMeter: this, mode: 'captureStream' } }));
     } catch (e) {
       console.warn('VU meter: captureStream falló, usando animación sintética', e);
       v.mode = 'fake';
@@ -1021,6 +1023,25 @@ class AppTemplate extends TemplateBase {
     };
 
     tick();
+  }
+
+  // Getters para que el AudioEnhancer (assets/js/audio-enhancer.js)
+  // pueda re-cablear el grafo de Web Audio de este VU meter local
+  // sin necesidad de un segundo createMediaElementSource.
+  getAudioContext() {
+    return this._vuMeter ? this._vuMeter.ctx : null;
+  }
+
+  getSourceNode() {
+    return this._vuMeter ? this._vuMeter.source : null;
+  }
+
+  getAnalyserNode() {
+    return this._vuMeter ? this._vuMeter.analyser : null;
+  }
+
+  isRealAnalysisActive() {
+    return !!(this._vuMeter && this._vuMeter.mode === 'real' && this._vuMeter.source);
   }
 
   _stopVuMeter() {
