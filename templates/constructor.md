@@ -1786,41 +1786,75 @@ Se activa automáticamente si `config/config.json` tiene el bloque:
 ```
 
 - `enabled` (bool, default `true`): on/off por cliente desde el servidor.
-- `preset` (string, default `"enhanced"`): uno de `enhanced | flat | vocal | bass | soft`.
+- `preset` (string, default `"enhanced"`): uno de `original | enhanced | flat | vocal | bass | soft`.
 
 Si el bloque **no existe**, el enhancer se activa con defaults (`enabled: true`, `preset: "enhanced"`). Si solo falta un campo, se aplica el default para ese campo.
 
 ### Presets disponibles
 
-| Preset      | Low-shelf 80 Hz | Peaking 250 Hz | Peaking 3.2 kHz | High-shelf 8 kHz | Compresor | Limiter | Out  | Uso                            |
-|-------------|-----------------|----------------|-----------------|------------------|-----------|---------|------|--------------------------------|
-| `enhanced`  | +5 dB           | −3 dB          | +2.5 dB         | +1.5 dB          | **Multibanda 3 bandas** | −0.5 dBFS | +2 dB | Default. Radio comercial FM, alto, natural, voz presente. |
-| `flat`      | 0               | 0              | 0               | 0                | 2:1 broadband | —       | +0   | Solo normalización suave.      |
-| `vocal`     | −6 dB           | −4 dB          | +3 dB           | +2 dB            | 2.5:1 broadband | −1 dBFS | +0   | Talk radio, podcasts, noticias.|
-| `bass`      | +9 dB           | +3 dB          | −2 dB           | 0                | 2:1 broadband | −1 dBFS | +0   | Reggaetón / electrónica.       |
-| `soft`      | −2 dB           | 0              | −3 dB           | 0                | 1.5:1 broadband | −3 dBFS | −3   | Audio de fondo / madrugada.    |
+| Preset      | Filosofía | Uso |
+|-------------|-----------|-----|
+| `original`  | Sin procesamiento. Solo control de volumen (userGain). Cadena: source → userGain → destination. | Comparación A/B, audiófilos, "no toques nada". |
+| `enhanced`  | **Hi-Fi.** EQ sutil + compresor broadband transparente y adaptativo + limitador brick-wall con look-ahead. Sin widener, sin multibanda. | **Default recomendado.** Cercano a la calidad de VLC / Foobar2000 / Spotify. |
+| `flat`      | Radio loud suave. EQ plano, compresor 2:1, sin limitador. | Normalización ligera sin colorear. |
+| `vocal`     | Radio loud agresivo. EQ para talk radio, compresor 2.5:1, limitador. | Talk radio, podcasts, noticias. |
+| `bass`      | Radio loud con graves. EQ con +9 dB @ 60 Hz, compresor 2:1. | Reggaetón, electrónica. |
+| `soft`      | Audio de fondo. EQ suave, limitador conservador, out −3 dB. | Madrugada, audio pasivo. |
 
-### Multibanda del preset `enhanced`
+### `enhanced` — Hi-Fi en detalle (default)
 
-`enhanced` usa compresión multibanda en 3 bandas con crossover **Linkwitz-Riley 4° orden** (dos Butterworth Q=0.707 cascados por filtro). L-R 4° orden suma plano en potencia: 0 dB exacto en los puntos de cruce, sin bultos ni valles, y la fase queda coherente entre bandas (no hay cancelación).
+Diseñado para acercarse a la calidad de reproductores profesionales como VLC, Foobar2000 o Spotify Desktop. Prioriza sonido limpio y natural sobre loudness.
 
-| Banda       | Rango       | Threshold | Ratio | Attack | Release | Knee | Función |
-|-------------|-------------|-----------|-------|--------|---------|------|---------|
-| Baja (LP)   | < 200 Hz    | −28 dB    | 3.5:1 | 10 ms  | 100 ms  | 10   | Aprieta graves sin matar el punch. Ataque medio para no perder el "kick". |
-| Media (BP)  | 200 Hz–3.5 kHz| −23 dB   | 2.5:1 | 8 ms   | 120 ms  | 10   | Vocales e instrumentos. Crossover en 3.5 kHz para mantener más energía vocal en la banda media (donde vive la voz). Threshold menos agresivo preserva la dinámica de la voz. |
-| Alta (HP)   | > 3.5 kHz   | −22 dB    | 4:1   | 5 ms   | 60 ms   | 8    | Caza transientes y sibilancia sin generar "grit" en los platillos. |
+**EQ — corrección sutil, no coloración:**
 
-La cadena completa del `enhanced`:
+| Slot | Frecuencia | Ganancia | Q | Propósito |
+|------|-----------|----------|---|-----------|
+| low | 80 Hz | +1 dB (lowshelf) | — | Calidez sutil |
+| mid | 300 Hz | −1.5 dB (peaking) | 0.7 | Quita "barro" en medios-bajos |
+| pres | 3 kHz | +1 dB (peaking) | 0.8 | Presencia vocal sutil |
+| high | 12 kHz | +0.5 dB (highshelf) | — | Aire por encima de la sibilancia (5-8 kHz) |
+
+**Compresor broadband — transparente y adaptativo:**
+
+- Ratio: 2:1
+- Attack: 25 ms (deja pasar transientes)
+- Release: 150 ms (natural, sin bombeo)
+- Knee: 12 dB (transición muy suave)
+- **Threshold adaptativo**: el sistema mide el RMS del audio de entrada cada 150 ms y ajusta el threshold automáticamente:
+  - Audio fuerte / bien masterizado (RMS > −12 dBFS) → threshold sube a −6 dB → el compresor no actúa
+  - Audio bajo / pobre (RMS < −28 dBFS) → threshold baja a −24 dB → compresión gentil compensa
+  - Entre medio: interpolación lineal
+  - Cambios suavizados con `setTargetAtTime` (sin clicks)
+
+Esto cumple el principio: **mínimo procesamiento si el audio ya es bueno, corrección progresiva si tiene deficiencies.** La EQ queda fija y muy sutil porque la coloración perceptible al cambiar de preset es peor que una corrección suave y consistente.
+
+**Limitador brick-wall con look-ahead:**
+
+- Threshold: **−1 dBFS** (nunca llega a clip)
+- Ratio: 20:1 (hard knee, brick-wall efectivo)
+- Attack: 0.5 ms
+- Release: 50 ms
+- **Look-ahead de 5 ms**: un `DelayNode` antes del limitador retrasa la señal 5 ms, así el limitador ve el pico antes de que llegue y puede reaccionar sin distorsión en transientes. Costo: +5 ms de latencia total (imperceptible para música).
+
+**Cadena completa del `enhanced`:**
 
 ```
-    source → stereoWidener (1.15) → EQ (4 bandas)
-      → multibanda (3 bandas, L-R 4° orden)
-      → limitador (-0.5 dBFS) → outGain (+2 dB) → userGain → destination
+source → analyser (observación) → EQ (4 bandas sutil)
+      → compressor (1 banda, ratio 2:1, threshold adaptativo)
+      → delay 5ms (look-ahead) → limiter (−1 dBFS, ratio 20:1)
+      → outGain (0 dB) → userGain → analyser (VU) → destination
 ```
 
-**Stereo widener**: matriz crossfeed que ensancha la imagen estéreo. `width: 1.15` da un ensanchamiento sutil y musical — las voces se quedan centradas (la señal "mid" no se toca) pero los instrumentos de los lados se separan un poco más. Con `width: 1.0` queda en passthrough transparente.
+**AudioContext**: `new AudioContext({ latencyHint: 'interactive' })` para menor latencia. No se fuerza `sampleRate` (el browser elige el nativo del device para evitar resampling innecesario). Web Audio procesa en 32-bit float por default en todos los browsers modernos.
 
-Output gain conservador (+2 dB) porque el multiband ya aumenta el loudness percibido. El limitador a -0.5 dBFS da headroom y evita clipping sin ser agresivo.
+**Por qué se acerca a Hi-Fi:**
+- EQ tan sutil que no colorea el material
+- Compresor 2:1 es prácticamente "volume rider" — solo controla picos
+- Look-ahead evita distorsión en transientes
+- OutGain 0 dB = nivel natural, sin empuje artificial
+- Sin widener = imagen estéreo intacta
+- Sin multibanda agresiva = dinámica preservada
+- Procesamiento en 32-bit float (default Web Audio)
 
 ### Requisitos en el template
 
@@ -1831,7 +1865,7 @@ El servidor de streaming (ipstream.cl) ya envía `Access-Control-Allow-Origin: *
 ### Habilitar la mejora en un template nuevo
 
 1. Asegurarse de que el `<audio>` del stream principal tenga `crossorigin="anonymous"` (ver snippet actualizado arriba en "Elementos Obligatorios del Reproductor").
-2. (Opcional) Editar `config/config.json` para fijar `audio_enhancer.preset` según el público de la radio.
+2. (Opcional) Editar `config/config.json` para fijar `audio_enhancer.preset` según el público de la radio. Para Hi-Fi: `"preset": "enhanced"`. Para sin procesamiento: `"preset": "original"`.
 3. Si el template usa un id distinto a `radio-audio` (caso `blue` que usa `news-audio`), no hay cambios extra: el enhancer se engancha al elemento que el `AudioPlayer` del template controle.
 
 ### Inspección y control en runtime
@@ -1844,10 +1878,12 @@ __audioEnhancer.getState();
 // → { enabled: true, preset: "enhanced", active: true, reason: null }
 
 // Cambiar preset en vivo
+__audioEnhancer.setPreset('original'); // sin procesamiento
+__audioEnhancer.setPreset('enhanced'); // Hi-Fi (default)
+__audioEnhancer.setPreset('flat');
 __audioEnhancer.setPreset('vocal');
 __audioEnhancer.setPreset('bass');
 __audioEnhancer.setPreset('soft');
-__audioEnhancer.setPreset('flat');
 
 // Apagar / encender (bypass sin corte)
 __audioEnhancer.setEnabled(false);

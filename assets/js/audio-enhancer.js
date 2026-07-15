@@ -1,19 +1,29 @@
 /**
  * AudioEnhancer - Mejora de calidad del stream de radio en vivo.
  *
- * Inserta una cadena de procesamiento (EQ 4 bandas -> Compressor ->
- * Limiter -> Output Gain) en el grafo de Web Audio API que arma
- * el VU meter. Sin recargar ni re-buferar el stream.
+ * Inserta una cadena de procesamiento (EQ sutil -> Compresor broadband
+ * adaptativo -> Limitador brick-wall con look-ahead -> Output Gain)
+ * en el grafo de Web Audio API que arma el VU meter. Sin recargar
+ * ni re-buferar el stream.
  *
- * Pipeline:
- *   source -> stereoWidener -> lowShelf -> midPeak -> presPeak -> highShelf
- *          -> [multiband: 3 bandas con compressor independiente]
- *          -> [limiter] -> outGain -> userGain -> analyser -> destination
+ * Pipeline (preset 'enhanced', Hi-Fi):
+ *   source -> analyser (observacion) -> EQ 4 bandas (sutil)
+ *          -> compressor (1 banda, ratio 2:1, threshold adaptativo)
+ *          -> delay 5ms (look-ahead) -> limiter (-1 dBFS, ratio 20:1)
+ *          -> outGain (0 dB) -> userGain -> analyser (VU) -> destination
  *
- * El stereoWidener es siempre passthrough (width=1.0) a menos que
- * el preset defina `width`. El multiband es opcional: si el preset
- * lo define, se usa un sub-grafo de 3 bandas con crossover L-R 4°
- * orden y DynamicsCompressor por banda. Si no, un solo compressor.
+ * Preset 'original' (sin procesamiento): source -> userGain -> destination.
+ *
+ * Preset 'enhanced' usa un solo compresor broadband (transparente,
+ * ratio 2:1) en vez de multibanda. El threshold se adapta al nivel
+ * de entrada: si el audio es fuerte y bien masterizado apenas actua,
+ * si es bajo o pobre-masterizado compensa gentil. EQ fija y muy
+ * sutil (correccion, no coloracion).
+ *
+ * El codigo de stereoWidener y multibanda se mantiene para uso
+ * futuro (presets "Wide Stereo" o "Radio Loud") pero 'enhanced'
+ * no los usa.
+ *
  * Persistencia: la configuracion (enabled, preset) vive en
  * config.json bajo la clave `audio_enhancer`. No usa localStorage.
  *
@@ -24,21 +34,24 @@
 import { config } from './config.js';
 
 const PRESETS = {
+  // Passthrough: sin procesamiento, solo control de volumen.
+  // La cadena se reduce a source -> userGain -> destination.
+  original: {
+    passthrough: true,
+    outGain: 0.0
+  },
+
+  // Hi-Fi: EQ sutil, compresor broadband transparente y adaptativo,
+  // limitador brick-wall con look-ahead. Sin widener, sin multibanda.
+  // Objetivo: acercarse a la calidad de VLC / Foobar2000 / Spotify.
   enhanced: {
-    width: 1.15,
-    low:    { type: 'lowshelf',  freq: 80,   gain:  5.0 },
-    mid:    { type: 'peaking',   freq: 250,  gain: -3.0, Q: 0.7 },
-    pres:   { type: 'peaking',   freq: 3200, gain:  2.5, Q: 0.8 },
-    high:   { type: 'highshelf', freq: 8000, gain:  1.5 },
-    multiband: {
-      bands: [
-        { type: 'lowpass',  freq: 200, comp: { threshold: -28, ratio: 3.5, attack: 0.010, release: 0.100, knee: 10 } },
-        { type: 'bandpass', lowFreq: 200, highFreq: 3500, comp: { threshold: -23, ratio: 2.5, attack: 0.008, release: 0.120, knee: 10 } },
-        { type: 'highpass', freq: 3500, comp: { threshold: -22, ratio: 4.0, attack: 0.005, release: 0.060, knee: 8 } }
-      ]
-    },
-    limit:  { threshold: -0.5, ratio: 20.0,  attack: 0.001, release: 0.050, knee: 0 },
-    outGain: 2.0
+    low:    { type: 'lowshelf',  freq: 80,    gain:  1.0 },
+    mid:    { type: 'peaking',   freq: 300,   gain: -1.5, Q: 0.7 },
+    pres:   { type: 'peaking',   freq: 3000,  gain:  1.0, Q: 0.8 },
+    high:   { type: 'highshelf', freq: 12000, gain:  0.5 },
+    comp:   { threshold: -18, ratio: 2.0, attack: 0.025, release: 0.150, knee: 12 },
+    limit:  { threshold: -1.0, ratio: 20.0, attack: 0.0005, release: 0.050, knee: 0, lookahead: 0.005 },
+    outGain: 0.0
   },
   flat: {
     low:    { type: 'lowshelf',  freq: 80,   gain:  0.0 },
@@ -166,6 +179,59 @@ class AudioEnhancer {
     this._nodes.userGain.gain.value = this._audioElement.volume;
   }
 
+  // Compresion adaptativa: mide RMS del audio de entrada cada
+  // ~150ms y ajusta el threshold del compresor segun el nivel.
+  // Audio fuerte/bien-masterizado -> threshold alto, compresor no actua.
+  // Audio bajo/pobre -> threshold bajo, compresion gentil compensa.
+  // El cambio de threshold se hace con setTargetAtTime para suavizar
+  // y evitar clicks.
+  _startAdaptiveCompression() {
+    if (this._adaptiveInterval) return;
+    const analyser = this._nodes && this._nodes.analyser;
+    const compressor = this._nodes && this._nodes.compressor;
+    if (!analyser || !compressor) return;
+
+    const buffer = new Uint8Array(analyser.fftSize);
+    const ctx = this._nodes.ctx;
+
+    this._adaptiveInterval = setInterval(() => {
+      if (!this._nodes || !this._nodes.analyser || !this._nodes.compressor) return;
+      this._nodes.analyser.getByteTimeDomainData(buffer);
+
+      // RMS sobre la ventana time-domain
+      let sum = 0;
+      for (let i = 0; i < buffer.length; i++) {
+        const v = (buffer[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / buffer.length);
+      const rmsDb = 20 * Math.log10(Math.max(rms, 0.0001));
+
+      // Mapa RMS -> threshold:
+      //   RMS > -12 dBFS  -> threshold -6 dB  (audio fuerte, no comprimir)
+      //   RMS < -28 dBFS  -> threshold -24 dB (audio bajo, comprimir mas)
+      //   Entre medio: interpolacion lineal
+      const t = Math.max(0, Math.min(1, (rmsDb - -28) / (-12 - -28)));
+      const threshold = -24 + t * (-6 - -24);
+
+      compressor.threshold.setTargetAtTime(threshold, ctx.currentTime, 0.8);
+    }, 150);
+  }
+
+  _stopAdaptiveCompression() {
+    if (this._adaptiveInterval) {
+      clearInterval(this._adaptiveInterval);
+      this._adaptiveInterval = null;
+    }
+  }
+
+  // El sistema adaptativo solo aplica a presets Hi-Fi/transparentes.
+  // Los presets "radio loud" (vocal, bass, soft) tienen su color
+  // intencional; adaptarlos los deshace.
+  _isAdaptivePreset() {
+    return this._config.preset === 'enhanced' || this._config.preset === 'flat';
+  }
+
   _wireIntoGraph(vu) {
     try {
       const ctx = vu.getAudioContext && vu.getAudioContext();
@@ -211,6 +277,7 @@ class AudioEnhancer {
       };
 
       this._onVolumeChange();
+      if (!chain.passthrough && this._isAdaptivePreset()) this._startAdaptiveCompression();
       this._state.active = true;
       this._state.reason = null;
       this._emit('change');
@@ -232,7 +299,12 @@ class AudioEnhancer {
       return;
     }
     try {
-      const ctx = new Ctx();
+      // latencyHint: 'interactive' prioriza baja latencia sobre
+      // eficiencia energetica. Importante para que el limitador
+      // con look-ahead no genere retraso perceptible.
+      // No forzamos sampleRate: dejamos que el browser elija el
+      // nativo del device para evitar resampling innecesario.
+      const ctx = new Ctx({ latencyHint: 'interactive' });
       const source = ctx.createMediaElementSource(this._audioElement);
       const chain = this._buildChain(ctx);
       if (!chain) {
@@ -264,6 +336,7 @@ class AudioEnhancer {
 
       this._mySourceCreated = true;
       this._onVolumeChange();
+      if (!chain.passthrough && this._isAdaptivePreset()) this._startAdaptiveCompression();
       this._state.active = true;
       this._state.reason = null;
       this._emit('change');
@@ -282,6 +355,24 @@ class AudioEnhancer {
     try {
       const preset = PRESETS[this._config.preset] || PRESETS.enhanced;
 
+      // Passthrough: solo control de volumen, sin EQ/comp/limit.
+      if (preset.passthrough) {
+        const userGain = ctx.createGain();
+        userGain.gain.value = this._audioElement ? this._audioElement.volume : 1;
+        return {
+          passthrough: true,
+          userGain,
+          steps: [{ in: userGain, out: userGain }]
+        };
+      }
+
+      // Analyser al inicio: pass-through, observa el nivel de entrada
+      // para la compresion adaptativa. fftSize 1024 da ~21ms de ventana
+      // a 48kHz, suficiente para RMS estable.
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.5;
+
       const lowShelf = ctx.createBiquadFilter();
       this._applyBiquad(lowShelf, preset.low);
 
@@ -294,19 +385,28 @@ class AudioEnhancer {
       const highShelf = ctx.createBiquadFilter();
       this._applyBiquad(highShelf, preset.high);
 
-      let compressorStep, compressors, multibandNodes;
+      let compressorStep, compressors, multibandNodes, compressor;
       if (preset.multiband) {
         const mb = this._buildMultibandCompressor(ctx, preset.multiband);
         compressorStep = { in: mb.input, out: mb.output };
         compressors = mb.compressors;
         multibandNodes = mb.nodes;
+        compressor = mb.compressors[0]; // referencia principal para el sistema adaptativo
       } else {
-        const comp = ctx.createDynamicsCompressor();
-        this._applyCompressor(comp, preset.comp);
-        compressorStep = { in: comp, out: comp };
-        compressors = [comp];
+        compressor = ctx.createDynamicsCompressor();
+        this._applyCompressor(compressor, preset.comp);
+        compressorStep = { in: compressor, out: compressor };
+        compressors = [compressor];
         multibandNodes = [];
       }
+
+      // Look-ahead delay para el limitador. El limitador ve el
+      // pico unos ms antes de que llegue -> puede reaccionar sin
+      // distorsionar. 5ms es imperceptible para musica.
+      const lookahead = (preset.limit && typeof preset.limit.lookahead === 'number')
+        ? preset.limit.lookahead : 0;
+      const delay = lookahead > 0 ? ctx.createDelay(0.1) : null;
+      if (delay) delay.delayTime.value = lookahead;
 
       let limiter = null;
       if (preset.limit) {
@@ -320,44 +420,25 @@ class AudioEnhancer {
       const userGain = ctx.createGain();
       userGain.gain.value = this._audioElement ? this._audioElement.volume : 1;
 
-      // Widener siempre presente; cuando width=1.0 queda en passthrough
-      // (L_out=L, R_out=R) y no afecta la señal. Esto simplifica
-      // setPreset: solo hay que actualizar 4 gain values.
-      // Si falla la construccion (ej: environment con quirks), cae
-      // a un GainNode passthrough y la cadena sigue funcionando.
-      const width = (typeof preset.width === 'number') ? preset.width : 1.0;
-      let widener;
-      try {
-        widener = this._buildStereoWidener(ctx, width);
-      } catch (e) {
-        console.warn('AudioEnhancer: widener no disponible, usando passthrough', e);
-        widener = {
-          input: ctx.createGain(),
-          output: null, // se setea abajo
-          nodes: [],
-          lToL: null, rToL: null, lToR: null, rToR: null,
-          width: 1.0
-        };
-        widener.output = widener.input;
-      }
-
       const steps = [
-        { in: widener.input, out: widener.output || widener.input },
+        { in: analyser, out: analyser },
         { in: lowShelf, out: lowShelf },
         { in: midPeak, out: midPeak },
         { in: presPeak, out: presPeak },
         { in: highShelf, out: highShelf },
         compressorStep
       ];
+      if (delay) steps.push({ in: delay, out: delay });
       if (limiter) steps.push({ in: limiter, out: limiter });
       steps.push({ in: outGain, out: outGain });
       steps.push({ in: userGain, out: userGain });
 
       return {
-        widener, widenerNodes: widener.nodes,
+        passthrough: false,
+        analyser, compressor,
         lowShelf, midPeak, presPeak, highShelf,
         compressors, multibandNodes,
-        limiter, outGain, userGain, steps
+        delay, limiter, outGain, userGain, steps
       };
     } catch (e) {
       console.warn('AudioEnhancer: no se pudo construir la cadena', e);
@@ -525,16 +606,26 @@ class AudioEnhancer {
     this._state.preset = name;
     if (this._nodes) {
       const preset = PRESETS[name];
-      this._applyBiquad(this._nodes.lowShelf, preset.low);
-      this._applyBiquad(this._nodes.midPeak, preset.mid);
-      this._applyBiquad(this._nodes.presPeak, preset.pres);
-      this._applyBiquad(this._nodes.highShelf, preset.high);
-      this._updateCompressors(preset);
-      if (preset.limit && this._nodes.limiter) {
-        this._applyCompressor(this._nodes.limiter, preset.limit);
+      // Preset 'original' es passthrough: si la cadena actual no
+      // lo es, no podemos re-cablear en caliente. Solo actualizamos
+      // el flag y dejamos que un reload tome efecto.
+      if (this._nodes.passthrough && !preset.passthrough) {
+        console.warn('AudioEnhancer: cambio de passthrough a processing requiere reload');
+      } else if (!this._nodes.passthrough && preset.passthrough) {
+        console.warn('AudioEnhancer: cambio de processing a passthrough requiere reload');
+      } else if (!preset.passthrough && !this._nodes.passthrough) {
+        this._applyBiquad(this._nodes.lowShelf, preset.low);
+        this._applyBiquad(this._nodes.midPeak, preset.mid);
+        this._applyBiquad(this._nodes.presPeak, preset.pres);
+        this._applyBiquad(this._nodes.highShelf, preset.high);
+        this._updateCompressors(preset);
+        if (preset.limit && this._nodes.limiter) {
+          this._applyCompressor(this._nodes.limiter, preset.limit);
+        }
+        if (preset.limit && preset.limit.lookahead && this._nodes.delay) {
+          this._nodes.delay.delayTime.value = preset.limit.lookahead;
+        }
       }
-      const width = (typeof preset.width === 'number') ? preset.width : 1.0;
-      this._setStereoWidth(this._nodes.widener, width);
       this._nodes.presetName = name;
       this._applyBypass();
     }
@@ -558,6 +649,7 @@ class AudioEnhancer {
 
   _applyBypass() {
     if (!this._nodes) return;
+    if (this._nodes.passthrough) return; // passthrough no tiene nada que ajustar
     const preset = PRESETS[this._config.preset] || PRESETS.enhanced;
     const transparent = { threshold: 0, ratio: 1, attack: 0.001, release: 0.050, knee: 0 };
     if (this._state.enabled) {
@@ -572,19 +664,21 @@ class AudioEnhancer {
         this._applyCompressor(this._nodes.limiter, transparent);
       }
       const target = this._dbToLinear(preset.outGain);
-      this._smoothGain(this._nodes.outGain.gain, target);
+      if (this._nodes.outGain) this._smoothGain(this._nodes.outGain.gain, target);
     } else {
       this._applyBiquad(this._nodes.lowShelf, { type: 'lowshelf', freq: 80, gain: 0 });
       this._applyBiquad(this._nodes.midPeak, { type: 'peaking', freq: 250, gain: 0, Q: 0.7 });
       this._applyBiquad(this._nodes.presPeak, { type: 'peaking', freq: 3200, gain: 0, Q: 0.8 });
       this._applyBiquad(this._nodes.highShelf, { type: 'highshelf', freq: 8000, gain: 0 });
-      for (const comp of this._nodes.compressors) {
-        this._applyCompressor(comp, transparent);
+      if (this._nodes.compressors) {
+        for (const comp of this._nodes.compressors) {
+          this._applyCompressor(comp, transparent);
+        }
       }
       if (this._nodes.limiter) {
         this._applyCompressor(this._nodes.limiter, transparent);
       }
-      this._smoothGain(this._nodes.outGain.gain, 1.0);
+      if (this._nodes.outGain) this._smoothGain(this._nodes.outGain.gain, 1.0);
     }
   }
 
@@ -606,11 +700,14 @@ class AudioEnhancer {
   }
 
   destroy() {
+    this._stopAdaptiveCompression();
     if (this._nodes) {
       try {
         this._nodes.source.disconnect();
-        if (this._nodes.analyser) this._nodes.analyser.disconnect();
-        for (const k of ['lowShelf','midPeak','presPeak','highShelf','limiter','outGain','userGain']) {
+        if (this._nodes.analyser && typeof this._nodes.analyser.disconnect === 'function') {
+          try { this._nodes.analyser.disconnect(); } catch (e) { /* ignore */ }
+        }
+        for (const k of ['lowShelf','midPeak','presPeak','highShelf','delay','limiter','outGain','userGain']) {
           if (this._nodes[k]) this._nodes[k].disconnect();
         }
         if (this._nodes.multibandNodes) {
