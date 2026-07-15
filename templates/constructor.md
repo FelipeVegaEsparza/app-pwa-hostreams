@@ -1830,19 +1830,21 @@ Esto cumple el principio: **mínimo procesamiento si el audio ya es bueno, corre
 
 **Limitador brick-wall con look-ahead:**
 
-- Threshold: **−1 dBFS** (nunca llega a clip)
+- Threshold: **−0.5 dBFS** (techo máximo de la señal procesada)
 - Ratio: 20:1 (hard knee, brick-wall efectivo)
 - Attack: 0.5 ms
 - Release: 50 ms
 - **Look-ahead de 5 ms**: un `DelayNode` antes del limitador retrasa la señal 5 ms, así el limitador ve el pico antes de que llegue y puede reaccionar sin distorsión en transientes. Costo: +5 ms de latencia total (imperceptible para música).
+
+**OutGain: +0.5 dB** (boost makeup después del limitador). Combinado con el limitador a −0.5 dBFS, el techo final de la señal queda en 0 dBFS (sin clipping). El limitador hace el trabajo pesado y el outGain empuja el nivel promedio ~1 dB por encima de la versión anterior.
 
 **Cadena completa del `enhanced`:**
 
 ```
 source → analyser (observación) → EQ (4 bandas sutil)
       → compressor (1 banda, ratio 2:1, threshold adaptativo)
-      → delay 5ms (look-ahead) → limiter (−1 dBFS, ratio 20:1)
-      → outGain (0 dB) → userGain → analyser (VU) → destination
+      → delay 5ms (look-ahead) → limiter (−0.5 dBFS, ratio 20:1)
+      → outGain (+0.5 dB) → userGain → analyser (VU) → destination
 ```
 
 **AudioContext**: `new AudioContext({ latencyHint: 'interactive' })` para menor latencia. No se fuerza `sampleRate` (el browser elige el nativo del device para evitar resampling innecesario). Web Audio procesa en 32-bit float por default en todos los browsers modernos.

@@ -50,8 +50,8 @@ const PRESETS = {
     pres:   { type: 'peaking',   freq: 3000,  gain:  1.0, Q: 0.8 },
     high:   { type: 'highshelf', freq: 12000, gain:  0.5 },
     comp:   { threshold: -18, ratio: 2.0, attack: 0.025, release: 0.150, knee: 12 },
-    limit:  { threshold: -1.0, ratio: 20.0, attack: 0.0005, release: 0.050, knee: 0, lookahead: 0.005 },
-    outGain: 0.0
+    limit:  { threshold: -0.5, ratio: 20.0, attack: 0.0005, release: 0.050, knee: 0, lookahead: 0.005 },
+    outGain: 0.5
   },
   flat: {
     low:    { type: 'lowshelf',  freq: 80,   gain:  0.0 },
