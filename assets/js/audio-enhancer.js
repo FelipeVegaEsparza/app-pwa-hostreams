@@ -313,11 +313,26 @@ class AudioEnhancer {
       // Widener siempre presente; cuando width=1.0 queda en passthrough
       // (L_out=L, R_out=R) y no afecta la señal. Esto simplifica
       // setPreset: solo hay que actualizar 4 gain values.
+      // Si falla la construccion (ej: environment con quirks), cae
+      // a un GainNode passthrough y la cadena sigue funcionando.
       const width = (typeof preset.width === 'number') ? preset.width : 1.0;
-      const widener = this._buildStereoWidener(ctx, width);
+      let widener;
+      try {
+        widener = this._buildStereoWidener(ctx, width);
+      } catch (e) {
+        console.warn('AudioEnhancer: widener no disponible, usando passthrough', e);
+        widener = {
+          input: ctx.createGain(),
+          output: null, // se setea abajo
+          nodes: [],
+          lToL: null, rToL: null, lToR: null, rToR: null,
+          width: 1.0
+        };
+        widener.output = widener.input;
+      }
 
       const steps = [
-        { in: widener.input, out: widener.output },
+        { in: widener.input, out: widener.output || widener.input },
         { in: lowShelf, out: lowShelf },
         { in: midPeak, out: midPeak },
         { in: presPeak, out: presPeak },
@@ -442,10 +457,13 @@ class AudioEnhancer {
     const rToR = ctx.createGain(); rToR.gain.value = a;
     nodes.push(lToL, rToL, lToR, rToR);
 
+    // connect(source, dest, outputIndex, inputIndex):
+    // outputIndex = output del SOURCE (GainNode tiene solo output 0).
+    // inputIndex  = input del DEST (ChannelMerger tiene inputs 0 y 1).
     splitter.connect(lToL, 0); lToL.connect(merger, 0, 0);
-    splitter.connect(rToL, 1); rToL.connect(merger, 1, 0);
+    splitter.connect(rToL, 1); rToL.connect(merger, 0, 0);
     splitter.connect(lToR, 0); lToR.connect(merger, 0, 1);
-    splitter.connect(rToR, 1); rToR.connect(merger, 1, 1);
+    splitter.connect(rToR, 1); rToR.connect(merger, 0, 1);
 
     return {
       input: splitter, output: merger, nodes,
